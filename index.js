@@ -1,0 +1,2 @@
+import { BehaviorManager } from './src';
+
