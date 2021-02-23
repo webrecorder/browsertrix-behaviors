@@ -1,15 +1,4 @@
-# 🚀 Welcome to your new awesome project!
+# browsertrix-behaviors
 
-This project has been created using **webpack scaffold**, you can now run
+TODO
 
-```
-npm run build
-```
-
-or
-
-```
-yarn build
-```
-
-to bundle your application
