@@ -2,9 +2,10 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   plugins: [new webpack.ProgressPlugin()],
-
-  module: {
+  output: {
+    iife: true,
+    filename: 'behaviors.js'
   },
 }

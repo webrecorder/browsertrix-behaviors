@@ -1,14 +1,10 @@
-import { sleep } from "./lib/utils";
+import { sleep, Behavior } from "./lib/utils";
 
 
 // ===========================================================================
-export class AutoScroll
+export class AutoScroll extends Behavior
 {
-  init() {
-    this.running = this.run();
-  }
-
-  async run() {
+  async* [Symbol.asyncIterator]() {
     const canScrollMore = () =>
       self.scrollY + self.innerHeight <
       Math.max(
@@ -23,11 +19,8 @@ export class AutoScroll
 
     while (canScrollMore()) {
       self.scrollBy(scrollOpts);
+      yield {"msg": "Scrolling by " + scrollOpts.top};
       await sleep(500);
     }
-  }
-
-  done() {
-    return Promise.race([this.running, sleep(30000)]);
   }
 }

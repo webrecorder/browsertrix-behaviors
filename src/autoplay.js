@@ -1,4 +1,4 @@
-import { sleep } from "./lib/utils";
+import { sleep, runOnload } from "./lib/utils";
 
 
 const domainSpecificRedirect = [
@@ -36,6 +36,8 @@ export class Autoplay {
     this.mediaSet = new Set();
 
     this.promises = [];
+
+    this.start();
   }
 
   async checkAutoPlayRedirect() {   
@@ -54,9 +56,11 @@ export class Autoplay {
     }
   }
 
-  init() {
-    this.checkAutoPlayRedirect();
-    this.initObserver();
+  start() {
+    runOnload(() => {
+      this.checkAutoPlayRedirect();
+      this.initObserver();
+    });
   }
 
   initObserver() {
