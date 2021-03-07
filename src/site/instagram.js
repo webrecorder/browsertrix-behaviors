@@ -198,10 +198,4 @@ export class InstagramPostsBehavior extends Behavior
       await sleep(1000);
     }
   }
-
-  async run() {
-    for await (const result of this) {
-      console.log("scroll instagram row", result);
-    }
-  }
 }

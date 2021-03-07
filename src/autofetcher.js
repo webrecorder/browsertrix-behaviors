@@ -3,7 +3,7 @@
 // also extract any urls from media query stylesheets that have not necessarily been loaded
 // (May not work for cross-origin stylesheets)
 
-import { runOnload } from "./lib/utils";
+import { runOnload, behavior_log } from "./lib/utils";
 
 const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], " +  
 "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
@@ -32,6 +32,11 @@ export class AutoFetcher
       this.run();
       this.initObserver();
     });
+  }
+
+  done() {
+    //TODO:
+    return Promise.resolve();
   }
 
   async run() {
@@ -70,11 +75,11 @@ export class AutoFetcher
         const url = this.urlqueue.shift();
         try {
           this.numPending++;
-          console.log("AutoFetching: " + url);
+          behavior_log("AutoFetching: " + url);
           const resp = await fetch(url);
           await resp.blob();
         } catch (e) {
-          console.log(e);
+          behavior_log(e);
         }
         this.numPending--;
       }
@@ -135,7 +140,6 @@ export class AutoFetcher
     const elems = root.querySelectorAll(SRC_SET_SELECTOR);
 
     for (const elem of elems) {
-      //console.log(elem);
       this.extractSrcSrcSet(elem);
     } 
   }
@@ -182,7 +186,7 @@ export class AutoFetcher
     try {
       rules = sheet.cssRules || sheet.rules;
     } catch (e) {
-      console.log("Can't access stylesheet");
+      behavior_log("Can't access stylesheet");
       return;
     }
 

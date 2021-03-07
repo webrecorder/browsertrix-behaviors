@@ -16,6 +16,13 @@ export function runOnload(func) {
   }
 }
 
+export function behavior_log(msg) {
+  if (self.__wb_behavior_log) {
+    self.__wb_behavior_log(msg);
+  }
+  console.log(msg);
+}
+
 // ===========================================================================
 export class RestoreState {
   constructor(childMatchSelect, child) {

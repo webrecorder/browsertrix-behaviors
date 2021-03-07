@@ -1,7 +1,7 @@
 import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
-import { runOnload, sleep } from "./lib/utils";
+import { runOnload, sleep, behavior_log } from "./lib/utils";
 
 import siteBehaviors from "./site";
 
@@ -12,23 +12,36 @@ export class BehaviorManager
   constructor() {
     this.behaviors = [];
     this.mainBehavior = null;
+    behavior_log("Behaviors in:" + self.location.href);
   }
 
   init(opts = {}) {
+    if (!self.window) {
+      return;
+    }
+
+    this.timeout = opts.timeout;
+
     if (opts.autofetch) {
+      behavior_log("Enable AutoFetcher");
       this.behaviors.push(new AutoFetcher());
     }
 
     if (opts.autoplay) {
+      behavior_log("Enable Autoplay");
       this.behaviors.push(new Autoplay());
     }
 
     let siteMatch = false;
 
+    if (self.window.top !== self.window) {
+      return;
+    }
+
     if (opts.siteSpecific) {
       for (const siteBehaviorClass of siteBehaviors) {
         if (siteBehaviorClass.isMatch()) {
-          console.log("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
+          behavior_log("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
           this.mainBehavior = new siteBehaviorClass();
           siteMatch = true;
           break;
@@ -37,30 +50,29 @@ export class BehaviorManager
     } 
 
     if (!siteMatch && opts.autoscroll) {
+      behavior_log("Starting Autoscroll");
       this.mainBehavior = new AutoScroll();
     }
 
     if (this.mainBehavior)  {
       this.behaviors.push(this.mainBehavior);
     }
-
-    this.timeout = opts.timeout;
   }
 
-  start() {
+  run() {
     runOnload(() => {
       if (this.mainBehavior) {
         this.mainBehavior.start();
       }
     });
-  }
 
-  done() {
     const allBehaviors = Promise.all(this.behaviors.map(x => x.done()));
 
     if (this.timeout) {
+      behavior_log(`Waiting for behaviors to finish or ${this.timeout}ms timeout`);
       return Promise.race([allBehaviors, sleep(this.timeout)]);
     } else {
+      behavior_log(`Waiting for behaviors to finish`);
       return allBehaviors;
     }
   }
