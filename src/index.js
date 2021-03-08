@@ -12,10 +12,17 @@ export class BehaviorManager
   constructor() {
     this.behaviors = [];
     this.mainBehavior = null;
+    this.inited = false;
     behavior_log("Loaded behaviors for: " + self.location.href);
   }
 
   init(opts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true}) {
+    if (this.inited) {
+      return;
+    }
+
+    this.inited = true;
+
     if (!self.window) {
       return;
     }
@@ -77,7 +84,9 @@ export class BehaviorManager
     }
   }
 
-  async run() {
+  async run(opts) {
+    this.init(opts);
+
     await awaitLoad();
 
     if (this.mainBehavior) {

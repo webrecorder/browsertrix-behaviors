@@ -19,7 +19,7 @@ To test out the behaviors in your current browser, you can:
 2. Copy the file (it is minified so will be on one line).
 3. Open a web page, such as one that has a custom behavior, like: [https://twitter.com/webrecorder_io](https://twitter.com/webrecorder_io)
 4. Open devtools console, and paste the script
-5. Enter `self.__bx_behaviors.init(); self.__bx_behaviors.run();`
+5. Enter `self.__bx_behaviors.run();`
 6. You should see the Twitter page automatically scrolling and visiting tweets.
 
 
@@ -81,6 +81,8 @@ Currently, the available site-specific behaviors are available for:
 Additional site-specific behaviors can be added to the [site](./src/site) directory.
 
 To run the active behavior, call: `await __bx_behaviors.run()` after init.
+
+Alternatively, calling `await __bx_behaviors.run(opts)` will also call `init(opts)` if init has not been called before.
 
 The promised returned by run will wait for the active behavior to finish, for the `timeout` time to be reached. It will also ensure any pending autoplay requests are started for the `autoplay` behavior.
 
