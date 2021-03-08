@@ -268,6 +268,5 @@ export class TwitterTimelineBehavior extends Behavior
 
   async* [Symbol.asyncIterator]() {
     yield* this.iterTimeline(0);
-    yield this.getState("Done");
   }
 }

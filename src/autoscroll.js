@@ -4,6 +4,10 @@ import { sleep, Behavior } from "./lib/utils";
 // ===========================================================================
 export class AutoScroll extends Behavior
 {
+  static get name() {
+    return "Autoscroll";
+  }
+
   async* [Symbol.asyncIterator]() {
     const canScrollMore = () =>
       self.scrollY + self.innerHeight <

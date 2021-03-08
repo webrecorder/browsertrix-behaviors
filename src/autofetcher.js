@@ -3,7 +3,7 @@
 // also extract any urls from media query stylesheets that have not necessarily been loaded
 // (May not work for cross-origin stylesheets)
 
-import { runOnload, behavior_log } from "./lib/utils";
+import { awaitLoad, behavior_log } from "./lib/utils";
 
 const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], " +  
 "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
@@ -27,11 +27,10 @@ export class AutoFetcher
     this.start();
   }
 
-  start() {
-    runOnload(() => {
-      this.run();
-      this.initObserver();
-    });
+  async start() {
+    await awaitLoad();
+    this.run();
+    this.initObserver();
   }
 
   done() {

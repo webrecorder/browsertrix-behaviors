@@ -1,7 +1,7 @@
 import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
-import { runOnload, sleep, behavior_log } from "./lib/utils";
+import { awaitLoad, sleep, behavior_log, _setLogFunc } from "./lib/utils";
 
 import siteBehaviors from "./site";
 
@@ -12,15 +12,31 @@ export class BehaviorManager
   constructor() {
     this.behaviors = [];
     this.mainBehavior = null;
-    behavior_log("Behaviors in:" + self.location.href);
+    behavior_log("Loaded behaviors for: " + self.location.href);
   }
 
-  init(opts = {}) {
+  init(opts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true}) {
     if (!self.window) {
       return;
     }
 
     this.timeout = opts.timeout;
+
+    // default if omitted is 'console.log'
+    if (opts.log !== undefined) {
+      let logger = opts.log;
+      // if string, look up as global
+      if (typeof(logger) === "string") {
+        logger = self[logger];
+      }
+      // if function, set to it
+      if (typeof(logger) === "function") {
+        _setLogFunc(logger);
+      // if false, disable logging
+      } else if (logger === false) {
+        _setLogFunc(null);
+      }
+    }
 
     if (opts.autofetch) {
       behavior_log("Enable AutoFetcher");
@@ -42,6 +58,7 @@ export class BehaviorManager
       for (const siteBehaviorClass of siteBehaviors) {
         if (siteBehaviorClass.isMatch()) {
           behavior_log("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
+          this.mainBehaviorClass = siteBehaviorClass;
           this.mainBehavior = new siteBehaviorClass();
           siteMatch = true;
           break;
@@ -51,6 +68,7 @@ export class BehaviorManager
 
     if (!siteMatch && opts.autoscroll) {
       behavior_log("Starting Autoscroll");
+      this.mainBehaviorClass = AutoScroll;
       this.mainBehavior = new AutoScroll();
     }
 
@@ -59,37 +77,39 @@ export class BehaviorManager
     }
   }
 
-  run() {
-    runOnload(() => {
-      if (this.mainBehavior) {
-        this.mainBehavior.start();
-      }
-    });
+  async run() {
+    await awaitLoad();
 
-    const allBehaviors = Promise.all(this.behaviors.map(x => x.done()));
+    if (this.mainBehavior) {
+      this.mainBehavior.start();
+    }
+
+    let allBehaviors = Promise.allSettled(this.behaviors.map(x => x.done()));
 
     if (this.timeout) {
       behavior_log(`Waiting for behaviors to finish or ${this.timeout}ms timeout`);
-      return Promise.race([allBehaviors, sleep(this.timeout)]);
+      allBehaviors = Promise.race([allBehaviors, sleep(this.timeout)]);
     } else {
       behavior_log(`Waiting for behaviors to finish`);
-      return allBehaviors;
     }
+
+    await allBehaviors;
+    behavior_log("All Behaviors Done!");
   }
 
   pause() {
-    console.log("pausing");
+    behavior_log("Pausing Main Behavior" + this.mainBehaviorClass.name);
     if (this.mainBehavior) {
       this.mainBehavior.pause();
     }
   }
 
   unpause() {
-    console.log("unpausing");
+    behavior_log("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
     if (this.mainBehavior) {
       this.mainBehavior.unpause();
     }
   }
 }
 
-self.__wb_behaviors = new BehaviorManager();
+self.__bx_behaviors = new BehaviorManager();

@@ -13,12 +13,11 @@ The file can injected in a number of ways, using tools like puppeteer/playwright
 ```javascript
 
 await page.evaluateOnNewDocument(behaviors + `
-self.__wb_behaviors.init({
+self.__bx_behaviors.init({
   autofetch: true,
   autoplay: true,
   autoscroll: true,
   siteSpecific: true,
-  timeout: 30000,
 });
 `);
 
@@ -31,13 +30,14 @@ see [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) fo
 
 ## Initialization
 
-Once the behavior script has been injected, run: `__wb_behaviors.init(opts)` to initialize which behaviors should be used. `opts` includes several boolean options:
+Once the behavior script has been injected, run: `__bx_behaviors.init(opts)` to initialize which behaviors should be used. `opts` includes several boolean options:
 
 - `autofetch` - enable background autofetching of img srcsets, and stylesheets (when possible)
 - `autoplay` - attempt to automatically play and video/audio, or fetch the URLs for any video streams found on the page.
 - `autoscroll` - attempt to repeatedly scroll the page to the bottom as far as possible.
 - `timeout` - set a timeout (in ms) for all behaviors to finish.
 - `siteSpecific` - run a site-specific behavior if available.
+- `log` - a function or global string to receive log messages from behaviors
 
 ### Background Behaviors
 
@@ -53,16 +53,24 @@ The `autoscroll` and `siteSpecific` enable 'active' behaviors, modify the page, 
 If both `siteSpecific` and `autoscroll` is specified, only one behavior is run. If a site-specific behavior exists, it takes precedence over auto-scroll, otherwise, auto-scroll is useed.
 
 
-Currently, the available site-specific behavior are for:
+Currently, the available site-specific behaviors are available for:
 
 - Twitter
 - Instagram
 
 Additional site-specific behaviors can be added to the [site](./src/site) directory.
 
-To run the active behavior, call: `await __wb_behaviors.run()` after init.
+To run the active behavior, call: `await __bx_behaviors.run()` after init.
 
 The promised returned by run will wait for the active behavior to finish, for the `timeout` time to be reached. It will also ensure any pending autoplay requests are started for the `autoplay` behavior.
+
+## Logging
+
+By default, behaviors will log debug messages to `console.log`. To disable this logging, set `log: false` in the init options.
+
+This param can also be set to a custom init function by string. For example, to have behavior event messages be passed to `self.my_log`, set `log: "my_log"` in the options.
+
+Additional logging options may be added soon.
 
 ## Building
 

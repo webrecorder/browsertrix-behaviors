@@ -1,4 +1,4 @@
-import { sleep, runOnload, behavior_log } from "./lib/utils";
+import { sleep, awaitLoad, behavior_log } from "./lib/utils";
 
 
 // const domainSpecificRedirect = [
@@ -70,19 +70,18 @@ export class Autoplay {
   //   }
   // }
 
-  start() {
-    runOnload(async () => {
-      this.initObserver();
-      //await this.checkAutoPlayRedirect();
+  async start() {
+    await awaitLoad();
+    this.initObserver();
+    //await this.checkAutoPlayRedirect();
 
-      for (const [inx, elem] of document.querySelectorAll("video, audio").entries()) {
-        this.addMediaWait(elem);
-      }
+    for (const [inx, elem] of document.querySelectorAll("video, audio").entries()) {
+      this.addMediaWait(elem);
+    }
 
-      await sleep(1000);
+    await sleep(1000);
 
-      this._initDone();
-    });
+    this._initDone();
   }
 
   initObserver() {

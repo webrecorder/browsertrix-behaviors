@@ -1,3 +1,5 @@
+let _logFunc = console.log;
+
 export function sleep(timeout) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 }
@@ -8,19 +10,24 @@ export async function waitUntil(pred, timeout) {
   }
 }
 
-export function runOnload(func) {
-  if (document.readyState === "complete") {
-    func();
-  } else {
-    window.addEventListener("load", func);
-  }
+export function awaitLoad() {
+  return new Promise((resolve) => {
+    if (document.readyState === "complete") {
+      resolve();
+    } else {
+      window.addEventListener("load", resolve);
+    }
+  });
 }
 
 export function behavior_log(msg) {
-  if (self.__wb_behavior_log) {
-    self.__wb_behavior_log(msg);
+  if (_logFunc) {
+    _logFunc(msg);
   }
-  console.log(msg);
+}
+
+export function _setLogFunc(func) {
+  _logFunc = func;
 }
 
 // ===========================================================================
@@ -112,10 +119,8 @@ export class Behavior
   }
 
   async run() {
-    const iter = this[Symbol.asyncIterator]();
-
-    for await (const step of iter) {
-      console.log(step);
+    for await (const step of this) {
+      behavior_log(step);
       if (this.paused) {
         await this.paused;
       }
