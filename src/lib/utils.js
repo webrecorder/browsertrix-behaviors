@@ -20,9 +20,9 @@ export function awaitLoad() {
   });
 }
 
-export function behavior_log(msg) {
+export function behavior_log(msg, type = "debug") {
   if (_logFunc) {
-    _logFunc(msg);
+    _logFunc({msg: JSON.stringify(msg), type});
   }
 }
 
@@ -120,11 +120,12 @@ export class Behavior
 
   async run() {
     for await (const step of this) {
-      behavior_log(step);
+      behavior_log(step, "info");
       if (this.paused) {
         await this.paused;
       }
     }
+    behavior_log({msg: "done!"}, "info");
   }
 
   pause() {
