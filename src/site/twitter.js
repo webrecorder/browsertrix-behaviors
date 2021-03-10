@@ -24,8 +24,8 @@ export class TwitterTimelineBehavior extends Behavior
     this.expandQuery = ".//div[@role='button' and @aria-haspopup='false']//*[contains(text(), 'more repl')]";
     this.quoteQuery = ".//div[@role='blockquote' and @aria-haspopup='false']";
 
-    this.imageQuery = ".//a[@role='link' and @aria-haspopup='false' and starts-with(@href, '/') and contains(@href, '/photo/')]";
-    this.imageNextQuery = "//div[@aria-label='Next']";
+    this.imageQuery = ".//a[@role='link' and starts-with(@href, '/') and contains(@href, '/photo/')]";
+    this.imageNextQuery = "//div[@aria-label='Next slide']";
     this.imageCloseQuery = "//div[@aria-label='Close' and @role='button']";
     this.backButtonQuery = "//div[@aria-label='Back' and @role='button']";
 
@@ -38,7 +38,7 @@ export class TwitterTimelineBehavior extends Behavior
 
     this.state = {
       videos: 0,
-      images: 0,
+      imagePopups: 0,
       threaded: 0,
       tweets: 0
     };
@@ -182,7 +182,7 @@ export class TwitterTimelineBehavior extends Behavior
       if (imagePopup) {
         const imageState = new HistoryState(() => imagePopup.click());
 
-        yield this.getState("Loading Image: " + window.location.href, "images");
+        yield this.getState("Loading Image: " + window.location.href, "imagePopups");
 
         await sleep(1000);
 
@@ -199,7 +199,7 @@ export class TwitterTimelineBehavior extends Behavior
           }
           prevLocation = window.location.href;
 
-          yield this.getState("Loading Image: " + window.location.href, "images");
+          yield this.getState("Loading Image: " + window.location.href, "imagePopups");
           await sleep(1000);
         }
 
