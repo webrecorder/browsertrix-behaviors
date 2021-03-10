@@ -39,8 +39,8 @@ export class TwitterTimelineBehavior extends Behavior
     this.state = {
       videos: 0,
       images: 0,
-      threadsOrReplies: 0,
-      viewedFully: 0
+      threaded: 0,
+      tweets: 0
     };
   }
 
@@ -165,7 +165,7 @@ export class TwitterTimelineBehavior extends Behavior
       return;
     }
 
-    yield this.getState("Capturing thread/timeline: " + window.location.href);
+    yield this.getState("Capturing thread: " + window.location.href);
 
     // iterate over infinite scroll of tweets
     for await (const tweet of this.infScroll()) {
@@ -256,9 +256,9 @@ export class TwitterTimelineBehavior extends Behavior
       }
 
       if (depth === 0) {
-        this.state.viewedFully++;
+        this.state.tweets++;
       } else {
-        this.state.threadsOrReplies++;
+        this.state.threaded++;
       }
 
       // wait before continuing
