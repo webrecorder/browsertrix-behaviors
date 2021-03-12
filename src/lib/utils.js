@@ -119,13 +119,16 @@ export class Behavior
   }
 
   async run() {
-    for await (const step of this) {
-      behavior_log(step, "info");
-      if (this.paused) {
-        await this.paused;
+    try {
+      for await (const step of this) {
+        behavior_log(step, "info");
+        if (this.paused) {
+          await this.paused;
+        }
       }
+    } catch (e) {
+      behavior_log({msg: e}, "info");
     }
-    behavior_log({msg: "done!"}, "info");
   }
 
   pause() {
