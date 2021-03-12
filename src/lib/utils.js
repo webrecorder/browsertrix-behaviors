@@ -20,9 +20,9 @@ export function awaitLoad() {
   });
 }
 
-export function behavior_log(msg, type = "debug") {
+export function behavior_log(data, type = "debug") {
   if (_logFunc) {
-    _logFunc({msg: JSON.stringify(msg), type});
+    _logFunc({data, type});
   }
 }
 
