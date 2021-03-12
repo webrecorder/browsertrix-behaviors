@@ -1,6 +1,8 @@
 import { sleep, xpathNode, xpathString, HistoryState, RestoreState, Behavior } from "../lib/utils";
 
 
+const waitMin = 200;
+
 // ===========================================================================
 export class TwitterTimelineBehavior extends Behavior
 {
@@ -12,7 +14,7 @@ export class TwitterTimelineBehavior extends Behavior
     return "Twitter";
   }
 
-  constructor(maxDepth = 1) {
+  constructor(maxDepth = 0) {
     super();
     this.maxDepth = maxDepth || 0;
 
@@ -24,8 +26,8 @@ export class TwitterTimelineBehavior extends Behavior
     this.expandQuery = ".//div[@role='button' and @aria-haspopup='false']//*[contains(text(), 'more repl')]";
     this.quoteQuery = ".//div[@role='blockquote' and @aria-haspopup='false']";
 
-    this.imageQuery = ".//a[@role='link' and @aria-haspopup='false' and starts-with(@href, '/') and contains(@href, '/photo/')]";
-    this.imageNextQuery = "//div[@aria-label='Next']";
+    this.imageQuery = ".//a[@role='link' and starts-with(@href, '/') and contains(@href, '/photo/')]";
+    this.imageNextQuery = "//div[@aria-label='Next slide']";
     this.imageCloseQuery = "//div[@aria-label='Close' and @role='button']";
     this.backButtonQuery = "//div[@aria-label='Back' and @role='button']";
 
@@ -38,9 +40,9 @@ export class TwitterTimelineBehavior extends Behavior
 
     this.state = {
       videos: 0,
-      images: 0,
-      threadsOrReplies: 0,
-      viewedFully: 0
+      imagePopups: 0,
+      threads: 0,
+      tweets: 0
     };
   }
 
@@ -57,14 +59,14 @@ export class TwitterTimelineBehavior extends Behavior
       return null;
     }
 
-    await sleep(100);
+    await sleep(waitMin * 2);
 
     if (!child.nextElementSibling) {
       return null;
     }
 
     while (xpathNode(this.progressQuery, child.nextElementSibling)) {
-      await sleep(100);
+      await sleep(waitMin);
     }
 
     return child.nextElementSibling;
@@ -78,9 +80,9 @@ export class TwitterTimelineBehavior extends Behavior
 
     const prev = child.previousElementSibling;
     expandElem.click();
-    await sleep(100);
+    await sleep(waitMin);
     while (xpathNode(this.progressQuery, prev.nextElementSibling)) {
-      await sleep(100);
+      await sleep(waitMin);
     }
     child = prev.nextElementSibling;
     return child;
@@ -112,7 +114,7 @@ export class TwitterTimelineBehavior extends Behavior
       }
 
       if (child && anchorElem) {
-        await sleep(100);
+        await sleep(waitMin);
 
         const restorer = new RestoreState(this.childMatchSelect, child);
 
@@ -133,20 +135,20 @@ export class TwitterTimelineBehavior extends Behavior
       return;
     }
 
-    let msg = "Waiting for media playback ";
+    let msg = "Waiting for media playback";
 
     try {
       const mediaTweetUrl = new URL(xpathString(this.childMatchSelect, tweet.parentElement), window.location.origin).href;
       if (this.seenMediaTweets.has(mediaTweetUrl)) {
         return;
       }
-      msg += "for " + mediaTweetUrl;
+      msg += " for " + mediaTweetUrl;
       this.seenMediaTweets.add(mediaTweetUrl);
     } catch (e) {
       console.warn(e);
     }
 
-    msg += "to finish...";
+    msg += " to finish...";
 
     yield this.getState(msg, "videos");
 
@@ -165,7 +167,7 @@ export class TwitterTimelineBehavior extends Behavior
       return;
     }
 
-    yield this.getState("Capturing thread/timeline: " + window.location.href);
+    yield this.getState("Capturing thread: " + window.location.href, "threads");
 
     // iterate over infinite scroll of tweets
     for await (const tweet of this.infScroll()) {
@@ -174,62 +176,16 @@ export class TwitterTimelineBehavior extends Behavior
         continue;
       }
 
-      await sleep(1000);
+      await sleep(waitMin * 2.5);
 
       // process images
-      const imagePopup = xpathNode(this.imageQuery, tweet);
-
-      if (imagePopup) {
-        const imageState = new HistoryState(() => imagePopup.click());
-
-        yield this.getState("Loading Image: " + window.location.href, "images");
-
-        await sleep(1000);
-
-        let nextImage = null;
-        let prevLocation = window.location.href;
-
-        while ((nextImage = xpathNode(this.imageNextQuery)) != null) {
-          nextImage.click();
-          await sleep(400);
-
-          if (window.location.href === prevLocation) {
-            await sleep(1000);
-            break;
-          }
-          prevLocation = window.location.href;
-
-          yield this.getState("Loading Image: " + window.location.href, "images");
-          await sleep(1000);
-        }
-
-
-        await imageState.goBack(this.imageCloseQuery);
-      }
+      yield* this.clickImages(tweet, depth);
 
       // process quoted tweet
       const quoteTweet = xpathNode(this.quoteQuery, tweet);
 
       if (quoteTweet) {
-        const quoteState = new HistoryState(() => quoteTweet.click());
-
-        await sleep(100);
-
-        yield this.getState("Capturing Quote: " + window.location.href);
-
-        if (!this.seenTweets.has(window.location.href) && depth < this.maxDepth) {
-          yield* this.iterTimeline(depth + 1, this.maxDepth);
-          this.seenTweets.add(window.location.href);
-        }
-
-        // wait
-        await sleep(2000);
-
-        await quoteState.goBack(this.backButtonQuery);
-        //tweet = await quoteState.restore(rootPath, childMatch);
-
-        // wait before continuing
-        await sleep(1000);
+        yield* this.clickTweet(quoteTweet, 1000);
       }
 
       // await any video or audio
@@ -237,36 +193,69 @@ export class TwitterTimelineBehavior extends Behavior
 
 
       // track location to see if click goes to new url
-      const tweetState = new HistoryState(() => tweet.click());
-
-      await sleep(200);
-
-      if (tweetState.changed) {
-        yield this.getState("Capturing Tweet: " + window.location.href);
-
-        if (!this.seenTweets.has(window.location.href) && depth < this.maxDepth) {
-          yield* this.iterTimeline(depth + 1, this.maxDepth);
-          this.seenTweets.add(window.location.href);
-        }
-
-        // wait
-        await sleep(500);
-
-        await tweetState.goBack(this.backButtonQuery);
-      }
-
-      if (depth === 0) {
-        this.state.viewedFully++;
-      } else {
-        this.state.threadsOrReplies++;
-      }
+      yield* this.clickTweet(tweet, depth);
 
       // wait before continuing
-      await sleep(1000);
+      await sleep(waitMin * 5);
+    }
+  }
+
+  async* clickImages(tweet) {
+    const imagePopup = xpathNode(this.imageQuery, tweet);
+
+    if (imagePopup) {
+      const imageState = new HistoryState(() => imagePopup.click());
+
+      yield this.getState("Loading Image: " + window.location.href, "imagePopups");
+
+      await sleep(waitMin * 5);
+
+      let nextImage = null;
+      let prevLocation = window.location.href;
+
+      while ((nextImage = xpathNode(this.imageNextQuery)) != null) {
+        nextImage.click();
+        await sleep(waitMin * 2);
+
+        if (window.location.href === prevLocation) {
+          await sleep(waitMin * 5);
+          break;
+        }
+        prevLocation = window.location.href;
+
+        yield this.getState("Loading Image: " + window.location.href, "imagePopups");
+        await sleep(waitMin * 5);
+      }
+
+      await imageState.goBack(this.imageCloseQuery);
+    }
+  }
+
+  async* clickTweet(tweet, depth) {
+    const tweetState = new HistoryState(() => tweet.click());
+
+    await sleep(waitMin);
+
+    if (tweetState.changed) {
+      yield this.getState("Capturing Tweet: " + window.location.href, "tweets");
+
+      if (depth < this.maxDepth && !this.seenTweets.has(window.location.href)) {
+        yield* this.iterTimeline(depth + 1, this.maxDepth);
+      }
+
+      this.seenTweets.add(window.location.href);
+
+      // wait
+      await sleep(waitMin * 2);
+
+      await tweetState.goBack(this.backButtonQuery);
+
+      await sleep(waitMin);
     }
   }
 
   async* [Symbol.asyncIterator]() {
     yield* this.iterTimeline(0);
+    yield this.getState("done!");
   }
 }

@@ -20,9 +20,9 @@ export function awaitLoad() {
   });
 }
 
-export function behavior_log(msg) {
+export function behavior_log(data, type = "debug") {
   if (_logFunc) {
-    _logFunc(msg);
+    _logFunc({data, type});
   }
 }
 
@@ -119,11 +119,15 @@ export class Behavior
   }
 
   async run() {
-    for await (const step of this) {
-      behavior_log(step);
-      if (this.paused) {
-        await this.paused;
+    try {
+      for await (const step of this) {
+        behavior_log(step, "info");
+        if (this.paused) {
+          await this.paused;
+        }
       }
+    } catch (e) {
+      behavior_log({msg: e}, "info");
     }
   }
 
