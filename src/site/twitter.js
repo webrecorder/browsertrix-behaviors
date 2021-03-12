@@ -133,20 +133,20 @@ export class TwitterTimelineBehavior extends Behavior
       return;
     }
 
-    let msg = "Waiting for media playback ";
+    let msg = "Waiting for media playback";
 
     try {
       const mediaTweetUrl = new URL(xpathString(this.childMatchSelect, tweet.parentElement), window.location.origin).href;
       if (this.seenMediaTweets.has(mediaTweetUrl)) {
         return;
       }
-      msg += "for " + mediaTweetUrl;
+      msg += " for " + mediaTweetUrl;
       this.seenMediaTweets.add(mediaTweetUrl);
     } catch (e) {
       console.warn(e);
     }
 
-    msg += "to finish...";
+    msg += " to finish...";
 
     yield this.getState(msg, "videos");
 
@@ -217,10 +217,11 @@ export class TwitterTimelineBehavior extends Behavior
 
         yield this.getState("Capturing Quote: " + window.location.href);
 
-        if (!this.seenTweets.has(window.location.href) && depth < this.maxDepth) {
-          yield* this.iterTimeline(depth + 1, this.maxDepth);
-          this.seenTweets.add(window.location.href);
-        }
+        //if (!this.seenTweets.has(window.location.href) && depth < this.maxDepth) {
+          //yield* this.iterTimeline(depth + 1, this.maxDepth);
+        //}
+
+        this.seenTweets.add(window.location.href);
 
         // wait
         await sleep(2000);
@@ -246,8 +247,9 @@ export class TwitterTimelineBehavior extends Behavior
 
         if (!this.seenTweets.has(window.location.href) && depth < this.maxDepth) {
           yield* this.iterTimeline(depth + 1, this.maxDepth);
-          this.seenTweets.add(window.location.href);
         }
+
+        this.seenTweets.add(window.location.href);
 
         // wait
         await sleep(500);
