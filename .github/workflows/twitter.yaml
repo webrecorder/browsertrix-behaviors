@@ -30,8 +30,8 @@ jobs:
     - name: run crawl
       run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js webrecorder/browsertrix-crawler:0.3.0-beta.1 crawl --url https://twitter.com/CaptureSample --limit 1 --logging behaviors > ./log
 
-    - name: echo log
-      run: echo ./log
+    - name: cat log
+      run: cat ./log
 
     - name: compare crawl log to expected
       run: grep '"state"' ./log | diff - ./test/expected-twitter.log
