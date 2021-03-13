@@ -1,4 +1,4 @@
-name: Twitter Behavior Check
+name: Autoscroll Behavior Check
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     - cron: '10 1 * * *'
 
 jobs:
-  twitter_test:
+  autoscroll_test:
     runs-on: ubuntu-latest
 
     strategy:
