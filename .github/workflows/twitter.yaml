@@ -24,8 +24,8 @@ jobs:
     - name: install requirements
       run: yarn install
 
-    - name: docker pull
-      run:  docker webrecorder/browsertrix-crawler:0.3.0-beta.1
+    - name: get browsertrix image
+      run:  docker pull webrecorder/browsertrix-crawler:0.3.0-beta.1
 
     - name: run crawl
       run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -it webrecorder/browsertrix-crawler:0.3.0-beta.1 crawler --url https://twitter.com/CaptureSample --limit 1 --logging behaviors > ./log
