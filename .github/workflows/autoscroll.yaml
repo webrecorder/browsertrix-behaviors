@@ -1,4 +1,4 @@
-name: Autoscroll Behavior Check
+name: Autoscroll Behavior
 
 on:
   push:
