@@ -75,7 +75,7 @@ export class Autoplay {
     this.initObserver();
     //await this.checkAutoPlayRedirect();
 
-    for (const [inx, elem] of document.querySelectorAll("video, audio").entries()) {
+    for (const [, elem] of document.querySelectorAll("video, audio").entries()) {
       this.addMediaWait(elem);
     }
 
@@ -130,10 +130,10 @@ export class Autoplay {
 
       media.addEventListener("loadstart", () => behavior_log("loadstart"));
       media.addEventListener("loadeddata", () => behavior_log("loadeddata"));
-      media.addEventListener("playing", () => { behavior_log("playing"); resolve() });
-      media.addEventListener("ended", () => { behavior_log("ended"); resolve() });
-      media.addEventListener("paused", () => { behavior_log("paused"); resolve() });
-      media.addEventListener("error", () => { behavior_log("error"); resolve() });
+      media.addEventListener("playing", () => { behavior_log("playing"); resolve(); });
+      media.addEventListener("ended", () => { behavior_log("ended"); resolve(); });
+      media.addEventListener("paused", () => { behavior_log("paused"); resolve(); });
+      media.addEventListener("error", () => { behavior_log("error"); resolve(); });
 
       if (media.paused) {
         behavior_log("generic play event for: " + media.outerHTML);

@@ -65,9 +65,9 @@ export class HistoryState {
 
     const backButton = xpathNode(backButtonQuery);
 
-    return new Promise((resolve, reject) => {
-      window.addEventListener('popstate', (event) => {
-      resolve();
+    return new Promise((resolve) => {
+      window.addEventListener("popstate", () => {
+        resolve();
       }, {once: true});
 
       if (backButton) {
@@ -90,7 +90,7 @@ export function* xpathNodes(path, root) {
   root = root || document;
   let iter = document.evaluate(path, root, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);
   let result = null;
-  while (result = iter.iterateNext()) {
+  while ((result = iter.iterateNext()) !== null) {
     yield result;
   }
 }
