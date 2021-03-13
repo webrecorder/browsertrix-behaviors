@@ -1,2 +1,2 @@
-import { BehaviorManager } from './src';
-
+import { BehaviorManager } from "./src";
+export { BehaviorManager };

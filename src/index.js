@@ -99,7 +99,7 @@ export class BehaviorManager
       behavior_log(`Waiting for behaviors to finish or ${this.timeout}ms timeout`);
       allBehaviors = Promise.race([allBehaviors, sleep(this.timeout)]);
     } else {
-      behavior_log(`Waiting for behaviors to finish`);
+      behavior_log("Waiting for behaviors to finish");
     }
 
     await allBehaviors;
