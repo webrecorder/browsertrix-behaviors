@@ -1,4 +1,4 @@
-name: Autoscroll Behavior
+name: "Autoplay Behavior: YouTube Embed"
 
 on:
   push:
@@ -28,11 +28,8 @@ jobs:
       run:  docker pull webrecorder/browsertrix-crawler
 
     - name: run crawl
-      run: docker run webrecorder/browsertrix-crawler crawl --url https://www.iana.org/numbers --limit 1 --logging behaviors --behaviors autoplay,autofetch,autoscroll > ./log
+      run: docker run -v $PWD/crawls:/crawls webrecorder/browsertrix-crawler crawl --url https://oembed.link/https://www.youtube.com/watch?v=aT-Up5Y4uRI --limit 1 --generateCDX --collection test
 
-    - name: cat log
-      run: cat ./log
-
-    - name: compare crawl log to expected
-      run: grep '"msg"' ./log | diff - ./test/expected-autoscroll.log
+    - name: check mp4 capture
+      run: grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj
 

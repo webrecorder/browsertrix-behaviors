@@ -4,6 +4,8 @@
 
 [![Autoscroll Behavior](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoscroll.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoscroll.yaml)
 
+[![Autoplay Behavior: Youtube](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/youtube-autoplay.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/youtube-autoplay.yaml)
+
 A set of behaviors injected into the browser to perform certain operations on a page, such as scrolling, fetching additional URLs, or performing
 customized actions for social-media sites.
 
