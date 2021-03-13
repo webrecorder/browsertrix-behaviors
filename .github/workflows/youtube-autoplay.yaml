@@ -1,4 +1,4 @@
-name: Autoplay Behavior: YouTube Embed
+name: "Autoplay Behavior: YouTube Embed"
 
 on:
   push:
