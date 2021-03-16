@@ -1,0 +1,35 @@
+name: "Autoplay Behavior: Vimeo Embed"
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '12 1 * * *'
+
+jobs:
+  autoscroll_test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: install requirements
+      run: yarn install
+
+    - name: get browsertrix image
+      run:  docker pull webrecorder/browsertrix-crawler
+
+    - name: run crawl
+      run: docker run -v $PWD/crawls:/crawls webrecorder/browsertrix-crawler crawl --url https://oembed.link/https://vimeo.com/1084537 --limit 1 --generateCDX --collection test
+
+    - name: check mp4 capture
+      run: grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj
+
