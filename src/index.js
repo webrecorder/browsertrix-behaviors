@@ -106,6 +106,10 @@ export class BehaviorManager
 
     await allBehaviors;
     behavior_log("All Behaviors Done!");
+
+    if (this.mainBehavior && this.mainBehaviorClass.cleanup) {
+      this.mainBehavior.cleanup();
+    }
   }
 
   pause() {

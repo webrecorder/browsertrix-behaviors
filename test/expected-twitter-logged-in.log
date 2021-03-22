@@ -1,0 +1,20 @@
+{"state":{"videos":0,"imagePopups":0,"threads":1,"tweets":0},"msg":"Capturing thread: https://twitter.com/CaptureSample"}
+{"state":{"videos":0,"imagePopups":0,"threads":1,"tweets":1},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369493177858551810"}
+{"state":{"videos":0,"imagePopups":1,"threads":1,"tweets":1},"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/1"}
+{"state":{"videos":0,"imagePopups":2,"threads":1,"tweets":1},"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/2"}
+{"state":{"videos":0,"imagePopups":3,"threads":1,"tweets":1},"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/3"}
+{"state":{"videos":0,"imagePopups":4,"threads":1,"tweets":1},"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/4"}
+{"state":{"videos":0,"imagePopups":4,"threads":1,"tweets":2},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369531770962550788"}
+{"state":{"videos":0,"imagePopups":4,"threads":1,"tweets":3},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369485585514074114"}
+{"state":{"videos":1,"imagePopups":4,"threads":1,"tweets":3},"msg":"Waiting for media playback for https://twitter.com/CaptureSample/status/1369492279585501184 to finish..."}
+{"state":{"videos":1,"imagePopups":4,"threads":1,"tweets":4},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369492279585501184"}
+{"state":{"videos":1,"imagePopups":4,"threads":1,"tweets":5},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369492281602887685"}
+{"state":{"videos":1,"imagePopups":4,"threads":1,"tweets":6},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369490498256216068"}
+{"state":{"videos":1,"imagePopups":4,"threads":1,"tweets":7},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369488031485292548"}
+{"state":{"videos":2,"imagePopups":4,"threads":1,"tweets":7},"msg":"Waiting for media playback for https://twitter.com/CaptureSample/status/1369487726710431750 to finish..."}
+{"state":{"videos":2,"imagePopups":4,"threads":1,"tweets":8},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369487726710431750"}
+{"state":{"videos":2,"imagePopups":4,"threads":1,"tweets":9},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369487470824361985"}
+{"state":{"videos":2,"imagePopups":5,"threads":1,"tweets":9},"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369486018714345477/photo/1"}
+{"state":{"videos":2,"imagePopups":5,"threads":1,"tweets":10},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369486018714345477"}
+{"state":{"videos":2,"imagePopups":5,"threads":1,"tweets":11},"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369485585514074114"}
+{"state":{"videos":2,"imagePopups":5,"threads":1,"tweets":11},"msg":"done!"}
