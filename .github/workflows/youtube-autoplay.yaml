@@ -25,10 +25,14 @@ jobs:
       run: yarn install
 
     - name: get browsertrix image
-      run:  docker pull webrecorder/browsertrix-crawler
+      run:  docker pull $BROWSERTRIX_IMAGE
+      env:
+        BROWSERTRIX_IMAGE: ${{ secrets.BROWSERTRIX_IMAGE }}
 
     - name: run crawl
-      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/crawls:/crawls webrecorder/browsertrix-crawler crawl --url https://oembed.link/https://www.youtube.com/watch?v=aT-Up5Y4uRI --limit 1 --generateCDX --collection test
+      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/crawls:/crawls $BROWSERTRIX_IMAGE crawl --url https://oembed.link/https://www.youtube.com/watch?v=aT-Up5Y4uRI --limit 1 --generateCDX --collection test
+      env:
+        BROWSERTRIX_IMAGE: ${{ secrets.BROWSERTRIX_IMAGE }}
 
     - name: check mp4 capture
       run: grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj
