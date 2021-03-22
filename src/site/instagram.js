@@ -1,5 +1,5 @@
-import { Behavior } from "../lib/utils";
-import { sleep, xpathNode, xpathString, RestoreState, waitUntil } from "../lib/utils";
+import { Behavior, behavior_log, installBehaviors } from "../lib/utils";
+import { sleep, xpathNode, xpathString, RestoreState, waitUntil, waitUnit } from "../lib/utils";
 
 
 // ===========================================================================
@@ -36,6 +36,23 @@ export class InstagramPostsBehavior extends Behavior
     this.loadMore = "//button[span[@aria-label='Load more comments']]";
 
     this.scrollOpts = {block: "start", inline: "nearest", behavior: "smooth"};
+
+    // extra window for first post, if allowed
+    this.postOnlyWindow = null;
+
+    this.state = {
+      "posts": 0,
+      "slides": 0,
+      "comments": 0,
+      "rows": 0,
+    }
+  }
+
+  cleanup() {
+    if (this.postOnlyWindow) {
+      this.postOnlyWindow.close();
+      this.postOnlyWindow = null;
+    }
   }
 
   async waitForNext(child) {
@@ -43,7 +60,7 @@ export class InstagramPostsBehavior extends Behavior
       return null;
     }
 
-    await sleep(100);
+    await sleep(waitUnit);
 
     if (!child.nextElementSibling) {
       return null;
@@ -70,7 +87,7 @@ export class InstagramPostsBehavior extends Behavior
     }
 
     while (child) {
-      await sleep(100);
+      await sleep(waitUnit);
 
       const restorer = new RestoreState(this.childMatchSelect, child);
 
@@ -84,7 +101,7 @@ export class InstagramPostsBehavior extends Behavior
     }
   }
 
-  async viewFirstPost() {
+  async* viewStandalonePost() {
     let root = xpathNode(this.rootPath);
 
     if (!root || !root.firstElementChild) {
@@ -93,63 +110,102 @@ export class InstagramPostsBehavior extends Behavior
 
     const firstPostHref = xpathString(this.childMatchSelect, root.firstElementChild);
 
-    const origLoc = window.location.href;
+    yield this.getState("Opening new window for first post: " + firstPostHref);
 
-    window.history.replaceState({}, "", firstPostHref);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+    try {
+      this.postOnlyWindow = window.open(firstPostHref, "_blank", "resizable");
+    
+      installBehaviors(this.postOnlyWindow);
+  
+      this.postOnlyWindow.__bx_behaviors.run({autofetch: true});
+  
+      await sleep(waitUnit * 10);
 
-    let root2 = null;
-    let root3 = null;
+    } catch (e) {
+      behavior_log(e);
+    }
 
-    await waitUntil(() => (root2 = xpathNode(this.rootPath)) !== root && root2, 1000);
+    // yield this.getState("Closing window for first post");
 
-    window.history.replaceState({}, "", origLoc);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+    // other.close();
 
-    await waitUntil(() => (root3 = xpathNode(this.rootPath)) !== root2 && root3, 1000);
+    // const origLoc = window.location.href;
+
+    // window.history.replaceState({}, "", firstPostHref);
+    // window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+
+    // yield this.getState("Loading post page via first post: " + firstPostHref);
+
+    // let root2 = null;
+    // let root3 = null;
+
+    // await sleep(waitUnit * 10);
+
+    // await waitUntil(() => (root2 = xpathNode(this.rootPath)) !== root && root2, waitUnit * 5);
+
+    // window.history.replaceState({}, "", origLoc);
+    // window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+
+    // await sleep(waitUnit * 10);
+
+    // await waitUntil(() => (root3 = xpathNode(this.rootPath)) !== root2 && root3, waitUnit * 5);
   }
 
   async *iterSubposts() {
     let next = xpathNode(this.subpostNextOnlyChevron);
 
-    yield this.state;
+    let count = 1;
 
     while (next) {
       next.click();
-      await sleep(1000);
+      await sleep(waitUnit * 5);
+
+      yield this.getState(`Loading Slide ${++count} for ${window.location.href}`, "slides");
 
       next = xpathNode(this.subpostPrevNextChevron);
     }
 
-    await sleep(1000);
+    await sleep(waitUnit * 5);
   }
 
   async iterComments() {
     const root = xpathNode(this.commentRoot);
 
+    if (!root) {
+      return;
+    }
+
     let child = root.firstElementChild;
+
+    let commentsLoaded = false;
 
     while (child) {
       child.scrollIntoView(this.scrollOpts);
+
+      commentsLoaded = true;
 
       let viewReplies;
 
       while ((viewReplies = xpathNode(this.viewReplies, child)) !== null) {
         viewReplies.click();
-        await sleep(500);
+        this.state.comments++;
+        await sleep(waitUnit * 2.5);
       }
 
       if (child.nextElementSibling && child.nextElementSibling.tagName === "LI") {
         let loadMore = xpathNode(this.loadMore, child.nextElementSibling);
         if (loadMore) {
           loadMore.click();
-          await sleep(1000);
+          this.state.comments++;
+          await sleep(waitUnit * 5);
         } 
       }
 
       child = child.nextElementSibling;
-      await sleep(500);
+      await sleep(waitUnit * 2.5);
     }
+
+    return commentsLoaded;
   }
 
   async* iterPosts(next) {
@@ -157,34 +213,40 @@ export class InstagramPostsBehavior extends Behavior
     
     while (next && ++count <= 3) {
       next.click();
-      await sleep(1000);
+      await sleep(waitUnit * 10);
+
+      yield this.getState("Loading Post: " + window.location.href, "posts");
 
       await fetch(window.location.href);
 
       yield* this.iterSubposts();
 
-      await Promise.race([
+      if (await Promise.race([
         this.iterComments(),
         sleep(20000)
-      ]);
+      ])) {
+        yield this.getState("Loaded Comments", "comments");
+      }
 
       next = xpathNode(this.nextPost);
 
       while (!next && xpathNode(this.postLoading)) {
-        await sleep(500);
+        await sleep(waitUnit * 2.5);
       }
     }
 
-    await sleep(1000);
+    await sleep(waitUnit * 5);
   }
 
-  async* [Symbol.asyncIterator]() {   
-    await this.viewFirstPost();
-    
+  async* [Symbol.asyncIterator]() {  
+    yield* this.viewStandalonePost();
+
     for await (const row of this.iterRow()) {
       row.scrollIntoView(this.scrollOpts);
 
-      await sleep(500);
+      await sleep(waitUnit * 2.5);
+
+      yield this.getState("Loading Row", "rows");
 
       const first = xpathNode(this.firstPostInRow, row);
 
@@ -195,7 +257,7 @@ export class InstagramPostsBehavior extends Behavior
         close.click();
       }
 
-      await sleep(1000);
+      await sleep(waitUnit * 5);
     }
   }
 }

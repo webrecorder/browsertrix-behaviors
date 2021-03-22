@@ -1,4 +1,7 @@
 let _logFunc = console.log;
+let _behaviorMgrClass = null;
+
+export const waitUnit = 200;
 
 export function sleep(timeout) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -28,6 +31,14 @@ export function behavior_log(data, type = "debug") {
 
 export function _setLogFunc(func) {
   _logFunc = func;
+}
+
+export function _setBehaviorManager(cls) {
+  _behaviorMgrClass = cls;
+}
+
+export function installBehaviors(obj) {
+  obj.__bx_behaviors = new _behaviorMgrClass();
 }
 
 // ===========================================================================
@@ -126,8 +137,9 @@ export class Behavior
           await this.paused;
         }
       }
+      behavior_log(this.getState("done!"), "info");
     } catch (e) {
-      behavior_log({msg: e}, "info");
+      behavior_log(this.getState(e), "info");
     }
   }
 
@@ -146,5 +158,17 @@ export class Behavior
       this.paused = null;
       this._unpause = null;
     }
+  }
+
+  getState(msg, incrValue) {
+    if (incrValue && this.state[incrValue] != undefined) {
+      this.state[incrValue]++;
+    }
+
+    return {state: this.state, msg};
+  }
+
+  cleanup() {
+    
   }
 }

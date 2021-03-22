@@ -1,0 +1,46 @@
+name: Instagram Behavior
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '15 1 * * *'
+
+jobs:
+  instagram_test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - uses: prewk/s3-cp-action@master
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
+        SOURCE: 's3://dh-preserve/test-profiles/instagram/'
+        DEST: './profile.tar.gz'
+
+    - name: install requirements
+      run: yarn install
+
+    - name: get browsertrix image
+      run:  docker pull webrecorder/browsertrix-crawler
+
+    - name: run crawl
+      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/profile.tar.gz:/profile.tar.gz webrecorder/browsertrix-crawler crawl --url https://instagram.com/capturesample --limit 1 --logging --profile /profile.tar.gz behaviors > ./log
+
+    - name: cat log
+      run: cat ./log
+
+    - name: compare crawl log to expected
+      run: grep '"state"' ./log | diff - ./test/expected-instagram.log
+

@@ -1,0 +1,10 @@
+{"state":{"posts":0,"slides":0,"comments":0,"rows":0},"msg":"Opening new window for first post: /p/CMtilvmsXzm/"}
+{"state":{"posts":0,"slides":0,"comments":0,"rows":1},"msg":"Loading Row"}
+{"state":{"posts":1,"slides":0,"comments":0,"rows":1},"msg":"Loading Post: https://www.instagram.com/p/CMtilvmsXzm/"}
+{"state":{"posts":1,"slides":1,"comments":0,"rows":1},"msg":"Loading Slide 2 for https://www.instagram.com/p/CMtilvmsXzm/"}
+{"state":{"posts":1,"slides":2,"comments":0,"rows":1},"msg":"Loading Slide 3 for https://www.instagram.com/p/CMtilvmsXzm/"}
+{"state":{"posts":1,"slides":2,"comments":3,"rows":1},"msg":"Loaded Comments"}
+{"state":{"posts":2,"slides":2,"comments":3,"rows":1},"msg":"Loading Post: https://www.instagram.com/p/CMqnzk-Mx7e/"}
+{"state":{"posts":2,"slides":2,"comments":5,"rows":1},"msg":"Loaded Comments"}
+{"state":{"posts":3,"slides":2,"comments":5,"rows":1},"msg":"Loading Post: https://www.instagram.com/p/CMqnVXZsfXR/"}
+{"state":{"posts":3,"slides":2,"comments":5,"rows":1},"msg":"done!"}
