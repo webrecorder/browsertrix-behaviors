@@ -41,7 +41,7 @@ jobs:
     - name: run crawl
       run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/profile.tar.gz:/profile.tar.gz $BROWSERTRIX_IMAGE crawl --url https://twitter.com/CaptureSample --limit 1 --logging behaviors --profile /profile.tar.gz > ./log
       env:
-        BROWSERTRIX_IMAGE: ${{ secrets.BROWSERTRIX_IMAGE }}"
+        BROWSERTRIX_IMAGE: ${{ secrets.BROWSERTRIX_IMAGE }}
 
 
     - name: cat log
