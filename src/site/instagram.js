@@ -1,5 +1,5 @@
 import { Behavior, behavior_log, installBehaviors } from "../lib/utils";
-import { sleep, xpathNode, xpathString, RestoreState, waitUntil, waitUnit } from "../lib/utils";
+import { sleep, xpathNode, xpathString, RestoreState, waitUnit } from "../lib/utils";
 
 
 // ===========================================================================
@@ -45,7 +45,7 @@ export class InstagramPostsBehavior extends Behavior
       "slides": 0,
       "comments": 0,
       "rows": 0,
-    }
+    };
   }
 
   cleanup() {

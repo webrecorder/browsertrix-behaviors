@@ -8,6 +8,7 @@ on:
 
 jobs:
   instagram_test:
+    environment: DigitalOcean
     runs-on: ubuntu-latest
 
     strategy:
