@@ -24,16 +24,15 @@ jobs:
     - name: install requirements
       run: yarn install
 
+    - uses: c-py/action-dotenv-to-setenv@v2
+      with:
+        env-file: test/test.env
+
     - name: get browsertrix image
       run:  docker pull $BROWSERTRIX_IMAGE
-      env:
-        BROWSERTRIX_IMAGE: ${{ secrets.BROWSERTRIX_IMAGE }}
 
     - name: run crawl
       run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js $BROWSERTRIX_IMAGE crawl --url https://twitter.com/CaptureSample --limit 1 --logging behaviors > ./log
-      env:
-        BROWSERTRIX_IMAGE: ${{ secrets.BROWSERTRIX_IMAGE }}
-
 
     - name: cat log
       run: cat ./log
