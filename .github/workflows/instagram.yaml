@@ -1,4 +1,4 @@
-naame: "Instagram Behavior (Logged In)"
+name: "Instagram Behavior (Logged In)"
 
 on:
   push:
