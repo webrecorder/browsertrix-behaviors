@@ -1,12 +1,15 @@
 # Browsertrix Behaviors
-
-[![Twitter Behavior](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter.yaml)
-
 [![Autoscroll Behavior](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoscroll.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoscroll.yaml)
 
 [![Autoplay Behavior: Youtube](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/youtube-autoplay.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/youtube-autoplay.yaml)
 
 [![Autoplay Behavior: Vimeo](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/vimeo-autoplay.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/vimeo-autoplay.yaml)
+
+[![Instagram Behavior (Logged In)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/instagram.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/instagram.yaml)
+
+[![Twitter Behavior](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter.yaml)
+
+[![Twitter Behavior (Logged In)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter-logged-in.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter-logged-in.yaml)
 
 
 A set of behaviors injected into the browser to perform certain operations on a page, such as scrolling, fetching additional URLs, or performing
