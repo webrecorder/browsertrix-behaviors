@@ -1,4 +1,4 @@
-naame: "Twitter Behavior (Logged In)"
+name: "Twitter Behavior (Logged In)"
 
 on:
   push:
