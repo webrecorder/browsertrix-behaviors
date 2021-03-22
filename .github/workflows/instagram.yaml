@@ -37,7 +37,7 @@ jobs:
       run:  docker pull webrecorder/browsertrix-crawler
 
     - name: run crawl
-      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/profile.tar.gz:/profile.tar.gz webrecorder/browsertrix-crawler crawl --url https://instagram.com/capturesample --limit 1 --logging --profile /profile.tar.gz behaviors > ./log
+      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/profile.tar.gz:/profile.tar.gz webrecorder/browsertrix-crawler crawl --url https://instagram.com/capturesample --limit 1 --logging behaviors --profile /profile.tar.gz > ./log
 
     - name: cat log
       run: cat ./log
