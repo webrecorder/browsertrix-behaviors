@@ -1,9 +1,11 @@
 import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
-import { awaitLoad, sleep, behavior_log, _setLogFunc } from "./lib/utils";
+import { awaitLoad, sleep, behavior_log, _setLogFunc, _setBehaviorManager, installBehaviors } from "./lib/utils";
 
 import siteBehaviors from "./site";
+
+_setBehaviorManager(BehaviorManager);
 
 
 // ===========================================================================
@@ -104,6 +106,10 @@ export class BehaviorManager
 
     await allBehaviors;
     behavior_log("All Behaviors Done!");
+
+    if (this.mainBehavior && this.mainBehaviorClass.cleanup) {
+      this.mainBehavior.cleanup();
+    }
   }
 
   pause() {
@@ -121,4 +127,4 @@ export class BehaviorManager
   }
 }
 
-self.__bx_behaviors = new BehaviorManager();
+installBehaviors(self);

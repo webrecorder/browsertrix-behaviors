@@ -24,11 +24,15 @@ jobs:
     - name: install requirements
       run: yarn install
 
+    - uses: c-py/action-dotenv-to-setenv@v2
+      with:
+        env-file: test/test.env
+
     - name: get browsertrix image
-      run:  docker pull webrecorder/browsertrix-crawler
+      run:  docker pull $BROWSERTRIX_IMAGE
 
     - name: run crawl
-      run: docker run webrecorder/browsertrix-crawler crawl --url https://www.iana.org/numbers --limit 1 --logging behaviors --behaviors autoplay,autofetch,autoscroll > ./log
+      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js $BROWSERTRIX_IMAGE crawl --url https://www.iana.org/numbers --limit 1 --logging behaviors --behaviors autoplay,autofetch,autoscroll > ./log
 
     - name: cat log
       run: cat ./log
