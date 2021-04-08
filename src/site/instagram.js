@@ -1,5 +1,5 @@
 import { Behavior, behavior_log, installBehaviors } from "../lib/utils";
-import { sleep, xpathNode, xpathString, RestoreState, waitUnit } from "../lib/utils";
+import { sleep, xpathNode, xpathString, RestoreState, waitUnit, waitUntil } from "../lib/utils";
 
 
 // ===========================================================================
