@@ -1,4 +1,4 @@
-import { sleep, Behavior } from "./lib/utils";
+import { sleep, Behavior, waitUnit } from "./lib/utils";
 
 
 // ===========================================================================
@@ -22,9 +22,10 @@ export class AutoScroll extends Behavior
     const scrollOpts = { top: 250, left: 0, behavior: "auto" };
 
     while (canScrollMore()) {
+      const interval = waitUnit * 2.5;
       self.scrollBy(scrollOpts);
-      yield {"msg": "Scrolling by " + scrollOpts.top};
-      await sleep(500);
+      yield {"msg": `Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`};
+      await sleep(interval);
     }
   }
 }

@@ -15,6 +15,7 @@ export class BehaviorManager
     this.behaviors = [];
     this.mainBehavior = null;
     this.inited = false;
+    this.started = false;
     behavior_log("Loaded behaviors for: " + self.location.href);
   }
 
@@ -30,6 +31,8 @@ export class BehaviorManager
     }
 
     this.timeout = opts.timeout;
+
+    console.log("logger", typeof(opts.log), opts.log, self[opts.log]);
 
     // default if omitted is 'console.log'
     if (opts.log !== undefined) {
@@ -87,6 +90,11 @@ export class BehaviorManager
   }
 
   async run(opts) {
+    if (this.started) {
+      this.unpause();
+      return;
+    }
+
     this.init(opts);
 
     await awaitLoad();
@@ -94,6 +102,8 @@ export class BehaviorManager
     if (this.mainBehavior) {
       this.mainBehavior.start();
     }
+
+    this.started = true;
 
     let allBehaviors = Promise.allSettled(this.behaviors.map(x => x.done()));
 

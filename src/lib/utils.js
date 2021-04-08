@@ -25,7 +25,11 @@ export function awaitLoad() {
 
 export function behavior_log(data, type = "debug") {
   if (_logFunc) {
-    _logFunc({data, type});
+    try {
+      _logFunc({data, type});
+    } catch (e) {
+      _logFunc(JSON.stringify({data, type}));
+    }
   }
 }
 
@@ -161,7 +165,7 @@ export class Behavior
   }
 
   getState(msg, incrValue) {
-    if (incrValue && this.state[incrValue] != undefined) {
+    if (incrValue && this.state[incrValue] !== undefined) {
       this.state[incrValue]++;
     }
 

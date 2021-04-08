@@ -41,10 +41,10 @@ export class InstagramPostsBehavior extends Behavior
     this.postOnlyWindow = null;
 
     this.state = {
-      "posts": 0,
-      "slides": 0,
-      "comments": 0,
-      "rows": 0,
+      posts: 0,
+      slides: 0,
+      rows: 0,
+      comments: 0,
     };
   }
 
@@ -112,43 +112,44 @@ export class InstagramPostsBehavior extends Behavior
 
     yield this.getState("Opening new window for first post: " + firstPostHref);
 
-    try {
-      this.postOnlyWindow = window.open(firstPostHref, "_blank", "resizable");
-    
-      installBehaviors(this.postOnlyWindow);
+    const nonInteractive = false;
+
+    if (nonInteractive) {
+      try {
+        this.postOnlyWindow = window.open(firstPostHref, "_blank", "resizable");
+
+        installBehaviors(this.postOnlyWindow);
+
+        this.postOnlyWindow.__bx_behaviors.run({autofetch: true});
+
+        await sleep(waitUnit * 10);
   
-      this.postOnlyWindow.__bx_behaviors.run({autofetch: true});
-  
+      } catch (e) {
+        behavior_log(e);
+      }
+    } else {
+
+      const origLoc = window.location.href;
+
+      window.history.replaceState({}, "", firstPostHref);
+      window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+
+      yield this.getState("Loading post page via first post: " + firstPostHref);
+
+      let root2 = null;
+      let root3 = null;
+
       await sleep(waitUnit * 10);
 
-    } catch (e) {
-      behavior_log(e);
+      await waitUntil(() => (root2 = xpathNode(this.rootPath)) !== root && root2, waitUnit * 5);
+
+      window.history.replaceState({}, "", origLoc);
+      window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+
+      await sleep(waitUnit * 10);
+
+      await waitUntil(() => (root3 = xpathNode(this.rootPath)) !== root2 && root3, waitUnit * 5);
     }
-
-    // yield this.getState("Closing window for first post");
-
-    // other.close();
-
-    // const origLoc = window.location.href;
-
-    // window.history.replaceState({}, "", firstPostHref);
-    // window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-
-    // yield this.getState("Loading post page via first post: " + firstPostHref);
-
-    // let root2 = null;
-    // let root3 = null;
-
-    // await sleep(waitUnit * 10);
-
-    // await waitUntil(() => (root2 = xpathNode(this.rootPath)) !== root && root2, waitUnit * 5);
-
-    // window.history.replaceState({}, "", origLoc);
-    // window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-
-    // await sleep(waitUnit * 10);
-
-    // await waitUntil(() => (root3 = xpathNode(this.rootPath)) !== root2 && root3, waitUnit * 5);
   }
 
   async *iterSubposts() {
@@ -221,12 +222,12 @@ export class InstagramPostsBehavior extends Behavior
 
       yield* this.iterSubposts();
 
-      if (await Promise.race([
+      yield this.getState("Loaded Comments", "comments");
+
+      await Promise.race([
         this.iterComments(),
         sleep(20000)
-      ])) {
-        yield this.getState("Loaded Comments", "comments");
-      }
+      ]);
 
       next = xpathNode(this.nextPost);
 
@@ -239,7 +240,7 @@ export class InstagramPostsBehavior extends Behavior
   }
 
   async* [Symbol.asyncIterator]() {  
-    yield* this.viewStandalonePost();
+    //yield* this.viewStandalonePost();
 
     for await (const row of this.iterRow()) {
       row.scrollIntoView(this.scrollOpts);
