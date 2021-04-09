@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "webpack --mode production",
-    "build-dev": "webpack --mode development"
+    "build-dev": "webpack --mode development",
+    "lint": "eslint ./src webpack.config.js"
   },
   "description": "Browsertrix Behaviors"
 }

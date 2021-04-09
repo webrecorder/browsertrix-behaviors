@@ -5,8 +5,6 @@ import { awaitLoad, sleep, behavior_log, _setLogFunc, _setBehaviorManager, insta
 
 import siteBehaviors from "./site";
 
-_setBehaviorManager(BehaviorManager);
-
 
 // ===========================================================================
 export class BehaviorManager
@@ -31,8 +29,6 @@ export class BehaviorManager
     }
 
     this.timeout = opts.timeout;
-
-    console.log("logger", typeof(opts.log), opts.log, self[opts.log]);
 
     // default if omitted is 'console.log'
     if (opts.log !== undefined) {
@@ -136,5 +132,7 @@ export class BehaviorManager
     }
   }
 }
+
+_setBehaviorManager(BehaviorManager);
 
 installBehaviors(self);
