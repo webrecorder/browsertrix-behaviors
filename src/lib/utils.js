@@ -134,6 +134,7 @@ export class Behavior
     this._running = null;
     this.paused = null;
     this._unpause = null;
+    this.state = {};
   }
 
   start() {

@@ -1,4 +1,4 @@
-import { sleep, Behavior, waitUnit, xpathNode, isInViewport } from "./lib/utils";
+import { sleep, Behavior, waitUnit, xpathNode, isInViewport, waitUntil } from "./lib/utils";
 
 
 // ===========================================================================
@@ -7,7 +7,12 @@ export class AutoScroll extends Behavior
   constructor() {
     super();
     this.showMoreQuery = "//*[contains(text(), 'show more') or contains(text(), 'Show more')]";
+  
+    this.state = {
+      segments: 1
+    };
   }
+
   static get name() {
     return "Autoscroll";
   }
@@ -23,30 +28,50 @@ export class AutoScroll extends Behavior
         self.document.documentElement.offsetHeight
       );
 
-    const scrollOpts = { top: 250, left: 0, behavior: "auto" };
+    const scrollOpts = { top: 200, left: 0, behavior: "auto" };
     const interval = waitUnit;
 
+    //scrollOpts.top = Math.min(self.document.body.clientHeight * 0.01, 500);
+
     let showMoreElem = null;
+    let origHeight = self.document.body.clientHeight;
 
     while (canScrollMore()) {
+      if (self.document.body.clientHeight > origHeight) {
+        this.state.segments++;
+      }
+
+      origHeight = self.document.body.clientHeight;
+
       if (!showMoreElem) {
         showMoreElem = xpathNode(this.showMoreQuery);
       }
 
       if (showMoreElem && isInViewport(showMoreElem)) {
-        yield {"msg": "Click Show More"};
+        yield this.getState("Clicking 'Show More', awaiting more content");
         showMoreElem.click();
-        await sleep(waitUnit * 5);
+
+        await sleep(waitUnit);
+
+        await Promise.race([
+          waitUntil(() => self.document.body.clientHeight > origHeight, 500),
+          sleep(30000)
+        ]);
+
         showMoreElem = null;
       }
 
-      scrollOpts.top = Math.min(self.document.body.clientHeight * 0.01, 500);
-
       self.scrollBy(scrollOpts);
 
-      yield {"msg": `Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`};
+      yield this.getState(`Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
+      
       await sleep(interval);
-
+      
+      // check for scrolling, but allow for more time for content to appear the longer have already scrolled
+      await Promise.race([
+        waitUntil(() => canScrollMore(), interval),
+        sleep(this.state.segments * 5000)
+      ]);
     }
   }
 }

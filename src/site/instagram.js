@@ -37,6 +37,8 @@ export class InstagramPostsBehavior extends Behavior
 
     this.scrollOpts = {block: "start", inline: "nearest", behavior: "smooth"};
 
+    this.maxCommentsTime = 10000;
+
     // extra window for first post, if allowed
     this.postOnlyWindow = null;
 
@@ -101,7 +103,7 @@ export class InstagramPostsBehavior extends Behavior
     }
   }
 
-  async* viewStandalonePost() {
+  async* viewStandalonePost(origLoc) {
     let root = xpathNode(this.rootPath);
 
     if (!root || !root.firstElementChild) {
@@ -110,11 +112,11 @@ export class InstagramPostsBehavior extends Behavior
 
     const firstPostHref = xpathString(this.childMatchSelect, root.firstElementChild);
 
-    yield this.getState("Opening new window for first post: " + firstPostHref);
+    yield this.getState("Loading single post view for first post: " + firstPostHref);
 
-    const nonInteractive = false;
+    const separateWindow = false;
 
-    if (nonInteractive) {
+    if (separateWindow) {
       try {
         this.postOnlyWindow = window.open(firstPostHref, "_blank", "resizable");
 
@@ -128,8 +130,6 @@ export class InstagramPostsBehavior extends Behavior
         behavior_log(e);
       }
     } else {
-
-      const origLoc = window.location.href;
 
       window.history.replaceState({}, "", firstPostHref);
       window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
@@ -226,7 +226,7 @@ export class InstagramPostsBehavior extends Behavior
 
       await Promise.race([
         this.iterComments(),
-        sleep(20000)
+        sleep(this.maxCommentsTime)
       ]);
 
       next = xpathNode(this.nextPost);
@@ -239,8 +239,21 @@ export class InstagramPostsBehavior extends Behavior
     await sleep(waitUnit * 5);
   }
 
-  async* [Symbol.asyncIterator]() {  
-    //yield* this.viewStandalonePost();
+  async* [Symbol.asyncIterator]() {
+    const origLoc = window.location.href;
+
+    for await (const row of this.iterRow()) {
+      await sleep(waitUnit * 2.5);
+
+      const first = xpathNode(this.firstPostInRow, row);
+
+      first.click();
+      await sleep(waitUnit * 10);
+
+      break;
+    }
+
+    yield* this.viewStandalonePost(origLoc);
 
     for await (const row of this.iterRow()) {
       row.scrollIntoView(this.scrollOpts);
