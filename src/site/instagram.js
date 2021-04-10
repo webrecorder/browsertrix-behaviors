@@ -134,8 +134,6 @@ export class InstagramPostsBehavior extends Behavior
       window.history.replaceState({}, "", firstPostHref);
       window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
 
-      yield this.getState("Loading post page via first post: " + firstPostHref);
-
       let root2 = null;
       let root3 = null;
 
