@@ -37,10 +37,10 @@ export class TwitterTimelineBehavior extends Behavior
     this.seenMediaTweets = new Set();
 
     this.state = {
+      tweets: 0,
+      images: 0,
       videos: 0,
-      imagePopups: 0,
-      threads: 0,
-      tweets: 0
+      //threads: 0,
     };
   }
 
@@ -196,7 +196,7 @@ export class TwitterTimelineBehavior extends Behavior
     if (imagePopup) {
       const imageState = new HistoryState(() => imagePopup.click());
 
-      yield this.getState("Loading Image: " + window.location.href, "imagePopups");
+      yield this.getState("Loading Image: " + window.location.href, "images");
 
       await sleep(waitUnit * 5);
 
@@ -213,7 +213,7 @@ export class TwitterTimelineBehavior extends Behavior
         }
         prevLocation = window.location.href;
 
-        yield this.getState("Loading Image: " + window.location.href, "imagePopups");
+        yield this.getState("Loading Image: " + window.location.href, "images");
         await sleep(waitUnit * 5);
       }
 

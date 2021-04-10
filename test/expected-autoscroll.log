@@ -1,7 +1,8 @@
-{"msg":"Scrolling by 250"}
-{"msg":"Scrolling by 250"}
-{"msg":"Scrolling by 250"}
-{"msg":"Scrolling by 250"}
-{"msg":"Scrolling by 250"}
-{"msg":"Scrolling by 250"}
-{"msg":"done!"}
+{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
+{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
+{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
+{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
+{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
+{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
+{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
+{"state":{"segments":1},"msg":"done!"}

@@ -5,8 +5,6 @@ import { awaitLoad, sleep, behavior_log, _setLogFunc, _setBehaviorManager, insta
 
 import siteBehaviors from "./site";
 
-_setBehaviorManager(BehaviorManager);
-
 
 // ===========================================================================
 export class BehaviorManager
@@ -15,6 +13,7 @@ export class BehaviorManager
     this.behaviors = [];
     this.mainBehavior = null;
     this.inited = false;
+    this.started = false;
     behavior_log("Loaded behaviors for: " + self.location.href);
   }
 
@@ -87,6 +86,11 @@ export class BehaviorManager
   }
 
   async run(opts) {
+    if (this.started) {
+      this.unpause();
+      return;
+    }
+
     this.init(opts);
 
     await awaitLoad();
@@ -94,6 +98,8 @@ export class BehaviorManager
     if (this.mainBehavior) {
       this.mainBehavior.start();
     }
+
+    this.started = true;
 
     let allBehaviors = Promise.allSettled(this.behaviors.map(x => x.done()));
 
@@ -126,5 +132,7 @@ export class BehaviorManager
     }
   }
 }
+
+_setBehaviorManager(BehaviorManager);
 
 installBehaviors(self);
