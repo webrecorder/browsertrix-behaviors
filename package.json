@@ -16,5 +16,10 @@
     "build-dev": "webpack --mode development",
     "lint": "eslint ./src webpack.config.js"
   },
-  "description": "Browsertrix Behaviors"
+  "description": "Browsertrix Behaviors",
+  "files": [
+    "src",
+    "index.js",
+    "dist/"
+  ]
 }
