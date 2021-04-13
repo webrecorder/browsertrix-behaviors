@@ -22,9 +22,11 @@ export class InstagramPostsBehavior extends Behavior
     this.childMatch = "child::div[.//a[@href='$1']]";
 
     this.firstPostInRow = "div[1]/a";
-    this.postCloseButton = "//button[.//*[@aria-label=\"Close\"]]";
+    //this.postCloseButton = "//button[.//*[@aria-label=\"Close\"]]";
+    this.postCloseButton = "/html/body/div[last()]/div[3]/button[.//*[@aria-label]]";
 
-    this.nextPost = "//div[@role='dialog']//a[text()='Next']";
+    //this.nextPost = "//div[@role='dialog']//a[text()='Next']";
+    this.nextPost = "//div[@role='dialog']//a[contains(@class, 'coreSpriteRightPaginationArrow')]";
     this.postLoading = "//*[@aria-label='Loading...']";
 
     this.subpostNextOnlyChevron = "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
@@ -32,8 +34,10 @@ export class InstagramPostsBehavior extends Behavior
 
     this.commentRoot = "//article/div[3]/div[1]/ul";
 
-    this.viewReplies = "li//button[span[contains(text(), 'View replies')]]";
-    this.loadMore = "//button[span[@aria-label='Load more comments']]";
+    //this.viewReplies = "li//button[span[contains(text(), 'View replies')]]";
+    this.viewReplies = "//li//button[span[not(count(*)) and text()!='$1']]";
+    //this.loadMore = "//button[span[@aria-label='Load more comments']]";
+    this.loadMore = "//button[span[@aria-label]]";
 
     this.scrollOpts = {block: "start", inline: "nearest", behavior: "smooth"};
 
@@ -137,14 +141,14 @@ export class InstagramPostsBehavior extends Behavior
       let root2 = null;
       let root3 = null;
 
-      await sleep(waitUnit * 10);
+      await sleep(waitUnit * 5);
 
       await waitUntil(() => (root2 = xpathNode(this.rootPath)) !== root && root2, waitUnit * 5);
 
+      await sleep(waitUnit * 5);
+
       window.history.replaceState({}, "", origLoc);
       window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-
-      await sleep(waitUnit * 10);
 
       await waitUntil(() => (root3 = xpathNode(this.rootPath)) !== root2 && root3, waitUnit * 5);
     }
@@ -178,20 +182,28 @@ export class InstagramPostsBehavior extends Behavior
 
     let commentsLoaded = false;
 
+    let text = "";
+
     while (child) {
       child.scrollIntoView(this.scrollOpts);
 
       commentsLoaded = true;
 
-      let viewReplies;
+      let viewReplies = xpathNode(this.viewReplies.replace("$1", text), child);
 
-      while ((viewReplies = xpathNode(this.viewReplies, child)) !== null) {
+      while (viewReplies) {
+        const orig = viewReplies.textContent;
         viewReplies.click();
         this.state.comments++;
         await sleep(waitUnit * 2.5);
+
+        await waitUntil(() => orig !== viewReplies.textContent, waitUnit);
+
+        text = viewReplies.textContent;
+        viewReplies = xpathNode(this.viewReplies.replace("$1", text), child);
       }
 
-      if (child.nextElementSibling && child.nextElementSibling.tagName === "LI") {
+      if (child.nextElementSibling && child.nextElementSibling.tagName === "LI" && !child.nextElementSibling.nextElementSibling) {
         let loadMore = xpathNode(this.loadMore, child.nextElementSibling);
         if (loadMore) {
           loadMore.click();
