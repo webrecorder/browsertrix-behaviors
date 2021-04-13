@@ -22,9 +22,11 @@ export class InstagramPostsBehavior extends Behavior
     this.childMatch = "child::div[.//a[@href='$1']]";
 
     this.firstPostInRow = "div[1]/a";
-    this.postCloseButton = "//button[.//*[@aria-label=\"Close\"]]";
+    //this.postCloseButton = "//button[.//*[@aria-label=\"Close\"]]";
+    this.postCloseButton = "/html/body/div[last()]/div[3]/button[.//*[@aria-label]]";
 
-    this.nextPost = "//div[@role='dialog']//a[text()='Next']";
+    //this.nextPost = "//div[@role='dialog']//a[text()='Next']";
+    this.nextPost = "//div[@role='dialog']//a[contains(@class, 'coreSpriteRightPaginationArrow')]";
     this.postLoading = "//*[@aria-label='Loading...']";
 
     this.subpostNextOnlyChevron = "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
@@ -32,8 +34,10 @@ export class InstagramPostsBehavior extends Behavior
 
     this.commentRoot = "//article/div[3]/div[1]/ul";
 
-    this.viewReplies = "li//button[span[contains(text(), 'View replies')]]";
-    this.loadMore = "//button[span[@aria-label='Load more comments']]";
+    //this.viewReplies = "li//button[span[contains(text(), 'View replies')]]";
+    this.viewReplies = "li//button[span[not(count(*))]]";
+    //this.loadMore = "//button[span[@aria-label='Load more comments']]";
+    this.loadMore = "//button[span[@aria-label]]";
 
     this.scrollOpts = {block: "start", inline: "nearest", behavior: "smooth"};
 
@@ -191,7 +195,7 @@ export class InstagramPostsBehavior extends Behavior
         await sleep(waitUnit * 2.5);
       }
 
-      if (child.nextElementSibling && child.nextElementSibling.tagName === "LI") {
+      if (child.nextElementSibling && child.nextElementSibling.tagName === "LI" && !child.nextElementSibling.nextElementSibling) {
         let loadMore = xpathNode(this.loadMore, child.nextElementSibling);
         if (loadMore) {
           loadMore.click();

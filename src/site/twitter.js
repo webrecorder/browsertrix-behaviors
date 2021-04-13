@@ -16,22 +16,29 @@ export class TwitterTimelineBehavior extends Behavior
     super();
     this.maxDepth = maxDepth || 0;
 
-    this.rootPath = "//div[starts-with(@aria-label, 'Timeline')]/*[1]";
+    //this.rootPath = "//div[starts-with(@aria-label, 'Timeline')]/*[1]";
+    this.rootPath = "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]/*[1]";
     this.anchorQuery = ".//article";
     this.childMatchSelect = "string(.//article//a[starts-with(@href, '/') and @aria-label]/@href)";
     this.childMatch = "child::div[.//a[@href='$1']]";
 
-    this.expandQuery = ".//div[@role='button' and @aria-haspopup='false']//*[contains(text(), 'more repl')]";
+    //this.expandQuery = ".//div[@role='button' and @aria-haspopup='false']//*[contains(text(), 'more repl')]";
+    this.expandQuery = ".//div[@role='button' and not(@aria-haspopup) and not(@data-testid)]";
     this.quoteQuery = ".//div[@role='blockquote' and @aria-haspopup='false']";
 
     this.imageQuery = ".//a[@role='link' and starts-with(@href, '/') and contains(@href, '/photo/')]";
-    this.imageNextQuery = "//div[@aria-label='Next slide']";
-    this.imageCloseQuery = "//div[@aria-label='Close' and @role='button']";
-    this.backButtonQuery = "//div[@aria-label='Back' and @role='button']";
+    //this.imageNextQuery = "//div[@aria-label='Next slide']";
+    this.imageFirstNextQuery = "//div[@aria-roledescription='carousel']/div[2]/div[1]/div[@role='button']";
+    this.imageNextQuery = "//div[@aria-roledescription='carousel']/div[2]/div[2]/div[@role='button']";
+    //this.imageCloseQuery = "//div[@aria-label='Close' and @role='button']";
+    this.imageCloseQuery = "//div[@role='presentation']/div[@role='button' and @aria-label]";
+    //this.backButtonQuery = "//div[@aria-label='Back' and @role='button']";
+    this.backButtonQuery = "//div[@data-testid='titleContainer']//div[@role='button']";
 
     this.progressQuery = ".//*[@role='progressbar']";
 
-    this.promoted = ".//*[text()=\"Promoted\"]";
+    //this.promoted = ".//*[text()=\"Promoted\"]";
+    this.promoted = ".//div[data-testid='placementTracking']"
 
     this.seenTweets = new Set();
     this.seenMediaTweets = new Set();
@@ -200,10 +207,10 @@ export class TwitterTimelineBehavior extends Behavior
 
       await sleep(waitUnit * 5);
 
-      let nextImage = null;
+      let nextImage = xpathNode(this.imageFirstNextQuery);
       let prevLocation = window.location.href;
 
-      while ((nextImage = xpathNode(this.imageNextQuery)) != null) {
+      while (nextImage) {
         nextImage.click();
         await sleep(waitUnit * 2);
 
@@ -215,6 +222,8 @@ export class TwitterTimelineBehavior extends Behavior
 
         yield this.getState("Loading Image: " + window.location.href, "images");
         await sleep(waitUnit * 5);
+
+        nextImage = xpathNode(this.imageNextQuery);
       }
 
       await imageState.goBack(this.imageCloseQuery);
