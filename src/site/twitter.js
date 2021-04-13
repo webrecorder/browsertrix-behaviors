@@ -38,7 +38,7 @@ export class TwitterTimelineBehavior extends Behavior
     this.progressQuery = ".//*[@role='progressbar']";
 
     //this.promoted = ".//*[text()=\"Promoted\"]";
-    this.promoted = ".//div[data-testid='placementTracking']"
+    this.promoted = ".//div[data-testid='placementTracking']";
 
     this.seenTweets = new Set();
     this.seenMediaTweets = new Set();
