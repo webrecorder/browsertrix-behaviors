@@ -82,7 +82,11 @@ export class BehaviorManager
 
     if (this.mainBehavior)  {
       this.behaviors.push(this.mainBehavior);
+
+      return this.mainBehavior.name;
     }
+
+    return "";
   }
 
   async run(opts) {
