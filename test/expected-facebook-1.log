@@ -1,0 +1,15 @@
+{"state":{"posts":1,"comments":0,"photos":0,"videos":0},"msg":"Viewing post"}
+{"state":{"posts":1,"comments":0,"photos":1,"videos":0},"msg":"Viewing photos https://www.facebook.com/Capture-Sample-105559135004406/photos/pcb.105560408337612/105560131670973/"}
+{"state":{"posts":1,"comments":0,"photos":2,"videos":0},"msg":"Viewing photos https://www.facebook.com/Capture-Sample-105559135004406/photos/pcb.105560408337612/105560165004303/"}
+{"state":{"posts":1,"comments":0,"photos":3,"videos":0},"msg":"Viewing photos https://www.facebook.com/Capture-Sample-105559135004406/photos/pcb.105560408337612/105560188337634/"}
+{"state":{"posts":1,"comments":0,"photos":4,"videos":0},"msg":"Viewing photos https://www.facebook.com/Capture-Sample-105559135004406/photos/pcb.105560408337612/105560261670960/"}
+{"state":{"posts":1,"comments":0,"photos":4,"videos":0},"msg":"Viewing extra photos https://www.facebook.com/Capture-Sample-105559135004406/photos/pcb.105560408337612/105560308337622"}
+{"state":{"posts":1,"comments":0,"photos":4,"videos":0},"msg":"Viewing extra photos https://www.facebook.com/Capture-Sample-105559135004406/photos/pcb.105560408337612/105560131670973"}
+{"state":{"posts":1,"comments":1,"photos":4,"videos":0},"msg":"Loading comments"}
+{"state":{"posts":1,"comments":2,"photos":4,"videos":0},"msg":"Loading comments"}
+{"state":{"posts":2,"comments":2,"photos":4,"videos":0},"msg":"Viewing post"}
+{"state":{"posts":2,"comments":2,"photos":4,"videos":1},"msg":"Viewing videos https://www.facebook.com/105559135004406/videos/117689630323556/"}
+{"state":{"posts":3,"comments":2,"photos":4,"videos":1},"msg":"Viewing post"}
+{"state":{"posts":3,"comments":3,"photos":4,"videos":1},"msg":"Loading comments"}
+{"state":{"posts":3,"comments":4,"photos":4,"videos":1},"msg":"Loading comments"}
+{"state":{"posts":3,"comments":4,"photos":4,"videos":1},"msg":"done!"}

@@ -3,7 +3,8 @@
 // also extract any urls from media query stylesheets that have not necessarily been loaded
 // (May not work for cross-origin stylesheets)
 
-import { awaitLoad, behavior_log } from "./lib/utils";
+import { BackgroundBehavior } from "./lib/behavior";
+import { awaitLoad } from "./lib/utils";
 
 const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], " +  
 "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
@@ -18,9 +19,10 @@ const IMPORT_REGEX = /(@import\s*[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
 
 
 // ===========================================================================
-export class AutoFetcher
+export class AutoFetcher extends BackgroundBehavior
 {
   constructor() {
+    super();
     this.urlSet = new Set();
     this.urlqueue = [];
     this.numPending = 0;
@@ -74,11 +76,11 @@ export class AutoFetcher
         const url = this.urlqueue.shift();
         try {
           this.numPending++;
-          behavior_log("AutoFetching: " + url);
+          this.debug("AutoFetching: " + url);
           const resp = await fetch(url);
           await resp.blob();
         } catch (e) {
-          behavior_log(e);
+          this.debug(e);
         }
         this.numPending--;
       }
@@ -185,7 +187,7 @@ export class AutoFetcher
     try {
       rules = sheet.cssRules || sheet.rules;
     } catch (e) {
-      behavior_log("Can't access stylesheet");
+      this.debug("Can't access stylesheet");
       return;
     }
 

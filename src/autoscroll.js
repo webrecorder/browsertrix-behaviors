@@ -1,4 +1,5 @@
-import { sleep, Behavior, waitUnit, xpathNode, isInViewport, waitUntil } from "./lib/utils";
+import { Behavior } from "./lib/behavior";
+import { sleep, waitUnit, xpathNode, isInViewport, waitUntil } from "./lib/utils";
 
 
 // ===========================================================================

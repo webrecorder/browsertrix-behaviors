@@ -23,14 +23,40 @@ export function awaitLoad() {
   });
 }
 
-export function behavior_log(data, type = "debug") {
+function callBinding(binding, obj) {
+  try {
+    binding(obj);
+  } catch (e) {
+    binding(JSON.stringify(obj));
+  }
+}
+
+export function behaviorLog(data, type = "debug") {
   if (_logFunc) {
+    callBinding(_logFunc, {data, type});
+  }
+}
+
+export async function openWindow(url) {
+  if (self.__bx_open) {
+    const p = new Promise((resolve) => self.__bx_openResolve = resolve);
+    callBinding(self.__bx_open, {url});
+
+    let win = null;
+
     try {
-      _logFunc({data, type});
+      win = await p;
+      if (win) {
+        return win;
+      }
     } catch (e) {
-      _logFunc(JSON.stringify({data, type}));
+      console.warn(e);
+    } finally {
+      delete self.__bx_openResolve;
     }
   }
+
+  return window.open(url);
 }
 
 export function _setLogFunc(func) {
@@ -115,6 +141,23 @@ export function xpathString(path, root) {
   return document.evaluate(path, root, null, XPathResult.STRING_TYPE).stringValue;
 }
 
+export async function* iterChildElem(root, timeout, totalTimeout) {
+  let child = root.firstElementChild;
+
+  while (child) {
+    yield child;
+
+    if (!child.nextElementSibling) {
+      await Promise.race([
+        waitUntil(() => !!child.nextElementSibling, timeout),
+        sleep(totalTimeout)
+      ]);
+    }
+
+    child = child.nextElementSibling;
+  }
+}
+
 
 // ===========================================================================
 export function isInViewport(elem) {
@@ -125,66 +168,4 @@ export function isInViewport(elem) {
       bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
       bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
   );
-}
-
-// ===========================================================================
-export class Behavior
-{
-  constructor() {
-    this._running = null;
-    this.paused = null;
-    this._unpause = null;
-    this.state = {};
-  }
-
-  start() {
-    this._running = this.run();
-  }
-
-  done() {
-    return this._running ? this._running : Promise.resolve();
-  }
-
-  async run() {
-    try {
-      for await (const step of this) {
-        behavior_log(step, "info");
-        if (this.paused) {
-          await this.paused;
-        }
-      }
-      behavior_log(this.getState("done!"), "info");
-    } catch (e) {
-      behavior_log(this.getState(e), "info");
-    }
-  }
-
-  pause() {
-    if (this.paused) {
-      return;
-    }
-    this.paused = new Promise((resolve) => {
-      this._unpause = resolve;
-    });
-  }
-
-  unpause() {
-    if (this._unpause) {
-      this._unpause();
-      this.paused = null;
-      this._unpause = null;
-    }
-  }
-
-  getState(msg, incrValue) {
-    if (incrValue && this.state[incrValue] !== undefined) {
-      this.state[incrValue]++;
-    }
-
-    return {state: this.state, msg};
-  }
-
-  cleanup() {
-    
-  }
 }
