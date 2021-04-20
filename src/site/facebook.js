@@ -36,11 +36,16 @@ export class FacebookTimelineBehavior extends Behavior
 
     this.photoCommentListQuery = "//ul[../h2]";
 
-    this.firstThumbnail = "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']";
+    this.firstPhotoThumbnail = "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']";
+    
+    this.firstVideoThumbnail = "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']";
+    this.nextVideo = "following::a[contains(@href, '/videos/') and @aria-hidden!='true']";
+    //this.nextVideoQuery = "//a[contains(@href, 'videos') and @role='link' and not(@aria-hidden) and .//img]";
 
-    this.isPhotoVideoPage = /^.*facebook\.com\/[^/]+\/(photos|videos)/;
+    this.isPhotoVideoPage = /^.*facebook\.com\/[^/]+\/(photos|videos)\/.+/;
 
     this.isPhotosPage = /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/;
+    this.isVideosPage = /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/;
 
     this.extraWindow = null;
 
@@ -58,6 +63,12 @@ export class FacebookTimelineBehavior extends Behavior
     if (this.isPhotosPage.exec(window.location.href)) {
       this.state = {"photos": 0, "comments": 0};
       yield* this.iterPhotoSlideShow();
+      return;
+    }
+
+    if (this.isVideosPage.exec(window.location.href)) {
+      this.state = {"videos": 0, "comments": 0};
+      yield* this.iterAllVideos();
       return;
     }
 
@@ -274,7 +285,7 @@ export class FacebookTimelineBehavior extends Behavior
   }
 
   async* iterPhotoSlideShow() {
-    const firstPhoto = xpathNode(this.firstThumbnail);
+    const firstPhoto = xpathNode(this.firstPhotoThumbnail);
 
     if (!firstPhoto) {
       return;
@@ -312,6 +323,53 @@ export class FacebookTimelineBehavior extends Behavior
       yield* this.iterComments(root, 2);
 
       await sleep(waitUnit * 5);
+    }
+  }
+
+  async* iterAllVideos() {
+    const firstInlineVideo = xpathNode("//video");
+    firstInlineVideo.scrollIntoView(this.scrollOpts);
+    if (!firstInlineVideo) {
+      return;
+    }
+
+    await sleep(waitUnit * 5);
+
+    let videoLink = xpathNode(this.firstVideoThumbnail);
+
+    if (!videoLink) {
+      return;
+    }
+
+    while (videoLink) {
+      videoLink.scrollIntoView(this.scrollOpts);
+
+      let lastHref = window.location.href;
+      videoLink.click();
+      await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+
+      yield this.getState("Viewing video: " + window.location.href, "videos");
+      await sleep(waitUnit * 10);
+
+      const close = xpathNode(this.closeButtonQuery);
+
+      if (!close) {
+        break;
+      }
+
+      lastHref = window.location.href;
+      close.click();
+      await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+
+      videoLink = xpathNode(this.nextVideo, videoLink);
+
+      // const videos = Array.from(xpathNodes(this.nextVideoQuery));
+
+      // if (videos.length) {
+      //   videoLink = videos[0];
+      // } else {
+      //   videoLink = null;
+      // }
     }
   }
 }
