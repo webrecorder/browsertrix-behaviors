@@ -1,0 +1,10 @@
+{"state":{},"msg":"Starting..."}
+{"state":{"posts":1,"comments":0,"videos":0},"msg":"Viewing post "}
+{"state":{"posts":1,"comments":1,"videos":0},"msg":"Loading comments"}
+{"state":{"posts":1,"comments":2,"videos":0},"msg":"Loading comments"}
+{"state":{"posts":2,"comments":2,"videos":0},"msg":"Viewing post "}
+{"state":{"posts":2,"comments":2,"videos":1},"msg":"Playing inline video"}
+{"state":{"posts":3,"comments":2,"videos":1},"msg":"Viewing post "}
+{"state":{"posts":3,"comments":3,"videos":1},"msg":"Loading comments"}
+{"state":{"posts":3,"comments":4,"videos":1},"msg":"Loading comments"}
+{"state":{"posts":3,"comments":4,"videos":1},"msg":"done!"}

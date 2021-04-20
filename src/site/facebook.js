@@ -21,7 +21,8 @@ export class FacebookTimelineBehavior extends Behavior
     this.pageletProfilePostList = "//div[@data-pagelet='page']//div[@data-pagelet='ProfileTimeline']";
 
     this.photosOrVideosQuery = `.//a[(contains(@href, '/photos/') or contains(@href, '/photo/?') or contains(@href, '/videos/')) and (starts-with(@href, '${window.location.origin}/') or starts-with(@href, '/'))]`;
-  
+    this.postQuery = ".//a[contains(@href, '/posts/')]";
+
     this.extraLabel = "//*[starts-with(text(), '+')]";
     this.nextSlideQuery = "//div[@data-name='media-viewer-nav-container']/div[@data-visualcompletion][2]//div[@role='button']";
 
@@ -35,28 +36,43 @@ export class FacebookTimelineBehavior extends Behavior
 
     this.photoCommentListQuery = "//ul[../h2]";
 
+    this.firstThumbnail = "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']";
+
     this.isPhotoVideoPage = /^.*facebook\.com\/[^/]+\/(photos|videos)/;
+
+    this.isPhotosPage = /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/
 
     this.extraWindow = null;
 
     //todo: make option
     this.allowNewWindow = false;
 
-    this.state = {
-      posts: 0,
-      comments: 0,
-      photos: 0,
-      videos: 0,
-    };
+    this.state = {};
   }
 
   async* [Symbol.asyncIterator]() {
+    yield this.getState("Starting...");
+
+    await sleep(2000);
+
+    if (this.isPhotosPage.exec(window.location.href)) {
+      this.state = {"photos": 0, "comments": 0};
+      yield* this.iterPhotoSlideShow();
+      return;
+    }
+
     if (this.isPhotoVideoPage.exec(window.location.href)) {
+      this.state = {"comments": 0};
       const root = xpathNode(this.photoCommentListQuery);
       yield* this.iterComments(root);
       return;
     }
 
+    this.state = {"posts": 0, "comments": 0, "videos": 0};
+    yield* this.iterPostFeeds();
+  }
+
+  async* iterPostFeeds() {
     const feeds = Array.from(xpathNodes(this.feedQuery));
     if (feeds && feeds.length) {
       for (const feed of feeds) {
@@ -80,13 +96,28 @@ export class FacebookTimelineBehavior extends Behavior
     if (!post) {
       return;
     }
-    yield this.getState("Viewing post", "posts");
+
+    const postLink = xpathNode(this.postQuery, post);
+
+    let url = "";
+
+    if (postLink) {
+      url = new URL(postLink.href, window.location.href);
+      url.search = "";
+    }
+
+    yield this.getState("Viewing post " + url, "posts");
 
     post.scrollIntoView(this.scrollOpts);
     
     await sleep(waitUnit * 2);
 
-    yield* this.viewPhotosOrVideos(post);
+    if (xpathNode(".//video", post)) {
+      yield this.getState("Playing inline video", "videos");
+      await sleep(waitUnit * 2);
+    }
+
+    //yield* this.viewPhotosOrVideos(post);
     
     let commentRootUL = xpathNode(this.commentListQuery, post);
     if (!commentRootUL) {
@@ -128,11 +159,11 @@ export class FacebookTimelineBehavior extends Behavior
 
       obj.scrollIntoView();
 
-      await sleep(waitUnit * 3);
+      await sleep(waitUnit * 5);
 
       obj.click();
 
-      await sleep(waitUnit * 20);
+      await sleep(waitUnit * 10);
       //await sleep(10000);
 
       if (this.allowNewWindow) {
@@ -196,17 +227,21 @@ export class FacebookTimelineBehavior extends Behavior
     }
   }
 
-  async* iterComments(commentRootUL) {
+  async* iterComments(commentRootUL, maxExpands = 2) {
     if (!commentRootUL) {
+      await sleep(waitUnit * 5);
       return;
     }
     let commentBlock = commentRootUL.firstElementChild;
     let lastBlock = null;
 
-    while (commentBlock) {
-      while (commentBlock) {
+    let count = 0;
+
+    while (commentBlock && count < maxExpands) {
+      while (commentBlock && count < maxExpands) {
         yield this.getState("Loading comments", "comments");
         commentBlock.scrollIntoView(this.scrollOpts);
+        await sleep(waitUnit * 2);
 
         const moreReplies = xpathNode(this.commentMoreReplies, commentBlock);
         if (moreReplies) {
@@ -216,6 +251,11 @@ export class FacebookTimelineBehavior extends Behavior
 
         lastBlock = commentBlock;
         commentBlock = lastBlock.nextElementSibling;
+        count++;
+      }
+
+      if (count === maxExpands) {
+        break;
       }
 
       let moreButton = xpathNode(this.commentMoreComments, commentRootUL);
@@ -225,8 +265,53 @@ export class FacebookTimelineBehavior extends Behavior
         await sleep(waitUnit * 5);
         if (lastBlock) {
           commentBlock = lastBlock.nextElementSibling;
+          await sleep(waitUnit * 5);
         }
       }
+    }
+
+    await sleep(waitUnit * 2);
+  }
+
+  async* iterPhotoSlideShow() {
+    const firstPhoto = xpathNode(this.firstThumbnail);
+
+    if (!firstPhoto) {
+      return;
+    }
+
+    let lastHref = window.location.href;
+
+    firstPhoto.scrollIntoView(this.scrollOpts);
+    
+    firstPhoto.click();
+    await sleep(waitUnit * 5);
+    await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+
+    let nextSlideButton = null;
+
+    while ((nextSlideButton = xpathNode(this.nextSlideQuery))) {
+      lastHref = window.location.href;
+
+      await sleep(waitUnit);
+      nextSlideButton.click();
+      await sleep(waitUnit * 5);
+
+      await Promise.race([
+        waitUntil(() => window.location.href !== lastHref, waitUnit * 2),
+        sleep(3000)
+      ]);
+
+      if (window.location.href === lastHref) {
+        break;
+      }
+
+      yield this.getState(`Viewing photo ${window.location.href}`, "photos");
+
+      const root = xpathNode(this.photoCommentListQuery);
+      yield* this.iterComments(root, 2);
+
+      await sleep(waitUnit * 5);
     }
   }
 }

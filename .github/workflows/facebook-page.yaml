@@ -7,7 +7,7 @@ on:
     - cron: '20 1 * * *'
 
 jobs:
-  facebook_test:
+  facebook_page:
     environment: DigitalOcean
     runs-on: ubuntu-latest
 
@@ -47,5 +47,5 @@ jobs:
       run: cat ./log
 
     - name: compare crawl log to expected
-      run: grep '"state"' ./log | diff - ./test/expected-facebook-1.log
+      run: grep '"state"' ./log | diff - ./test/expected-facebook-page.log
 
