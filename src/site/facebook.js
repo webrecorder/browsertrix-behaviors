@@ -40,7 +40,7 @@ export class FacebookTimelineBehavior extends Behavior
 
     this.isPhotoVideoPage = /^.*facebook\.com\/[^/]+\/(photos|videos)/;
 
-    this.isPhotosPage = /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/
+    this.isPhotosPage = /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/;
 
     this.extraWindow = null;
 

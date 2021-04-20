@@ -1,4 +1,4 @@
-name: "Facebook Behavior: Page Photos, By Owner (Logged In)"
+name: "Facebook Behavior: Page Photos (Owner Logged In)"
 
 on:
   push:
