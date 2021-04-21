@@ -76,7 +76,7 @@ export class FacebookTimelineBehavior extends Behavior
     if (this.isPhotoVideoPage.exec(window.location.href)) {
       this.state = {"comments": 0};
       const root = xpathNode(this.photoCommentListQuery);
-      yield* this.iterComments(root);
+      yield* this.iterComments(root, 1000);
       return;
     }
 
@@ -104,7 +104,7 @@ export class FacebookTimelineBehavior extends Behavior
     }
   }
 
-  async* viewPost(post) {
+  async* viewPost(post, maxExpands = 2) {
     if (!post) {
       return;
     }
@@ -140,7 +140,7 @@ export class FacebookTimelineBehavior extends Behavior
       }
       commentRootUL = xpathNode(this.commentListQuery, post);
     }
-    yield* this.iterComments(commentRootUL);
+    yield* this.iterComments(commentRootUL, maxExpands);
 
     await sleep(waitUnit * 5);
   }
