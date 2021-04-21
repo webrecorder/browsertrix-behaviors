@@ -39,6 +39,7 @@ export class FacebookTimelineBehavior extends Behavior
     this.firstPhotoThumbnail = "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']";
     
     this.firstVideoThumbnail = "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']";
+    this.mainVideoQuery = "//div[@data-pagelet='root']//div[@role='dialog']//div[@role='main']//video";
     this.nextVideo = "following::a[contains(@href, '/videos/') and @aria-hidden!='true']";
     //this.nextVideoQuery = "//a[contains(@href, 'videos') and @role='link' and not(@aria-hidden) and .//img]";
 
@@ -349,7 +350,16 @@ export class FacebookTimelineBehavior extends Behavior
       await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
 
       yield this.getState("Viewing video: " + window.location.href, "videos");
+
       await sleep(waitUnit * 10);
+
+      // wait for video to play, or 20s
+      await Promise.race([
+        waitUntil(() => {
+          const video = xpathNode(this.mainVideoQuery);
+          return video && video.readyState >= 3;
+        }, waitUnit * 2),
+        sleep(20000)]);
 
       const close = xpathNode(this.closeButtonQuery);
 
@@ -362,14 +372,6 @@ export class FacebookTimelineBehavior extends Behavior
       await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
 
       videoLink = xpathNode(this.nextVideo, videoLink);
-
-      // const videos = Array.from(xpathNodes(this.nextVideoQuery));
-
-      // if (videos.length) {
-      //   videoLink = videos[0];
-      // } else {
-      //   videoLink = null;
-      // }
     }
   }
 }
