@@ -1,4 +1,5 @@
-import { sleep, awaitLoad, behavior_log } from "./lib/utils";
+import { BackgroundBehavior } from "./lib/behavior";
+import { sleep, awaitLoad } from "./lib/utils";
 
 
 // const domainSpecificRedirect = [
@@ -45,8 +46,10 @@ import { sleep, awaitLoad, behavior_log } from "./lib/utils";
 
 
 // ===========================================================================
-export class Autoplay {
+export class Autoplay extends BackgroundBehavior {
   constructor() {
+    super();
+    
     this.mediaSet = new Set();
 
     this.promises = [];
@@ -110,10 +113,10 @@ export class Autoplay {
   }
 
   addMediaWait(media) {
-    behavior_log("media: " + media.outerHTML);
+    this.debug("media: " + media.outerHTML);
     if (media.src && media.src.startsWith("http:") || media.src.startsWith("https:")) {
       if (!this.mediaSet.has(media.src)) {
-        behavior_log("fetch media URL: " + media.src);
+        this.debug("fetch media URL: " + media.src);
         this.mediaSet.add(media.src);
         this.promises.push(fetch(media.src).then(resp => resp.blob()));
         return;
@@ -128,15 +131,15 @@ export class Autoplay {
 
       this.promises.push(p);
 
-      media.addEventListener("loadstart", () => behavior_log("loadstart"));
-      media.addEventListener("loadeddata", () => behavior_log("loadeddata"));
-      media.addEventListener("playing", () => { behavior_log("playing"); resolve(); });
-      media.addEventListener("ended", () => { behavior_log("ended"); resolve(); });
-      media.addEventListener("paused", () => { behavior_log("paused"); resolve(); });
-      media.addEventListener("error", () => { behavior_log("error"); resolve(); });
+      media.addEventListener("loadstart", () => this.debug("loadstart"));
+      media.addEventListener("loadeddata", () => this.debug("loadeddata"));
+      media.addEventListener("playing", () => { this.debug("playing"); resolve(); });
+      media.addEventListener("ended", () => { this.debug("ended"); resolve(); });
+      media.addEventListener("paused", () => { this.debug("paused"); resolve(); });
+      media.addEventListener("error", () => { this.debug("error"); resolve(); });
 
       if (media.paused) {
-        behavior_log("generic play event for: " + media.outerHTML);
+        this.debug("generic play event for: " + media.outerHTML);
         media.muted = true;
         media.click();
         media.play();

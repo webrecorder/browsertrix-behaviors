@@ -1,4 +1,5 @@
-import { Behavior, behavior_log, installBehaviors } from "../lib/utils";
+import { Behavior } from "../lib/behavior";
+//import { behavior_log, installBehaviors } from "../lib/utils";
 import { sleep, xpathNode, xpathString, RestoreState, waitUnit, waitUntil } from "../lib/utils";
 
 
@@ -38,8 +39,6 @@ export class InstagramPostsBehavior extends Behavior
     this.viewReplies = "//li//button[span[not(count(*)) and text()!='$1']]";
     //this.loadMore = "//button[span[@aria-label='Load more comments']]";
     this.loadMore = "//button[span[@aria-label]]";
-
-    this.scrollOpts = {block: "start", inline: "nearest", behavior: "smooth"};
 
     this.maxCommentsTime = 10000;
 
@@ -118,40 +117,40 @@ export class InstagramPostsBehavior extends Behavior
 
     yield this.getState("Loading single post view for first post: " + firstPostHref);
 
-    const separateWindow = false;
+    // const separateWindow = false;
 
-    if (separateWindow) {
-      try {
-        this.postOnlyWindow = window.open(firstPostHref, "_blank", "resizable");
+    // if (separateWindow) {
+    //   try {
+    //     this.postOnlyWindow = window.open(firstPostHref, "_blank", "resizable");
 
-        installBehaviors(this.postOnlyWindow);
+    //     installBehaviors(this.postOnlyWindow);
 
-        this.postOnlyWindow.__bx_behaviors.run({autofetch: true});
+    //     this.postOnlyWindow.__bx_behaviors.run({autofetch: true});
 
-        await sleep(waitUnit * 10);
+    //     await sleep(waitUnit * 10);
   
-      } catch (e) {
-        behavior_log(e);
-      }
-    } else {
+    //   } catch (e) {
+    //     behavior_log(e);
+    //   }
+    // } else {
 
-      window.history.replaceState({}, "", firstPostHref);
-      window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+    window.history.replaceState({}, "", firstPostHref);
+    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
 
-      let root2 = null;
-      let root3 = null;
+    let root2 = null;
+    let root3 = null;
 
-      await sleep(waitUnit * 5);
+    await sleep(waitUnit * 5);
 
-      await waitUntil(() => (root2 = xpathNode(this.rootPath)) !== root && root2, waitUnit * 5);
+    await waitUntil(() => (root2 = xpathNode(this.rootPath)) !== root && root2, waitUnit * 5);
 
-      await sleep(waitUnit * 5);
+    await sleep(waitUnit * 5);
 
-      window.history.replaceState({}, "", origLoc);
-      window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+    window.history.replaceState({}, "", origLoc);
+    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
 
-      await waitUntil(() => (root3 = xpathNode(this.rootPath)) !== root2 && root3, waitUnit * 5);
-    }
+    await waitUntil(() => (root3 = xpathNode(this.rootPath)) !== root2 && root3, waitUnit * 5);
+    //}
   }
 
   async *iterSubposts() {

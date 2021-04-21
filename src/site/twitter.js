@@ -1,4 +1,5 @@
-import { sleep, xpathNode, xpathString, HistoryState, RestoreState, Behavior, waitUnit } from "../lib/utils";
+import { Behavior } from "../lib/behavior";
+import { sleep, xpathNode, xpathString, HistoryState, RestoreState, waitUnit } from "../lib/utils";
 
 
 // ===========================================================================
@@ -107,7 +108,7 @@ export class TwitterTimelineBehavior extends Behavior
       }
 
       if (child && child.innerText) {
-        child.scrollIntoView();      
+        child.scrollIntoView(this.scrollOpts);      
       }
 
       if (child && anchorElem) {
