@@ -17,8 +17,10 @@ export class FacebookTimelineBehavior extends Behavior
     super();
     this.feedQuery = "//div[@role='feed']";
     this.articleQuery = ".//div[@role='article']";
+
     this.pageletPostList = "//div[@data-pagelet='page']/div[@role='main']//div[@role='main']/div";
     this.pageletProfilePostList = "//div[@data-pagelet='page']//div[@data-pagelet='ProfileTimeline']";
+    this.articleToPostList = "//div[@role='article']/../../../../div";
 
     this.photosOrVideosQuery = `.//a[(contains(@href, '/photos/') or contains(@href, '/photo/?') or contains(@href, '/videos/')) and (starts-with(@href, '${window.location.origin}/') or starts-with(@href, '/'))]`;
     this.postQuery = ".//a[contains(@href, '/posts/')]";
@@ -39,6 +41,8 @@ export class FacebookTimelineBehavior extends Behavior
     this.firstPhotoThumbnail = "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']";
     
     this.firstVideoThumbnail = "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']";
+    this.firstVideoSimple = "//div[@role='main']//a[contains(@href, '/videos/') and @aria-hidden!='true']";
+
     this.mainVideoQuery = "//div[@data-pagelet='root']//div[@role='dialog']//div[@role='main']//video";
     this.nextVideo = "following::a[contains(@href, '/videos/') and @aria-hidden!='true']";
     //this.nextVideoQuery = "//a[contains(@href, 'videos') and @role='link' and not(@aria-hidden) and .//img]";
@@ -93,7 +97,15 @@ export class FacebookTimelineBehavior extends Behavior
         }
       }
     } else {
-      const feed = xpathNode(this.pageletPostList) || xpathNode(this.pageletProfilePostList);
+      const feed = 
+      xpathNode(this.pageletPostList) || 
+      xpathNode(this.pageletProfilePostList) ||
+      xpathNode(this.articleToPostList);
+
+      if (!feed) {
+        return;
+      }
+
       for await (const post of iterChildElem(feed, waitUnit, waitUntil * 10)) {
         yield* this.viewPost(xpathNode(this.articleQuery, post));
       }
@@ -329,14 +341,13 @@ export class FacebookTimelineBehavior extends Behavior
 
   async* iterAllVideos() {
     const firstInlineVideo = xpathNode("//video");
-    firstInlineVideo.scrollIntoView(this.scrollOpts);
-    if (!firstInlineVideo) {
-      return;
+    if (firstInlineVideo) {
+      firstInlineVideo.scrollIntoView(this.scrollOpts);
+
+      await sleep(waitUnit * 5);
     }
 
-    await sleep(waitUnit * 5);
-
-    let videoLink = xpathNode(this.firstVideoThumbnail);
+    let videoLink = xpathNode(this.firstVideoThumbnail) || xpathNode(this.firstVideoSimple);
 
     if (!videoLink) {
       return;
@@ -356,10 +367,16 @@ export class FacebookTimelineBehavior extends Behavior
       // wait for video to play, or 20s
       await Promise.race([
         waitUntil(() => {
-          const video = xpathNode(this.mainVideoQuery);
-          return video && video.readyState >= 3;
+          for (const video of xpathNodes("//video")) {
+            if (video.readyState >= 3) {
+              return true;
+            }
+          }
+          return false;
         }, waitUnit * 2),
         sleep(20000)]);
+
+      await sleep(waitUnit * 10);
 
       const close = xpathNode(this.closeButtonQuery);
 
