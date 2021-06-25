@@ -22,13 +22,13 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - uses: prewk/s3-cp-action@v2
+    - uses: prewk/s3-cp-action@v1
       env:
-        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws_s3_endpoint: ${{ secrets.AWS_S3_ENDPOINT }}
-        source: 's3://dh-preserve/test-profiles/facebook/facebook.tar.gz'
-        dest: './profile.tar.gz'
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
+        SOURCE: 's3://dh-preserve/test-profiles/facebook/facebook.tar.gz'
+        DEST: './profile.tar.gz'
 
     - name: install requirements
       run: yarn install
