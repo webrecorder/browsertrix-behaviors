@@ -5,9 +5,9 @@
 
 [![Autoscroll Behavior](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoscroll.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoscroll.yaml)
 
-[![Autoplay Behavior: Youtube](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/youtube-autoplay.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/youtube-autoplay.yaml)
+[![Autoplay Behavior: Youtube](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoplay-youtube.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoplay-youtube.yaml)
 
-[![Autoplay Behavior: Vimeo](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/vimeo-autoplay.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/vimeo-autoplay.yaml)
+[![Autoplay Behavior: Vimeo](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoplay-vimeo.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoplay-vimeo.yaml)
 
 [![Instagram Behavior (Logged In)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/instagram.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/instagram.yaml)
 

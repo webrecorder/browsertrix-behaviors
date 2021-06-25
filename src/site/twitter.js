@@ -29,8 +29,8 @@ export class TwitterTimelineBehavior extends Behavior
 
     this.imageQuery = ".//a[@role='link' and starts-with(@href, '/') and contains(@href, '/photo/')]";
     //this.imageNextQuery = "//div[@aria-label='Next slide']";
-    this.imageFirstNextQuery = "//div[@aria-roledescription='carousel']/div[2]/div[1]/div[@role='button']";
-    this.imageNextQuery = "//div[@aria-roledescription='carousel']/div[2]/div[2]/div[@role='button']";
+    this.imageFirstNextQuery = "//div[@aria-roledescription='carousel']/div[2]/div[1]//div[@role='button']";
+    this.imageNextQuery = "//div[@aria-roledescription='carousel']/div[2]/div[2]//div[@role='button']";
     //this.imageCloseQuery = "//div[@aria-label='Close' and @role='button']";
     this.imageCloseQuery = "//div[@role='presentation']/div[@role='button' and @aria-label]";
     //this.backButtonQuery = "//div[@aria-label='Back' and @role='button']";

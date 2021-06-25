@@ -1,10 +1,10 @@
-name: "Autoplay Behavior: YouTube Embed"
+name: "Autoplay Behavior: Vimeo Embed"
 
 on:
   push:
   pull_request:
   schedule:
-    - cron: '10 1 * * *'
+    - cron: '12 16 * * *'
 
 jobs:
   autoscroll_test:
@@ -32,7 +32,7 @@ jobs:
       run:  docker pull $BROWSERTRIX_IMAGE
 
     - name: run crawl
-      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/crawls:/crawls $BROWSERTRIX_IMAGE crawl --url https://oembed.link/https://www.youtube.com/watch?v=aT-Up5Y4uRI --limit 1 --generateCDX --collection test
+      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/crawls:/crawls $BROWSERTRIX_IMAGE crawl --url https://oembed.link/https://vimeo.com/1084537 --limit 1 --generateCDX --collection test
 
     - name: check mp4 capture
       run: grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj
