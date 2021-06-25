@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
   schedule:
-    - cron: '29 1 * * *'
+    - cron: '29 16 * * *'
 
 jobs:
   facebook_test:
