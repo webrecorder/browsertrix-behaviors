@@ -46,14 +46,16 @@ export class BehaviorManager
       }
     }
 
+    this.autofetch = new AutoFetcher(!!opts.autofetch);
+
     if (opts.autofetch) {
       behaviorLog("Enable AutoFetcher");
-      this.behaviors.push(new AutoFetcher());
+      this.behaviors.push(this.autofetch);
     }
 
     if (opts.autoplay) {
       behaviorLog("Enable Autoplay");
-      this.behaviors.push(new Autoplay());
+      this.behaviors.push(new Autoplay(this.autofetch));
     }
 
     let siteMatch = false;
@@ -134,6 +136,11 @@ export class BehaviorManager
     if (this.mainBehavior) {
       this.mainBehavior.unpause();
     }
+  }
+
+  doAsyncFetch(url) {
+    behaviorLog("Queueing Async Fetch Url: " + url);
+    return this.autofetch.queueUrl(url);
   }
 }
 

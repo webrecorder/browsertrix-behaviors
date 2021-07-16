@@ -17,16 +17,21 @@ const SRCSET_REGEX = /\s*(\S*\s+[\d.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/;
 const STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
 const IMPORT_REGEX = /(@import\s*[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
 
+const MAX_CONCURRENT = 12;
+
 
 // ===========================================================================
 export class AutoFetcher extends BackgroundBehavior
 {
-  constructor() {
+  constructor(active = false) {
     super();
     this.urlSet = new Set();
     this.urlqueue = [];
     this.numPending = 0;
-    this.start();
+
+    if (active) {
+      this.start();
+    }
   }
 
   async start() {
@@ -53,31 +58,34 @@ export class AutoFetcher extends BackgroundBehavior
     try {
       url = new URL(url, document.baseURI).href;
     } catch (e) {
-      return;
+      return false;
     }
 
     if (!this.isValidUrl(url)) {
-      return;
+      return false;
     }
 
     if (this.urlSet.has(url)) {
-      return;
+      return false;
     }
 
     this.urlSet.add(url);
 
     this.doFetch(url);
+
+    return true;
   }
 
   async doFetch(url) {
     this.urlqueue.push(url);
-    if (this.numPending <= 6) {
+    if (this.numPending <= MAX_CONCURRENT) {
       while (this.urlqueue.length > 0) {
         const url = this.urlqueue.shift();
         try {
           this.numPending++;
           this.debug("AutoFetching: " + url);
-          const resp = await fetch(url);
+          const resp = await fetch(url, {"mode": "no-cors", "credentials": "include"});
+          this.debug(`AutoFetch Result ${resp.status} for ${url}`);
           await resp.blob();
         } catch (e) {
           this.debug(e);
