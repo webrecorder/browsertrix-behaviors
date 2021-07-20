@@ -2,55 +2,14 @@ import { BackgroundBehavior } from "./lib/behavior";
 import { sleep, awaitLoad } from "./lib/utils";
 
 
-// const domainSpecificRedirect = [
-//   {
-//     rx: [/w\.soundcloud\.com/],
-//     async handle(url) {
-//       if (url.searchParams.get("auto_play") === "true") {
-//         return null;
-//       }
-
-//       url.searchParams.set("auto_play", "true");
-//       // set continuous_play to true in order to handle
-//       // a playlist etc
-//       url.searchParams.set("continuous_play", "true");
-//       return url.href;
-//     },
-//   },
-//   {
-//     rx: [/player\.vimeo\.com/],
-//     async handle(url) {
-//       const video = document.querySelector("video");
-
-//       if (video) {
-//         video.play();
-//         behavior_log("play video");
-//       }
-//     }
-//   },
-//   {
-//     rx: [/youtube(?:-nocookie)?\.com\/embed\//],
-//     async handle(url) {
-//       const center = document.elementFromPoint(
-//         document.documentElement.clientWidth / 2,
-//         document.documentElement.clientHeight / 2);
-      
-//       if (center) {
-//         center.click();
-//         behavior_log("play video");
-//         await sleep(1000);
-//       }
-//     },
-//   },
-// ];
-
-
 // ===========================================================================
 export class Autoplay extends BackgroundBehavior {
-  constructor() {
+  constructor(autofetcher) {
     super();
     
     this.mediaSet = new Set();
+
+    this.autofetcher = autofetcher;
 
     this.promises = [];
 
@@ -58,20 +17,6 @@ export class Autoplay extends BackgroundBehavior {
 
     this.start();
   }
-
-  // async checkAutoPlayRedirect() {
-  //   await sleep(500);
-
-  //   const url = new URL(self.location.href);
-
-  //   for (const ds of domainSpecificRedirect) {
-  //     for (const rx of ds.rx) {
-  //       if (url.href.search(rx) >= 0) {
-  //         await ds.handle(url);
-  //       }
-  //     }
-  //   }
-  // }
 
   async start() {
     await awaitLoad();
@@ -118,10 +63,11 @@ export class Autoplay extends BackgroundBehavior {
       if (!this.mediaSet.has(media.src)) {
         this.debug("fetch media URL: " + media.src);
         this.mediaSet.add(media.src);
-        this.promises.push(fetch(media.src).then(resp => resp.blob()));
+        this.autofetcher.queueUrl(media.src);
         return;
       }
     }
+
     if (media.play) {
       let resolve;
 
