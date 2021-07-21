@@ -67,7 +67,7 @@ export class BehaviorManager
     if (opts.siteSpecific) {
       for (const siteBehaviorClass of siteBehaviors) {
         if (siteBehaviorClass.isMatch()) {
-          behaviorLog("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
+          behaviorLog("Loading Site-Specific Behavior: " + siteBehaviorClass.name);
           this.mainBehaviorClass = siteBehaviorClass;
           this.mainBehavior = new siteBehaviorClass();
           siteMatch = true;
@@ -77,7 +77,7 @@ export class BehaviorManager
     } 
 
     if (!siteMatch && opts.autoscroll) {
-      behaviorLog("Starting Autoscroll");
+      behaviorLog("Loading Autoscroll");
       this.mainBehaviorClass = AutoScroll;
       this.mainBehavior = new AutoScroll();
     }
@@ -93,13 +93,19 @@ export class BehaviorManager
 
   async run(opts) {
     if (this.started) {
+      behaviorLog("Unpasing Site Behavior");
       this.unpause();
       return;
     }
 
+    behaviorLog("Initing Site Behavior, Awaiting Load");
+
     this.init(opts);
 
     await awaitLoad();
+
+
+    behaviorLog("Running behavior...");
 
     if (this.mainBehavior) {
       this.mainBehavior.start();
