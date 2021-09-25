@@ -133,6 +133,11 @@ export class TwitterTimelineBehavior extends Behavior
       return;
     }
 
+    // no need to wait for mp4s, should be loaded fully automatically
+    if (media.src.startsWith("https://") && media.src.indexOf(".mp4") > 0) {
+      return;
+    }
+
     let msg = "Waiting for media playback";
 
     try {
