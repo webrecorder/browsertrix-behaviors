@@ -133,25 +133,32 @@ export class TwitterTimelineBehavior extends Behavior
       return;
     }
 
-    // no need to wait for mp4s, should be loaded fully automatically
-    if (media.src.startsWith("https://") && media.src.indexOf(".mp4") > 0) {
-      return;
-    }
-
-    let msg = "Waiting for media playback";
+    let mediaTweetUrl = null;
 
     try {
-      const mediaTweetUrl = new URL(xpathString(this.childMatchSelect, tweet.parentElement), window.location.origin).href;
-      if (this.seenMediaTweets.has(mediaTweetUrl)) {
-        return;
-      }
-      msg += " for " + mediaTweetUrl;
-      this.seenMediaTweets.add(mediaTweetUrl);
+      mediaTweetUrl = new URL(xpathString(this.childMatchSelect, tweet.parentElement), window.location.origin).href;
     } catch (e) {
       console.warn(e);
     }
 
-    msg += " to finish...";
+    // no need to wait for mp4s, should be loaded fully automatically
+    if (media.src.startsWith("https://") && media.src.indexOf(".mp4") > 0) {
+      yield this.getState(`Loading video for ${mediaTweetUrl || "unknown"}`, "videos");
+      return;
+    }
+
+    let msg;
+
+    if (mediaTweetUrl) {
+      if (this.seenMediaTweets.has(mediaTweetUrl)) {
+        return;
+      }
+
+      msg = `Waiting for media playback for ${mediaTweetUrl} to finish`;
+      this.seenMediaTweets.add(mediaTweetUrl);
+    } else {
+      msg = "Loading video";
+    }
 
     yield this.getState(msg, "videos");
 
