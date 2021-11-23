@@ -27,13 +27,15 @@ export class InstagramPostsBehavior extends Behavior
     this.postCloseButton = "/html/body/div[last()]/div[3]/button[.//*[@aria-label]]";
 
     //this.nextPost = "//div[@role='dialog']//a[text()='Next']";
-    this.nextPost = "//div[@role='dialog']//a[contains(@class, 'coreSpriteRightPaginationArrow')]";
+    //this.nextPost = "//div[@role='dialog']//a[contains(@class, 'coreSpriteRightPaginationArrow')]";
+    this.nextPost = "//button[.//*[local-name() = 'svg' and @aria-label='Next']]";
     this.postLoading = "//*[@aria-label='Loading...']";
 
     this.subpostNextOnlyChevron = "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
     this.subpostPrevNextChevron = this.subpostNextOnlyChevron + "[2]";
 
-    this.commentRoot = "//article/div[3]/div[1]/ul";
+    //this.commentRoot = "//article/div[3]/div[1]/ul";
+    this.commentRoot = "//article[@role='presentation']/div[1]/div[2]//ul";
 
     //this.viewReplies = "li//button[span[contains(text(), 'View replies')]]";
     this.viewReplies = "//li//button[span[not(count(*)) and text()!='$1']]";
