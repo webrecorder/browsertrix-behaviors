@@ -46,6 +46,8 @@ class AutoFetcher extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.BackgroundB
     this.urlqueue = [];
     this.numPending = 0;
 
+    this._donePromise = new Promise((resolve) => this._markDone = resolve);
+
     if (active) {
       this.start();
     }
@@ -55,11 +57,16 @@ class AutoFetcher extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.BackgroundB
     await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.awaitLoad)();
     this.run();
     this.initObserver();
+
+    await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.sleep)(500);
+
+    if (!this.urlqueue.length && !this.numPending) {
+      this._markDone();
+    }
   }
 
   done() {
-    //TODO:
-    return Promise.resolve();
+    return this._donePromise;
   }
 
   async run() {
@@ -108,6 +115,9 @@ class AutoFetcher extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.BackgroundB
           this.debug(e);
         }
         this.numPending--;
+      }
+      if (!this.numPending) {
+        this._markDone();
       }
     }
   }
