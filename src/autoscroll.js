@@ -23,40 +23,39 @@ export class AutoScroll extends Behavior
     Math.max(
       self.document.body.scrollHeight,
       self.document.body.offsetHeight,
-      self.document.documentElement.clientHeight,
-      self.document.documentElement.scrollHeight,
-      self.document.documentElement.offsetHeight
+      self.document.scrollingElement.clientHeight,
+      self.document.scrollingElement.scrollHeight,
+      self.document.scrollingElement.offsetHeight
     );
   }
 
-  hasScrollEL(obj) {
-    try {
-      return !!self.getEventListeners(obj).scroll;
-    } catch (e) {
-      // unknown, assume has listeners
-      this.debug("getEventListeners() not available");
-      return true;
-    }
-  }
-
   async* [Symbol.asyncIterator]() {
-    const scrollInc = Math.min(self.document.body.clientHeight * 0.05, 30);
+    const scrollInc = Math.min(self.document.scrollingElement.clientHeight * 0.05, 30);
     const interval = 75;
 
-    if (!this.hasScrollEL(self.window) &&
-        !this.hasScrollEL(self.document) &&
-        !this.hasScrollEL(self.document.body)) {
-      yield this.getState("Skipping autoscroll, page seems to be static (no 'scroll' event listeners)");
+    let lastScrollHeight = self.document.scrollingElement.scrollHeight;
+
+    const scrollOpts = { top: 0, left: 0, behavior: "auto" };
+
+    scrollOpts.top = document.scrollingElement.scrollHeight - self.innerHeight;
+
+    // check if scrolling should be done
+    window.scrollTo(scrollOpts);
+
+    if (lastScrollHeight === self.document.scrollingElement.scrollHeight) {
+      yield this.getState("Skipping autoscroll, page seems to not be scrolling-dynamic");
       return;
     }
 
-    const scrollOpts = { top: scrollInc, left: 0, behavior: "auto" };
+    scrollOpts.top = 0;
+    window.scrollTo(scrollOpts);
 
     let showMoreElem = null;
-    let lastScrollHeight = self.document.body.scrollHeight;
+
+    scrollOpts.top = scrollInc;
 
     while (this.canScrollMore()) {
-      const scrollHeight = self.document.body.scrollHeight;
+      const scrollHeight = self.document.scrollingElement.scrollHeight;
 
       if (scrollHeight > lastScrollHeight) {
         this.state.segments++;
@@ -74,7 +73,7 @@ export class AutoScroll extends Behavior
         await sleep(waitUnit);
 
         await Promise.race([
-          waitUntil(() => self.document.body.scrollHeight > scrollHeight, 500),
+          waitUntil(() => self.document.scrollingElement.scrollHeight > scrollHeight, 500),
           sleep(30000)
         ]);
 
