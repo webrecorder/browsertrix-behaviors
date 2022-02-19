@@ -43,7 +43,7 @@ export class AutoScroll extends Behavior
     window.scrollTo(scrollOpts);
 
     if (lastScrollHeight === self.document.scrollingElement.scrollHeight) {
-      yield this.getState("Skipping autoscroll, page seems to not be scrolling-dynamic");
+      yield this.getState("Skipping autoscroll, page seems to not be responsive to scrolling events");
       return;
     }
 
