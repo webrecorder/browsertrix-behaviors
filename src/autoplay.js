@@ -1,5 +1,5 @@
 import { BackgroundBehavior } from "./lib/behavior";
-import { sleep, awaitLoad } from "./lib/utils";
+import { awaitLoad } from "./lib/utils";
 
 
 // ===========================================================================
@@ -20,16 +20,24 @@ export class Autoplay extends BackgroundBehavior {
 
   async start() {
     await awaitLoad();
-    this.initObserver();
-    //await this.checkAutoPlayRedirect();
+    //this.initObserver();
 
-    for (const [, elem] of document.querySelectorAll("video, audio").entries()) {
-      this.addMediaWait(elem);
-    }
+    this.pollAudioVideo();
 
-    await sleep(1000);
+    setInterval(() => this.pollAudioVideo(), 500);
+
+    //await sleep(500);
 
     this._initDone();
+  }
+
+  pollAudioVideo() {
+    for (const [, elem] of document.querySelectorAll("video, audio").entries()) {
+      if (!elem.__bx_autoplay_seen) {
+        elem.__bx_autoplay_seen = true;
+        this.addMediaWait(elem);
+      }
+    }
   }
 
   initObserver() {
