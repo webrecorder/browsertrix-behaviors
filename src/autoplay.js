@@ -89,8 +89,11 @@ export class Autoplay extends BackgroundBehavior {
       media.addEventListener("loadeddata", () => this.debug("loadeddata"));
       media.addEventListener("playing", () => { this.debug("playing"); resolve(); });
       media.addEventListener("ended", () => { this.debug("ended"); resolve(); });
-      media.addEventListener("paused", () => { this.debug("paused"); resolve(); });
+      media.addEventListener("pause", () => { this.debug("pause"); resolve(); });
+      media.addEventListener("abort", () => { this.debug("abort"); resolve(); });
       media.addEventListener("error", () => { this.debug("error"); resolve(); });
+      media.addEventListener("stalled", () => { this.debug("stalled"); resolve(); });
+      media.addEventListener("suspend", () => { this.debug("suspend"); resolve(); });
 
       if (media.paused) {
         this.debug("generic play event for: " + media.outerHTML);
