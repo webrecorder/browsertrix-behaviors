@@ -83,12 +83,13 @@ export class AutoScroll extends Behavior
 
       self.scrollBy(scrollOpts);
 
-      yield this.getState(`Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
-      
       await sleep(interval);
 
-      // only add extra wait if actually changed height
-      if (this.state.segments > 1) {
+      if (this.state.segments === 1) {
+        // only print this the first time
+        yield this.getState(`Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
+      } else {
+        // only add extra wait if actually changed height
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
         await Promise.race([
           waitUntil(() => this.canScrollMore(), interval),
