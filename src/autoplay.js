@@ -26,8 +26,6 @@ export class Autoplay extends BackgroundBehavior {
 
     setInterval(() => this.pollAudioVideo(), 500);
 
-    //await sleep(500);
-
     this._initDone();
   }
 
@@ -36,31 +34,6 @@ export class Autoplay extends BackgroundBehavior {
       if (!elem.__bx_autoplay_seen) {
         elem.__bx_autoplay_seen = true;
         this.addMediaWait(elem);
-      }
-    }
-  }
-
-  initObserver() {
-    this.mutobz = new MutationObserver((changes) => this.observeChange(changes));
-
-    this.mutobz.observe(document.documentElement, {
-      characterData: false,
-      characterDataOldValue: false,
-      attributes: false,
-      attributeOldValue: false,
-      subtree: true,
-      childList: true,
-    });
-  }
-
-  observeChange(changes) {
-    for (const change of changes) {
-      if (change.type === "childList") {
-        for (const node of change.addedNodes) {
-          if (node instanceof HTMLMediaElement) {
-            this.addMediaWait(node);
-          }
-        }
       }
     }
   }
