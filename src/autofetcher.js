@@ -4,7 +4,7 @@
 // (May not work for cross-origin stylesheets)
 
 import { BackgroundBehavior } from "./lib/behavior";
-import { awaitLoad } from "./lib/utils";
+import { awaitLoad, sleep } from "./lib/utils";
 
 const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], " +  
 "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
@@ -28,21 +28,33 @@ export class AutoFetcher extends BackgroundBehavior
     this.urlSet = new Set();
     this.urlqueue = [];
     this.numPending = 0;
+    this.numDone = 0;
+
+    this._donePromise = new Promise((resolve) => this._markDone = resolve);
 
     if (active) {
       this.start();
     }
   }
 
+  get numFetching() {
+    return this.numDone + this.numPending + this.urlqueue.length;
+  }
+
   async start() {
     await awaitLoad();
     this.run();
     this.initObserver();
+
+    await sleep(500);
+
+    if (!this.urlqueue.length && !this.numPending) {
+      this._markDone();
+    }
   }
 
   done() {
-    //TODO:
-    return Promise.resolve();
+    return this._donePromise;
   }
 
   async run() {
@@ -91,6 +103,10 @@ export class AutoFetcher extends BackgroundBehavior
           this.debug(e);
         }
         this.numPending--;
+        this.numDone++;
+      }
+      if (!this.numPending) {
+        this._markDone();
       }
     }
   }

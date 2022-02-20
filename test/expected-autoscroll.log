@@ -1,10 +1,2 @@
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
-{"state":{"segments":1},"msg":"Scrolling down by 200 pixels every 0.2 seconds"}
+{"state":{"segments":1},"msg":"Skipping autoscroll, page seems to not be responsive to scrolling events"}
 {"state":{"segments":1},"msg":"done!"}

@@ -1,5 +1,5 @@
 import { BackgroundBehavior } from "./lib/behavior";
-import { sleep, awaitLoad } from "./lib/utils";
+import { awaitLoad } from "./lib/utils";
 
 
 // ===========================================================================
@@ -20,39 +20,20 @@ export class Autoplay extends BackgroundBehavior {
 
   async start() {
     await awaitLoad();
-    this.initObserver();
-    //await this.checkAutoPlayRedirect();
+    //this.initObserver();
 
-    for (const [, elem] of document.querySelectorAll("video, audio").entries()) {
-      this.addMediaWait(elem);
-    }
+    this.pollAudioVideo();
 
-    await sleep(1000);
+    setInterval(() => this.pollAudioVideo(), 500);
 
     this._initDone();
   }
 
-  initObserver() {
-    this.mutobz = new MutationObserver((changes) => this.observeChange(changes));
-
-    this.mutobz.observe(document.documentElement, {
-      characterData: false,
-      characterDataOldValue: false,
-      attributes: false,
-      attributeOldValue: false,
-      subtree: true,
-      childList: true,
-    });
-  }
-
-  observeChange(changes) {
-    for (const change of changes) {
-      if (change.type === "childList") {
-        for (const node of change.addedNodes) {
-          if (node instanceof HTMLMediaElement) {
-            this.addMediaWait(node);
-          }
-        }
+  pollAudioVideo() {
+    for (const [, elem] of document.querySelectorAll("video, audio").entries()) {
+      if (!elem.__bx_autoplay_seen) {
+        elem.__bx_autoplay_seen = true;
+        this.addMediaWait(elem);
       }
     }
   }
@@ -81,8 +62,11 @@ export class Autoplay extends BackgroundBehavior {
       media.addEventListener("loadeddata", () => this.debug("loadeddata"));
       media.addEventListener("playing", () => { this.debug("playing"); resolve(); });
       media.addEventListener("ended", () => { this.debug("ended"); resolve(); });
-      media.addEventListener("paused", () => { this.debug("paused"); resolve(); });
+      media.addEventListener("pause", () => { this.debug("pause"); resolve(); });
+      media.addEventListener("abort", () => { this.debug("abort"); resolve(); });
       media.addEventListener("error", () => { this.debug("error"); resolve(); });
+      media.addEventListener("stalled", () => { this.debug("stalled"); resolve(); });
+      media.addEventListener("suspend", () => { this.debug("suspend"); resolve(); });
 
       if (media.paused) {
         this.debug("generic play event for: " + media.outerHTML);
