@@ -79,7 +79,7 @@ export class BehaviorManager
     if (!siteMatch && opts.autoscroll) {
       behaviorLog("Starting Autoscroll");
       this.mainBehaviorClass = AutoScroll;
-      this.mainBehavior = new AutoScroll();
+      this.mainBehavior = new AutoScroll(this.autofetch);
     }
 
     if (this.mainBehavior)  {

@@ -28,12 +28,17 @@ export class AutoFetcher extends BackgroundBehavior
     this.urlSet = new Set();
     this.urlqueue = [];
     this.numPending = 0;
+    this.numDone = 0;
 
     this._donePromise = new Promise((resolve) => this._markDone = resolve);
 
     if (active) {
       this.start();
     }
+  }
+
+  get numFetching() {
+    return this.numDone + this.numPending + this.urlqueue.length;
   }
 
   async start() {
@@ -98,6 +103,7 @@ export class AutoFetcher extends BackgroundBehavior
           this.debug(e);
         }
         this.numPending--;
+        this.numDone++;
       }
       if (!this.numPending) {
         this._markDone();
