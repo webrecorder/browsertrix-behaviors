@@ -24,7 +24,8 @@ export class InstagramPostsBehavior extends Behavior
 
     this.firstPostInRow = "div[1]/a";
     //this.postCloseButton = "//button[.//*[@aria-label=\"Close\"]]";
-    this.postCloseButton = "/html/body/div[last()]/div[3]/button[.//*[@aria-label]]";
+    //this.postCloseButton = "/html/body/div[last()]/div[3]/button[.//*[@aria-label]]";
+    this.postCloseButton = "/html/body/div[last()]/div[1]/button[.//*[@aria-label]]";
 
     //this.nextPost = "//div[@role='dialog']//a[text()='Next']";
     //this.nextPost = "//div[@role='dialog']//a[contains(@class, 'coreSpriteRightPaginationArrow')]";
@@ -252,17 +253,6 @@ export class InstagramPostsBehavior extends Behavior
 
   async* [Symbol.asyncIterator]() {
     const origLoc = window.location.href;
-
-    for await (const row of this.iterRow()) {
-      await sleep(waitUnit * 2.5);
-
-      const first = xpathNode(this.firstPostInRow, row);
-
-      first.click();
-      await sleep(waitUnit * 10);
-
-      break;
-    }
 
     yield* this.viewStandalonePost(origLoc);
 
