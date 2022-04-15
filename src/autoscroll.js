@@ -70,7 +70,7 @@ export class AutoScroll extends Behavior
     return false;
   }
 
-  async shouldScrollUp() {
+  shouldScrollUp() {
     if (self.window.scrollY === 0) {
       return false;
     }
