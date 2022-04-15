@@ -45,8 +45,8 @@ export class Autoplay extends BackgroundBehavior {
         this.debug("fetch media URL: " + media.src);
         this.mediaSet.add(media.src);
         this.autofetcher.queueUrl(media.src);
-        return;
       }
+      return;
     }
 
     if (media.play) {
@@ -71,8 +71,7 @@ export class Autoplay extends BackgroundBehavior {
       if (media.paused) {
         this.debug("generic play event for: " + media.outerHTML);
         media.muted = true;
-        media.click();
-        media.play();
+        media.play().reject(() => media.click()).finally(() => resolve());
       }
     }
   }

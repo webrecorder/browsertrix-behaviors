@@ -1,11 +1,13 @@
 import { FacebookTimelineBehavior } from "./facebook";
 import { InstagramPostsBehavior } from "./instagram";
+import { TelegramBehavior } from "./telegram";
 import { TwitterTimelineBehavior } from "./twitter";
 
 const siteBehaviors = [
   InstagramPostsBehavior,
   TwitterTimelineBehavior,
-  FacebookTimelineBehavior
+  FacebookTimelineBehavior,
+  TelegramBehavior
 ];
 
 export default siteBehaviors;
