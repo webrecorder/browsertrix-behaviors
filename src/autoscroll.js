@@ -97,7 +97,7 @@ export class AutoScroll extends Behavior
   }
 
   async* scrollDown() {
-    const scrollInc = Math.min(self.document.scrollingElement.clientHeight * 0.05, 30);
+    const scrollInc = Math.min(self.document.scrollingElement.clientHeight * 0.10, 30);
     const interval = 75;
 
     let showMoreElem = null;
