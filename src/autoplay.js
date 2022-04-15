@@ -1,5 +1,5 @@
 import { BackgroundBehavior } from "./lib/behavior";
-import { awaitLoad } from "./lib/utils";
+import { awaitLoad, sleep } from "./lib/utils";
 
 
 // ===========================================================================
@@ -58,7 +58,9 @@ export class Autoplay extends BackgroundBehavior {
 
       this.promises.push(p);
 
-      media.addEventListener("loadstart", () => this.debug("loadstart"));
+      let loadingStarted = false;
+
+      media.addEventListener("loadstart", () => {loadingStarted = true; this.debug("loadstart"); });
       media.addEventListener("loadeddata", () => this.debug("loadeddata"));
       media.addEventListener("playing", () => { this.debug("playing"); resolve(); });
       media.addEventListener("ended", () => { this.debug("ended"); resolve(); });
@@ -71,7 +73,14 @@ export class Autoplay extends BackgroundBehavior {
       if (media.paused) {
         this.debug("generic play event for: " + media.outerHTML);
         media.muted = true;
-        media.play().reject(() => media.click()).finally(() => resolve());
+        //media.play().reject(() => media.click()).finally(() => resolve());
+        media.play();
+        (async() => {
+          await sleep(500);
+          if (!loadingStarted) {
+            media.click();
+          }
+        })();
       }
     }
   }
