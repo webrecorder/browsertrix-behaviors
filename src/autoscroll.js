@@ -99,6 +99,7 @@ export class AutoScroll extends Behavior
   async* scrollDown() {
     const scrollInc = Math.min(self.document.scrollingElement.clientHeight * 0.10, 30);
     const interval = 75;
+    let elapsedWait = 0;
 
     let showMoreElem = null;
 
@@ -138,13 +139,21 @@ export class AutoScroll extends Behavior
       if (this.state.segments === 1) {
         // only print this the first time
         yield this.getState(`Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
+        elapsedWait = 2.0;
       } else {
+        const waitSecs = elapsedWait / (this.state.segments - 1);
         // only add extra wait if actually changed height
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
+        this.debug(`Waiting upto ${waitSecs} seconds for more scroll segments`);
+
+        const startTime = Date.now();
+
         await Promise.race([
           waitUntil(() => this.canScrollMore(), interval),
-          sleep((this.state.segments - 1) * 2000)
+          sleep(waitSecs)
         ]);
+
+        elapsedWait += (Date.now() - startTime) * 2;
       }
     }
   }

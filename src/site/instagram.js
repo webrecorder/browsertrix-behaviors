@@ -7,7 +7,7 @@ import { sleep, xpathNode, xpathString, RestoreState, waitUnit, waitUntil } from
 export class InstagramPostsBehavior extends Behavior
 {
   static isMatch() {
-    return window.location.href.match(/https:\/\/(www\.)?instagram\.com\/\w[\w]+/);
+    return window.location.href.match(/https:\/\/(www\.)?instagram\.com\/\w[\w.-]+/);
   }
 
   static get name() {
