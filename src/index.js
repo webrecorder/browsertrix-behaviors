@@ -117,7 +117,7 @@ export class BehaviorManager
     }
 
     await allBehaviors;
-    behaviorLog("All Behaviors Done!");
+    behaviorLog("All Behaviors Done for " + self.location.href);
 
     if (this.mainBehavior && this.mainBehaviorClass.cleanup) {
       this.mainBehavior.cleanup();
