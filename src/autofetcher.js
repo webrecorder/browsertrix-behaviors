@@ -6,7 +6,7 @@
 import { BackgroundBehavior } from "./lib/behavior";
 import { awaitLoad, sleep } from "./lib/utils";
 
-const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], " +  
+const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], " +  
 "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
 "picture > source[srcset], picture > source[data-srcset], picture > source[data-src], " +
 "video > source[srcset], video > source[data-srcset], video > source[data-src], " +
@@ -175,16 +175,29 @@ export class AutoFetcher extends BackgroundBehavior
       return;
     }
 
-    const src = elem.src || elem.getAttribute("data-src");
+    const data_src = elem.getAttribute("data-src");
+
+    if (data_src) {
+      this.queueUrl(data_src);
+    }
+
+    // check regular src in case of <noscript>
+    const src = elem.getAttribute("src");
 
     if (src) {
       this.queueUrl(src);
     }
 
-    const srcset = elem.srcset || elem.getAttribute("data-srcset");
+    const srcset = elem.getAttribute("srcset");
 
     if (srcset) {
       this.extractSrcSetAttr(srcset);
+    }
+
+    const data_srcset = elem.getAttribute("data-srcset");
+
+    if (data_srcset) {
+      this.extractSrcSetAttr(data_srcset);
     }
   }
 
