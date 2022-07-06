@@ -73,7 +73,7 @@ export class Autoplay extends BackgroundBehavior {
     }
 
     if (!found && media.play) {
-      this.attemptMediaPlay();
+      this.attemptMediaPlay(media);
     }
   }
 
