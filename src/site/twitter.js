@@ -36,6 +36,8 @@ export class TwitterTimelineBehavior extends Behavior
     //this.backButtonQuery = "//div[@aria-label='Back' and @role='button']";
     this.backButtonQuery = "//div[@data-testid='titleContainer']//div[@role='button']";
 
+    this.viewSensitiveQuery = ".//a[@href='/settings/content_you_see']/parent::div/parent::div/parent::div//div[@role='button']";
+
     this.progressQuery = ".//*[@role='progressbar']";
 
     //this.promoted = ".//*[text()=\"Promoted\"]";
@@ -116,7 +118,7 @@ export class TwitterTimelineBehavior extends Behavior
 
         const restorer = new RestoreState(this.childMatchSelect, child);
 
-        if (restorer.matchValue) {
+        if (restorer.matchValue || child === root.firstElementChild) {
           yield anchorElem;
 
           child = await restorer.restore(this.rootPath, this.childMatch);
@@ -187,6 +189,12 @@ export class TwitterTimelineBehavior extends Behavior
       }
 
       await sleep(waitUnit * 2.5);
+
+      const viewButton = xpathNode(this.viewSensitiveQuery, tweet);
+      if (viewButton) {
+        viewButton.click();
+        await sleep(waitUnit * 2.5);
+      }
 
       // process images
       yield* this.clickImages(tweet, depth);
