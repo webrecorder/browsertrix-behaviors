@@ -36,6 +36,8 @@ export class TwitterTimelineBehavior extends Behavior
     //this.backButtonQuery = "//div[@aria-label='Back' and @role='button']";
     this.backButtonQuery = "//div[@data-testid='titleContainer']//div[@role='button']";
 
+    this.viewSensitiveQuery = ".//a[@href='/settings/content_you_see']/parent::div/parent::div/parent::div//div[@role='button']";
+
     this.progressQuery = ".//*[@role='progressbar']";
 
     //this.promoted = ".//*[text()=\"Promoted\"]";
@@ -63,11 +65,20 @@ export class TwitterTimelineBehavior extends Behavior
       return null;
     }
 
-    while (xpathNode(this.progressQuery, child.nextElementSibling)) {
+    while (this.showingProgressBar(child.nextElementSibling)) {
       await sleep(waitUnit);
     }
 
     return child.nextElementSibling;
+  }
+
+  showingProgressBar(root) {
+    const node = xpathNode(this.progressQuery, root);
+    if (!node) {
+      return false;
+    }
+    // return false is hidden / no-height
+    return node.clientHeight > 10;
   }
 
   async expandMore(child) {
@@ -79,7 +90,7 @@ export class TwitterTimelineBehavior extends Behavior
     const prev = child.previousElementSibling;
     expandElem.click();
     await sleep(waitUnit);
-    while (xpathNode(this.progressQuery, prev.nextElementSibling)) {
+    while (this.showingProgressBar(prev.nextElementSibling)) {
       await sleep(waitUnit);
     }
     child = prev.nextElementSibling;
@@ -116,9 +127,9 @@ export class TwitterTimelineBehavior extends Behavior
 
         const restorer = new RestoreState(this.childMatchSelect, child);
 
-        if (restorer.matchValue) {
-          yield anchorElem;
+        yield anchorElem;
 
+        if (restorer.matchValue) {
           child = await restorer.restore(this.rootPath, this.childMatch);
         }
       }
@@ -187,6 +198,12 @@ export class TwitterTimelineBehavior extends Behavior
       }
 
       await sleep(waitUnit * 2.5);
+
+      const viewButton = xpathNode(this.viewSensitiveQuery, tweet);
+      if (viewButton) {
+        viewButton.click();
+        await sleep(waitUnit * 2.5);
+      }
 
       // process images
       yield* this.clickImages(tweet, depth);
