@@ -106,7 +106,7 @@ export class Autoplay extends BackgroundBehavior {
 
       await sleep(500);
 
-      if (loadingStarted || !media.paused) {
+      if (loadingStarted) {
         return;
       }
 
