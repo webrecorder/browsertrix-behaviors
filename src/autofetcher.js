@@ -6,7 +6,7 @@
 import { BackgroundBehavior } from "./lib/behavior";
 import { awaitLoad, sleep } from "./lib/utils";
 
-const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy']" +  
+const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy'], " +  
 "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
 "picture > source[srcset], picture > source[data-srcset], picture > source[data-src], " +
 "video > source[srcset], video > source[data-srcset], video > source[data-src], " +
