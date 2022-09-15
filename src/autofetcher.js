@@ -6,7 +6,7 @@
 import { BackgroundBehavior } from "./lib/behavior";
 import { awaitLoad, sleep } from "./lib/utils";
 
-const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], " +  
+const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy']" +  
 "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
 "picture > source[srcset], picture > source[data-srcset], picture > source[data-src], " +
 "video > source[srcset], video > source[data-srcset], video > source[data-src], " +
@@ -121,7 +121,7 @@ export class AutoFetcher extends BackgroundBehavior
       attributeOldValue: true,
       subtree: true,
       childList: true,
-      attributeFilter: ["srcset"]
+      attributeFilter: ["srcset", "loading"]
     });
   }
 
@@ -130,6 +130,12 @@ export class AutoFetcher extends BackgroundBehavior
     case Node.ATTRIBUTE_NODE:
       if (target.nodeName === "srcset") {
         this.extractSrcSetAttr(target.nodeValue);
+      }
+      if (target.nodeName === "loading" && target.nodeValue === "lazy") {
+        const elem = target.parentNode;
+        if (elem.tagName === "IMG") {
+          elem.setAttribute("loading", "eager");
+        }
       }
       break;
 
@@ -181,11 +187,9 @@ export class AutoFetcher extends BackgroundBehavior
       this.queueUrl(data_src);
     }
 
-    // check regular src in case of <noscript>
-    const src = elem.getAttribute("src");
-
-    if (src) {
-      this.queueUrl(src);
+    // force lazy loading to eager
+    if (elem.getAttribute("loading") === "lazy") {
+      elem.setAttribute("loading", "eager");
     }
 
     const srcset = elem.getAttribute("srcset");
@@ -198,6 +202,13 @@ export class AutoFetcher extends BackgroundBehavior
 
     if (data_srcset) {
       this.extractSrcSetAttr(data_srcset);
+    }
+
+    // check regular src in case of <noscript> only to avoid duplicate loading
+    const src = elem.getAttribute("src");
+
+    if (src && elem.parentElement.tagName === "NOSCRIPT") {
+      this.queueUrl(src);
     }
   }
 
