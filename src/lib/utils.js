@@ -7,10 +7,24 @@ export function sleep(timeout) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 }
 
-export async function waitUntil(pred, timeout) {
+export async function waitUntil(pred, interval = waitUnit) {
   while (!pred()) {
-    await sleep(timeout);
+    await sleep(interval);
   }
+}
+
+export async function waitUntilNode(path, old = null, root = document, timeout = 1000, interval = waitUnit) {
+  let node = null;
+  let stop = false;
+  const waitP = waitUntil(() => {
+    node = xpathNode(path, root); 
+    return stop || (node !== old && node !== null);
+  }, interval);
+  const timeoutP = new Promise((r) => 
+    setTimeout(() => { stop = true; r("TIMEOUT")}, timeout)
+  )
+  await Promise.race([waitP, timeoutP]);
+  return node;
 }
 
 export function awaitLoad() {
