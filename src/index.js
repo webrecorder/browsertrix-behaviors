@@ -5,7 +5,6 @@ import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, instal
 
 import siteBehaviors from "./site";
 
-
 // ===========================================================================
 export class BehaviorManager
 {
@@ -69,12 +68,15 @@ export class BehaviorManager
         if (siteBehaviorClass.isMatch()) {
           behaviorLog("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
           this.mainBehaviorClass = siteBehaviorClass;
-          this.mainBehavior = new siteBehaviorClass();
+          const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
+            (opts.siteSpecific[siteBehaviorClass.name] || {}) : {};
+          console.log(siteSpecificOpts);
+          this.mainBehavior = new siteBehaviorClass(siteSpecificOpts);
           siteMatch = true;
           break;
         }
       }
-    } 
+    }
 
     if (!siteMatch && opts.autoscroll) {
       behaviorLog("Starting Autoscroll");
