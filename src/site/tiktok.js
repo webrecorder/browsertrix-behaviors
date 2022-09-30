@@ -1,6 +1,5 @@
 import { Behavior } from "../lib/behavior";
-import { sleep, xpathNode, xpathString, RestoreState,
-  waitUntil, waitUntilNode, xpathNodes, iterChildElem } from "../lib/utils";
+import { sleep, xpathNode, waitUntilNode, iterChildMatches } from "../lib/utils";
 
 /**
  * Steps for building behaviors:
@@ -13,27 +12,36 @@ import { sleep, xpathNode, xpathString, RestoreState,
  *                      such as number of links discovered, etc.
  *  - define a `[Symbol.asyncIterator]` method. This acts as the entrypoint
  *    for the behavior
- *    
+ *
  * */
 
-
+/** TODO:
+ *  - [x] Pass settings to __bx_behaviors.run()
+ *  - [x] Settings: nested, comment depth, comment breadth
+ *  - [x] Add watch command to Webpack (reference extension)
+ *  - [ ] General docs for now, API docs later (markdown preferred)
+ *  - [ ] Use video behavior in profile behavior
+ *  - [ ] DSL propasal
+*/
 
 /** NOTES:
- *  - General docs for now, API docs later
- *  - Markdown preferred
- *  - 
+ *  - YouTube behavior?
+ *  - Migrate to TypeScript
+ *  - Build each behavior separately?
+ *  - Allow people to "paste" in their compiled behaviors into the browser
+ *    extension or target specific behaviors to include in the crawler build
  */
-
 
 const Q = {
   commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
-  commentItemContainer: "//div[contains(@class, 'CommentItemContainer')]",
+  commentItemContainer: "./self::div[contains(@class, 'CommentItemContainer')]",
   viewMoreReplies:      ".//p[contains(@class, 'ReplyActionText')]",
   repliesLoading:       ".//p[contains(@class, 'ReplyActionContainer')/svg]",
   replyActionContainer: ".//div[contains(@class, 'ReplyActionContainer')]",
   viewMoreThread:       ".//p[starts-with(@data-e2e, 'view-more')]"
-}
+};
 
+export const BREADTH_ALL = Symbol("BREADTH_ALL");
 
 export class TikTokVideoBehavior extends Behavior {
   static isMatch() {
@@ -42,12 +50,14 @@ export class TikTokVideoBehavior extends Behavior {
   }
 
   static get name() {
-    return "TikTok";
+    return "TikTokVideo";
   }
 
-  constructor() {
+  constructor({ breadth = BREADTH_ALL }) {
     super();
+    this.opts = { breadth };
     this.state = { threads: 0, replies: 0 };
+    this.scrollOpts = {behavior: "smooth", block: "center", inline: "center"};
   }
 
   async scrollAndClick(node) {
@@ -56,21 +66,25 @@ export class TikTokVideoBehavior extends Behavior {
     node.click();
   }
 
-  async crawlThread(parentNode, prev = null) {
+  isBreadthAll() {
+    return this.opts.breadth === BREADTH_ALL;
+  }
+
+  async crawlThread(parentNode, prev = null, iter = 0) {
+    if (!this.isBreadthAll() && iter > this.opts.breadth) return;
     const next = await waitUntilNode(Q.viewMoreThread, prev, parentNode);
     if (next === null || next.innerText === "") return;
     this.state.replies++;
-    next.scrollIntoView(this.scrollOpts);
-    await sleep(500);
-    next.click();
-    return await this.crawlThread(parentNode, next);
+    this.scrollAndClick(next);
+    return await this.crawlThread(parentNode, next, iter + 1);
   }
 
   async* [Symbol.asyncIterator]() {
     const listNode = xpathNode(Q.commentListContainer);
-    for await (const item of iterChildElem(listNode, 1000, 10000)) {
+    for await (const item of iterChildMatches(Q.commentItemContainer, listNode, 200, 10000)) {
       this.state.threads++;
       item.scrollIntoView(this.scrollOpts);
+      console.log(item);
       const viewMore = xpathNode(Q.viewMoreReplies, item);
       if (viewMore) {
         await this.scrollAndClick(viewMore);
@@ -81,4 +95,3 @@ export class TikTokVideoBehavior extends Behavior {
     yield;
   }
 }
-
