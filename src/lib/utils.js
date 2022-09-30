@@ -17,12 +17,12 @@ export async function waitUntilNode(path, old = null, root = document, timeout =
   let node = null;
   let stop = false;
   const waitP = waitUntil(() => {
-    node = xpathNode(path, root); 
+    node = xpathNode(path, root);
     return stop || (node !== old && node !== null);
   }, interval);
-  const timeoutP = new Promise((r) => 
-    setTimeout(() => { stop = true; r("TIMEOUT")}, timeout)
-  )
+  const timeoutP = new Promise((r) =>
+    setTimeout(() => { stop = true; r("TIMEOUT"); }, timeout)
+  );
   await Promise.race([waitP, timeoutP]);
   return node;
 }
@@ -93,7 +93,7 @@ export class RestoreState {
 
   async restore(rootPath, childMatch) {
     let root = null;
-    
+
     while (root = xpathNode(rootPath), !root) {
       await sleep(100);
     }
@@ -134,7 +134,6 @@ export class HistoryState {
   }
 }
 
-
 // ===========================================================================
 export function xpathNode(path, root) {
   root = root || document;
@@ -172,6 +171,24 @@ export async function* iterChildElem(root, timeout, totalTimeout) {
   }
 }
 
+export async function* iterChildMatches(path, root, timeout, totalTimeout) {
+  let child = root.firstElementChild;
+
+  while (child) {
+    yield child;
+
+    const matchNode = (node) => node && xpathNode(path, node) ? node : null;
+    const getMatch = () => matchNode(child.nextElementSibling);
+    if (!getMatch()) {
+      await Promise.race([
+        waitUntil(() => getMatch(), timeout),
+        sleep(totalTimeout)
+      ]);
+    }
+
+    child = getMatch();
+  }
+}
 
 // ===========================================================================
 export function isInViewport(elem) {
@@ -182,4 +199,10 @@ export function isInViewport(elem) {
       bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
       bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
   );
+}
+
+export function scrollToOffset(element, offset = 0) {
+  const elPosition = element.getBoundingClientRect().top;
+  const topPosition = elPosition + window.pageYOffset - offset;
+  window.scrollTo({ top: topPosition, behavior: "smooth" });
 }
