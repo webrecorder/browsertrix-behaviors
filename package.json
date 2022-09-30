@@ -14,6 +14,9 @@
   "scripts": {
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development",
+    "build-dev-copy": "webpack --mode development && cat ./dist/behaviors.js | pbcopy",
+    "watch": "webpack watch --mode production",
+    "watch-dev": "webpack watch --mode development",
     "lint": "eslint ./src webpack.config.js"
   },
   "description": "Browsertrix Behaviors",
