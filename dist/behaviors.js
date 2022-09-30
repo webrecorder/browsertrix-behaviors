@@ -740,7 +740,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "installBehaviors": () => (/* binding */ installBehaviors),
 /* harmony export */   "isInViewport": () => (/* binding */ isInViewport),
 /* harmony export */   "iterChildElem": () => (/* binding */ iterChildElem),
+/* harmony export */   "iterChildMatches": () => (/* binding */ iterChildMatches),
 /* harmony export */   "openWindow": () => (/* binding */ openWindow),
+/* harmony export */   "scrollToOffset": () => (/* binding */ scrollToOffset),
 /* harmony export */   "sleep": () => (/* binding */ sleep),
 /* harmony export */   "waitUnit": () => (/* binding */ waitUnit),
 /* harmony export */   "waitUntil": () => (/* binding */ waitUntil),
@@ -768,12 +770,12 @@ async function waitUntilNode(path, old = null, root = document, timeout = 1000, 
   let node = null;
   let stop = false;
   const waitP = waitUntil(() => {
-    node = xpathNode(path, root); 
+    node = xpathNode(path, root);
     return stop || (node !== old && node !== null);
   }, interval);
-  const timeoutP = new Promise((r) => 
-    setTimeout(() => { stop = true; r("TIMEOUT")}, timeout)
-  )
+  const timeoutP = new Promise((r) =>
+    setTimeout(() => { stop = true; r("TIMEOUT"); }, timeout)
+  );
   await Promise.race([waitP, timeoutP]);
   return node;
 }
@@ -844,7 +846,7 @@ class RestoreState {
 
   async restore(rootPath, childMatch) {
     let root = null;
-    
+
     while (root = xpathNode(rootPath), !root) {
       await sleep(100);
     }
@@ -885,7 +887,6 @@ class HistoryState {
   }
 }
 
-
 // ===========================================================================
 function xpathNode(path, root) {
   root = root || document;
@@ -923,6 +924,24 @@ async function* iterChildElem(root, timeout, totalTimeout) {
   }
 }
 
+async function* iterChildMatches(path, root, timeout, totalTimeout) {
+  let child = root.firstElementChild;
+
+  while (child) {
+    yield child;
+
+    const matchNode = (node) => node && xpathNode(path, node) ? node : null;
+    const getMatch = () => matchNode(child.nextElementSibling);
+    if (!getMatch()) {
+      await Promise.race([
+        waitUntil(() => getMatch(), timeout),
+        sleep(totalTimeout)
+      ]);
+    }
+
+    child = getMatch();
+  }
+}
 
 // ===========================================================================
 function isInViewport(elem) {
@@ -933,6 +952,12 @@ function isInViewport(elem) {
       bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
       bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
   );
+}
+
+function scrollToOffset(element, offset = 0) {
+  const elPosition = element.getBoundingClientRect().top;
+  const topPosition = elPosition + window.pageYOffset - offset;
+  window.scrollTo({ top: topPosition, behavior: "smooth" });
 }
 
 
@@ -1766,6 +1791,7 @@ class TelegramBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Behavi
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "BREADTH_ALL": () => (/* binding */ BREADTH_ALL),
 /* harmony export */   "TikTokVideoBehavior": () => (/* binding */ TikTokVideoBehavior)
 /* harmony export */ });
 /* harmony import */ var _lib_behavior__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../lib/behavior */ "./src/lib/behavior.js");
@@ -1784,27 +1810,34 @@ __webpack_require__.r(__webpack_exports__);
  *                      such as number of links discovered, etc.
  *  - define a `[Symbol.asyncIterator]` method. This acts as the entrypoint
  *    for the behavior
- *    
+ *
  * */
 
-
-
 /** NOTES:
- *  - General docs for now, API docs later
- *  - Markdown preferred
- *  - 
+ *  - [ ] General docs for now, API docs later
+ *  - [ ] Markdown preferred
+ *  - [ ] Add watch command to Webpack (reference extension)
+ *  - [ ] DSL propasal
+ *  - [ ] Use video behavior in profile behavior
+ *  - [ ] Pass settings to __bx_behaviors.run()
+ *  - [x] Settings: nested, comment depth, comment breadth
+ *  - [ ] YouTube behavior?
+ *  - [ ] Migrate to TypeScript
+ *  - [ ] Build each behavior separately?
+ *  - [ ] Allow people to "paste" in their compiled behaviors into the browser
+ *        extension or target specific behaviors to include in the crawler build
  */
-
 
 const Q = {
   commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
-  commentItemContainer: "//div[contains(@class, 'CommentItemContainer')]",
+  commentItemContainer: "./self::div[contains(@class, 'CommentItemContainer')]",
   viewMoreReplies:      ".//p[contains(@class, 'ReplyActionText')]",
   repliesLoading:       ".//p[contains(@class, 'ReplyActionContainer')/svg]",
   replyActionContainer: ".//div[contains(@class, 'ReplyActionContainer')]",
   viewMoreThread:       ".//p[starts-with(@data-e2e, 'view-more')]"
-}
+};
 
+const BREADTH_ALL = Symbol("BREADTH_ALL");
 
 class TikTokVideoBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Behavior {
   static isMatch() {
@@ -1813,35 +1846,41 @@ class TikTokVideoBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Beh
   }
 
   static get name() {
-    return "TikTok";
+    return "TikTokVideo";
   }
 
-  constructor() {
+  constructor({ breadth = BREADTH_ALL }) {
     super();
+    this.opts = { breadth };
     this.state = { threads: 0, replies: 0 };
+    this.scrollOpts = {behavior: "smooth", block: "start", inline: "start"};
   }
 
   async scrollAndClick(node) {
-    node.scrollIntoView(this.scrollOpts);
+    (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollToOffset)(node, 80);
     await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.sleep)(500);
     node.click();
   }
 
-  async crawlThread(parentNode, prev = null) {
+  isBreadthAll() {
+    return this.opts.breadth === BREADTH_ALL;
+  }
+
+  async crawlThread(parentNode, prev = null, iter = 0) {
+    if (!this.isBreadthAll() && iter > this.opts.breadth) return;
     const next = await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.waitUntilNode)(Q.viewMoreThread, prev, parentNode);
     if (next === null || next.innerText === "") return;
     this.state.replies++;
-    next.scrollIntoView(this.scrollOpts);
-    await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.sleep)(500);
-    next.click();
-    return await this.crawlThread(parentNode, next);
+    this.scrollAndClick(next);
+    return await this.crawlThread(parentNode, next, iter + 1);
   }
 
   async* [Symbol.asyncIterator]() {
     const listNode = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.xpathNode)(Q.commentListContainer);
-    for await (const item of (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.iterChildElem)(listNode, 1000, 10000)) {
+    for await (const item of (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.iterChildMatches)(Q.commentItemContainer, listNode, 200, 10000)) {
       this.state.threads++;
-      item.scrollIntoView(this.scrollOpts);
+      (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollToOffset)(item, 80);
+      console.log(item);
       const viewMore = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.xpathNode)(Q.viewMoreReplies, item);
       if (viewMore) {
         await this.scrollAndClick(viewMore);
@@ -1852,7 +1891,6 @@ class TikTokVideoBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Beh
     yield;
   }
 }
-
 
 
 /***/ }),
@@ -2240,7 +2278,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 // ===========================================================================
 class BehaviorManager
 {
@@ -2304,12 +2341,15 @@ class BehaviorManager
         if (siteBehaviorClass.isMatch()) {
           (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.behaviorLog)("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
           this.mainBehaviorClass = siteBehaviorClass;
-          this.mainBehavior = new siteBehaviorClass();
+          const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
+            (opts.siteSpecific[siteBehaviorClass.name] || {}) : {};
+          console.log(siteSpecificOpts);
+          this.mainBehavior = new siteBehaviorClass(siteSpecificOpts);
           siteMatch = true;
           break;
         }
       }
-    } 
+    }
 
     if (!siteMatch && opts.autoscroll) {
       (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.behaviorLog)("Starting Autoscroll");
