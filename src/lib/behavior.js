@@ -1,6 +1,5 @@
 import { behaviorLog } from "./utils";
 
-
 // ===========================================================================
 export class BackgroundBehavior
 {
@@ -74,6 +73,14 @@ export class Behavior extends BackgroundBehavior
   }
 
   cleanup() {
-    
+
+  }
+
+  setOpts(opts) {
+    this.opts = opts;
+  }
+
+  getOpt(opt) {
+    return this.opts ? this.opts[opt] : null;
   }
 }

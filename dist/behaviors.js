@@ -643,7 +643,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/lib/utils.js");
 
 
-
 // ===========================================================================
 class BackgroundBehavior
 {
@@ -717,9 +716,18 @@ class Behavior extends BackgroundBehavior
   }
 
   cleanup() {
-    
+
+  }
+
+  setOpts(opts) {
+    this.opts = opts;
+  }
+
+  getOpt(opt) {
+    return this.opts ? this.opts[opt] : null;
   }
 }
+
 
 /***/ }),
 
@@ -742,6 +750,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "iterChildElem": () => (/* binding */ iterChildElem),
 /* harmony export */   "iterChildMatches": () => (/* binding */ iterChildMatches),
 /* harmony export */   "openWindow": () => (/* binding */ openWindow),
+/* harmony export */   "scrollAndClick": () => (/* binding */ scrollAndClick),
 /* harmony export */   "scrollToOffset": () => (/* binding */ scrollToOffset),
 /* harmony export */   "sleep": () => (/* binding */ sleep),
 /* harmony export */   "waitUnit": () => (/* binding */ waitUnit),
@@ -753,6 +762,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 let _logFunc = console.log;
 let _behaviorMgrClass = null;
+
+const scrollOpts = {behavior: "smooth", block: "center", inline: "center"};
+
+async function scrollAndClick(node, interval = 500, opts = scrollOpts) {
+  node.scrollIntoView(opts);
+  await sleep(interval);
+  node.click();
+}
 
 const waitUnit = 200;
 
@@ -766,7 +783,7 @@ async function waitUntil(pred, interval = waitUnit) {
   }
 }
 
-async function waitUntilNode(path, old = null, root = document, timeout = 1000, interval = waitUnit) {
+async function waitUntilNode(path, root = document, old = null, timeout = 1000, interval = waitUnit) {
   let node = null;
   let stop = false;
   const waitP = waitUntil(() => {
@@ -924,22 +941,23 @@ async function* iterChildElem(root, timeout, totalTimeout) {
   }
 }
 
-async function* iterChildMatches(path, root, timeout, totalTimeout) {
-  let child = root.firstElementChild;
-
-  while (child) {
-    yield child;
-
-    const matchNode = (node) => node && xpathNode(path, node) ? node : null;
-    const getMatch = () => matchNode(child.nextElementSibling);
-    if (!getMatch()) {
-      await Promise.race([
-        waitUntil(() => getMatch(), timeout),
-        sleep(totalTimeout)
-      ]);
-    }
-
-    child = getMatch();
+async function* iterChildMatches(
+  path, root, interval = waitUnit, timeout = 5000
+) {
+  let node = xpathNode(`.//${path}`, root);
+  const getMatch = (node) => xpathNode(`./following-sibling::${path}`, node);
+  while (node) {
+    yield node;
+    const next = getMatch(node);
+    if (next) { node = next; continue; }
+    await Promise.race([
+      waitUntil(() => {
+        const match = getMatch();
+        if (match) node = match;
+        return match;
+      }, interval),
+      sleep(timeout)
+    ]);
   }
 }
 
@@ -1799,96 +1817,63 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * Steps for building behaviors:
- *  - import 'Behavior' class from '../lib/behavior'
- *  - define new exported class that extends the 'Behavior' class
- *  - define an `isMatch` static method
- *  - define a `name` static getter method
- *  - define a constructor method that calls `super()`
- *  - [DEBUG(optional)] define a `this.state` attribute to log information
- *                      such as number of links discovered, etc.
- *  - define a `[Symbol.asyncIterator]` method. This acts as the entrypoint
- *    for the behavior
- *
- * */
-
-/** NOTES:
- *  - [ ] General docs for now, API docs later
- *  - [ ] Markdown preferred
- *  - [ ] Add watch command to Webpack (reference extension)
- *  - [ ] DSL propasal
- *  - [ ] Use video behavior in profile behavior
- *  - [ ] Pass settings to __bx_behaviors.run()
- *  - [x] Settings: nested, comment depth, comment breadth
- *  - [ ] YouTube behavior?
- *  - [ ] Migrate to TypeScript
- *  - [ ] Build each behavior separately?
- *  - [ ] Allow people to "paste" in their compiled behaviors into the browser
- *        extension or target specific behaviors to include in the crawler build
- */
-
 const Q = {
   commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
-  commentItemContainer: "./self::div[contains(@class, 'CommentItemContainer')]",
+  commentItemContainer: "div[contains(@class, 'CommentItemContainer')]",
   viewMoreReplies:      ".//p[contains(@class, 'ReplyActionText')]",
-  repliesLoading:       ".//p[contains(@class, 'ReplyActionContainer')/svg]",
-  replyActionContainer: ".//div[contains(@class, 'ReplyActionContainer')]",
   viewMoreThread:       ".//p[starts-with(@data-e2e, 'view-more')]"
 };
 
 const BREADTH_ALL = Symbol("BREADTH_ALL");
 
 class TikTokVideoBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Behavior {
-  static isMatch() {
-    const pathRe = /https:\/\/(www\.)?tiktok\.com\/@.+\/video\/\d+/;
-    return window.location.href.match(pathRe);
-  }
-
   static get name() {
     return "TikTokVideo";
   }
 
+  static isMatch() {
+    const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@.+\/video\/\d+/;
+    return window.location.href.match(pathRegex);
+  }
+
   constructor({ breadth = BREADTH_ALL }) {
     super();
-    this.opts = { breadth };
-    this.state = { threads: 0, replies: 0 };
-    this.scrollOpts = {behavior: "smooth", block: "start", inline: "start"};
+    this.setOpts({ breadth });
   }
 
-  async scrollAndClick(node) {
-    (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollToOffset)(node, 80);
-    await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.sleep)(500);
-    node.click();
+  shouldExitCrawlThread(next, iter) {
+    const breadth = this.getOpt("breadth");
+    const exhausted = breadth !== BREADTH_ALL && breadth <= iter;
+    return exhausted || next === null || next.innerText === "";
   }
 
-  isBreadthAll() {
-    return this.opts.breadth === BREADTH_ALL;
+  async* crawlThread(parentNode, prev = null, iter = 0) {
+    const next = await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.waitUntilNode)(Q.viewMoreThread, parentNode, prev);
+    if (this.shouldExitCrawlThread(next, iter)) return;
+    await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollAndClick)(next, 500);
+    yield this.getState("View more replies", "replies");
+    yield* this.crawlThread(parentNode, next, iter + 1);
   }
 
-  async crawlThread(parentNode, prev = null, iter = 0) {
-    if (!this.isBreadthAll() && iter > this.opts.breadth) return;
-    const next = await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.waitUntilNode)(Q.viewMoreThread, prev, parentNode);
-    if (next === null || next.innerText === "") return;
-    this.state.replies++;
-    this.scrollAndClick(next);
-    return await this.crawlThread(parentNode, next, iter + 1);
+  async* expandThread(item) {
+    const viewMore = await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.waitUntilNode)(Q.viewMoreReplies, item);
+    if (!viewMore) return;
+    yield this.getState("Expand thread", "expandedThreads");
+    await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollAndClick)(viewMore, 500);
+    yield* this.crawlThread(item, null, 1);
   }
 
   async* [Symbol.asyncIterator]() {
-    const listNode = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.xpathNode)(Q.commentListContainer);
-    for await (const item of (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.iterChildMatches)(Q.commentItemContainer, listNode, 200, 10000)) {
-      this.state.threads++;
-      (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollToOffset)(item, 80);
-      console.log(item);
-      const viewMore = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.xpathNode)(Q.viewMoreReplies, item);
-      if (viewMore) {
-        await this.scrollAndClick(viewMore);
-        await this.crawlThread(item);
+    const breadth = this.getOpt("breadth");
+    const commentList = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.xpathNode)(Q.commentListContainer);
+    const commentItems = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.iterChildMatches)(Q.commentItemContainer, commentList);
+    for await (const item of commentItems) {
+      item.scrollIntoView(this.scrollOpts);
+      yield this.getState("View thread", "threads");
+      if (breadth === BREADTH_ALL || breadth > 0) {
+        yield* this.expandThread(item);
       }
     }
-    console.log(this.state);
-    yield;
   }
 }
 

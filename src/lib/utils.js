@@ -1,6 +1,14 @@
 let _logFunc = console.log;
 let _behaviorMgrClass = null;
 
+const scrollOpts = {behavior: "smooth", block: "center", inline: "center"};
+
+export async function scrollAndClick(node, interval = 500, opts = scrollOpts) {
+  node.scrollIntoView(opts);
+  await sleep(interval);
+  node.click();
+}
+
 export const waitUnit = 200;
 
 export function sleep(timeout) {
@@ -13,7 +21,7 @@ export async function waitUntil(pred, interval = waitUnit) {
   }
 }
 
-export async function waitUntilNode(path, old = null, root = document, timeout = 1000, interval = waitUnit) {
+export async function waitUntilNode(path, root = document, old = null, timeout = 1000, interval = waitUnit) {
   let node = null;
   let stop = false;
   const waitP = waitUntil(() => {
@@ -171,22 +179,23 @@ export async function* iterChildElem(root, timeout, totalTimeout) {
   }
 }
 
-export async function* iterChildMatches(path, root, timeout, totalTimeout) {
-  let child = root.firstElementChild;
-
-  while (child) {
-    yield child;
-
-    const matchNode = (node) => node && xpathNode(path, node) ? node : null;
-    const getMatch = () => matchNode(child.nextElementSibling);
-    if (!getMatch()) {
-      await Promise.race([
-        waitUntil(() => getMatch(), timeout),
-        sleep(totalTimeout)
-      ]);
-    }
-
-    child = getMatch();
+export async function* iterChildMatches(
+  path, root, interval = waitUnit, timeout = 5000
+) {
+  let node = xpathNode(`.//${path}`, root);
+  const getMatch = (node) => xpathNode(`./following-sibling::${path}`, node);
+  while (node) {
+    yield node;
+    const next = getMatch(node);
+    if (next) { node = next; continue; }
+    await Promise.race([
+      waitUntil(() => {
+        const match = getMatch();
+        if (match) node = match;
+        return match;
+      }, interval),
+      sleep(timeout)
+    ]);
   }
 }
 
