@@ -70,7 +70,6 @@ export class BehaviorManager
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
             (opts.siteSpecific[siteBehaviorClass.name] || {}) : {};
-          console.log(siteSpecificOpts);
           this.mainBehavior = new siteBehaviorClass(siteSpecificOpts);
           siteMatch = true;
           break;
