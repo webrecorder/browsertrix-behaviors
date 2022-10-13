@@ -739,26 +739,26 @@ class Behavior extends BackgroundBehavior
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "HistoryState": () => (/* binding */ HistoryState),
-/* harmony export */   "RestoreState": () => (/* binding */ RestoreState),
-/* harmony export */   "_setBehaviorManager": () => (/* binding */ _setBehaviorManager),
-/* harmony export */   "_setLogFunc": () => (/* binding */ _setLogFunc),
-/* harmony export */   "awaitLoad": () => (/* binding */ awaitLoad),
-/* harmony export */   "behaviorLog": () => (/* binding */ behaviorLog),
-/* harmony export */   "installBehaviors": () => (/* binding */ installBehaviors),
-/* harmony export */   "isInViewport": () => (/* binding */ isInViewport),
-/* harmony export */   "iterChildElem": () => (/* binding */ iterChildElem),
-/* harmony export */   "iterChildMatches": () => (/* binding */ iterChildMatches),
-/* harmony export */   "openWindow": () => (/* binding */ openWindow),
 /* harmony export */   "scrollAndClick": () => (/* binding */ scrollAndClick),
-/* harmony export */   "scrollToOffset": () => (/* binding */ scrollToOffset),
-/* harmony export */   "sleep": () => (/* binding */ sleep),
 /* harmony export */   "waitUnit": () => (/* binding */ waitUnit),
+/* harmony export */   "sleep": () => (/* binding */ sleep),
 /* harmony export */   "waitUntil": () => (/* binding */ waitUntil),
 /* harmony export */   "waitUntilNode": () => (/* binding */ waitUntilNode),
+/* harmony export */   "awaitLoad": () => (/* binding */ awaitLoad),
+/* harmony export */   "behaviorLog": () => (/* binding */ behaviorLog),
+/* harmony export */   "openWindow": () => (/* binding */ openWindow),
+/* harmony export */   "_setLogFunc": () => (/* binding */ _setLogFunc),
+/* harmony export */   "_setBehaviorManager": () => (/* binding */ _setBehaviorManager),
+/* harmony export */   "installBehaviors": () => (/* binding */ installBehaviors),
+/* harmony export */   "RestoreState": () => (/* binding */ RestoreState),
+/* harmony export */   "HistoryState": () => (/* binding */ HistoryState),
 /* harmony export */   "xpathNode": () => (/* binding */ xpathNode),
 /* harmony export */   "xpathNodes": () => (/* binding */ xpathNodes),
-/* harmony export */   "xpathString": () => (/* binding */ xpathString)
+/* harmony export */   "xpathString": () => (/* binding */ xpathString),
+/* harmony export */   "iterChildElem": () => (/* binding */ iterChildElem),
+/* harmony export */   "iterChildMatches": () => (/* binding */ iterChildMatches),
+/* harmony export */   "isInViewport": () => (/* binding */ isInViewport),
+/* harmony export */   "scrollToOffset": () => (/* binding */ scrollToOffset)
 /* harmony export */ });
 let _logFunc = console.log;
 let _behaviorMgrClass = null;
@@ -1850,16 +1850,16 @@ class TikTokVideoBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Beh
   async* crawlThread(parentNode, prev = null, iter = 0) {
     const next = await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.waitUntilNode)(Q.viewMoreThread, parentNode, prev);
     if (this.shouldExitCrawlThread(next, iter)) return;
-    await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollAndClick)(next, 500);
     yield this.getState("View more replies", "replies");
+    await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollAndClick)(next, 500);
     yield* this.crawlThread(parentNode, next, iter + 1);
   }
 
   async* expandThread(item) {
-    const viewMore = await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.waitUntilNode)(Q.viewMoreReplies, item);
+    const viewMore = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.xpathNode)(Q.viewMoreReplies, item);
     if (!viewMore) return;
-    yield this.getState("Expand thread", "expandedThreads");
     await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollAndClick)(viewMore, 500);
+    yield this.getState("Expand thread", "expandedThreads");
     yield* this.crawlThread(item, null, 1);
   }
 
@@ -1874,6 +1874,7 @@ class TikTokVideoBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Beh
         yield* this.expandThread(item);
       }
     }
+    yield "TikTok Video Behavior Complete";
   }
 }
 
@@ -2193,9 +2194,8 @@ class TwitterTimelineBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
 /******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
+/******/ 		if(__webpack_module_cache__[moduleId]) {
+/******/ 			return __webpack_module_cache__[moduleId].exports;
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = __webpack_module_cache__[moduleId] = {
@@ -2275,6 +2275,13 @@ class BehaviorManager
   }
 
   init(opts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true}) {
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    console.log(">>>>>>>>>>>>>>>>>>> OPTIONS:", opts);
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     if (this.inited) {
       return;
     }
@@ -2322,13 +2329,12 @@ class BehaviorManager
     }
 
     if (opts.siteSpecific) {
-      for (const siteBehaviorClass of _site__WEBPACK_IMPORTED_MODULE_4__["default"]) {
+      for (const siteBehaviorClass of _site__WEBPACK_IMPORTED_MODULE_4__.default) {
         if (siteBehaviorClass.isMatch()) {
           (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.behaviorLog)("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
             (opts.siteSpecific[siteBehaviorClass.name] || {}) : {};
-          console.log(siteSpecificOpts);
           this.mainBehavior = new siteBehaviorClass(siteSpecificOpts);
           siteMatch = true;
           break;

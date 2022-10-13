@@ -34,16 +34,16 @@ export class TikTokVideoBehavior extends Behavior {
   async* crawlThread(parentNode, prev = null, iter = 0) {
     const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
     if (this.shouldExitCrawlThread(next, iter)) return;
-    await scrollAndClick(next, 500);
     yield this.getState("View more replies", "replies");
+    await scrollAndClick(next, 500);
     yield* this.crawlThread(parentNode, next, iter + 1);
   }
 
   async* expandThread(item) {
-    const viewMore = await waitUntilNode(Q.viewMoreReplies, item);
+    const viewMore = xpathNode(Q.viewMoreReplies, item);
     if (!viewMore) return;
-    yield this.getState("Expand thread", "expandedThreads");
     await scrollAndClick(viewMore, 500);
+    yield this.getState("Expand thread", "expandedThreads");
     yield* this.crawlThread(item, null, 1);
   }
 
@@ -58,5 +58,6 @@ export class TikTokVideoBehavior extends Behavior {
         yield* this.expandThread(item);
       }
     }
+    yield "TikTok Video Behavior Complete";
   }
 }
