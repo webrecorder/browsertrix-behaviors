@@ -1,5 +1,5 @@
 import { Behavior } from "../lib/behavior";
-import { xpathNode, waitUntilNode, iterChildMatches, scrollAndClick } from "../lib/utils";
+import { iterChildMatches, scrollAndClick, waitUntilNode, xpathNode } from "../lib/utils";
 
 const Q = {
   commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
@@ -34,8 +34,8 @@ export class TikTokVideoBehavior extends Behavior {
   async* crawlThread(parentNode, prev = null, iter = 0) {
     const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
     if (this.shouldExitCrawlThread(next, iter)) return;
-    yield this.getState("View more replies", "replies");
     await scrollAndClick(next, 500);
+    yield this.getState("View more replies", "replies");
     yield* this.crawlThread(parentNode, next, iter + 1);
   }
 

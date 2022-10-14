@@ -237,7 +237,8 @@ utilizes it with other parameters.
 Let's now import the `iterChildMatches` function from our utils module:
 
 ```javascript
-import { xpathNode, iterChildMatches } from "../lib/utils";
+import { iterChildMatches, xpathNode } from "../lib/utils";
+//       ^---- New import
 ```
 
 This function takes a query just as `xpathNode` does, along with a parent node
@@ -308,7 +309,7 @@ for await (const item of commentItems) {
 Our behavior now yields a result each time we scroll to a comment, and the
 extension can now pause and resume the scrolling behavior.
 
-### 📖 Expanding comment threads
+## 📖 Expanding comment threads
 
 Since we're able to identify each comment, we can now look for specific parts of
 the element like buttons that perform actions on the page. Let's define a new
@@ -343,8 +344,8 @@ before continuing on. Let's import a handy function that will both scroll the
 button into the view as well as click it after a provided amount of time:
 
 ```javascript
-import { xpathNode, iterChildMatches, scrollAndClick } from "../lib/utils";
-//                                    ^---- new import
+import { iterChildMatches, scrollAndClick, xpathNode } from "../lib/utils";
+//                         ^---- New import
 ```
 
 We can now use `scrollAndClick` in our new method as well as `this.getState` to
@@ -383,3 +384,91 @@ export class TikTokVideoBehavior extends Behavior {
 Note that we use the `yield*` keyword in order to yield each result of the
 `expandThread` method one at a time. This maintains our fine-grained control
 over pausing and resuming the behavior.
+
+## 🏁 Checkpoint: Testing our behavior in ArchiveWeb.page
+
+> Content pending...
+
+## 🔁 Recursively expanding comment threads
+
+So far only the initial "View more comments" button is clicked and the resulting
+content is loaded, but in order to fully scrape entire videos' comment sections
+we'll need to go beyond just loading one set of replies.
+
+One tactic we can use is a recursive method that clicks the `View more` button
+that appearsa when more comments are available to load in each thread after
+initial expansion. There are a few things to consider:
+
+1. The `View more` button doesn't exist until we've already clicked
+   `View more replies`.
+1. The button may not appear at all if the end of the thread has been reached.
+1. Clicking the button once "destroys" it and once a new group of comments has
+   loaded, a new button accompanies them.
+
+### The `waitUntilNode` helper function
+
+The main tool we'll use to alleviate some of these complexities is called
+`waitUntilNode`:
+
+```javascript
+import { iterChildMatches, scrollAndClick, waitUntilNode, xpathNode } from "../lib/utils";
+//                                         ^---- New import
+```
+
+Similar to our other query helper functions, `waitUntilNode` takes an XPath
+query along with a parent node, but it returns a `Promise` as it waits for some
+period of time before giving up on the query. It also accepts a third argument
+that compares another node instance against what the query returns. This is
+particularly needed for item 3 in the above list.
+
+### Defining a `crawlThread` method
+
+Let's add the last query we'll need to crawl comment threads, which targets the
+`View more` buttons:
+
+```javascript
+const Q = {
+  // ...
+  viewMoreThread: ".//p[starts-with(@data-e2e, 'view-more')]"
+};
+```
+
+Now we can define a `crawlThread` method that utilizes our new query as well as
+the `waitUntilNode` function:
+
+```javascript
+export class TikTokVideoBehavior extends Behavior {
+  // ...
+  async* crawlThread(parentNode, prev = null) {
+    const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
+    if (!next) return;
+  }
+  // ...
+}
+```
+
+Similarly to `expandThread` we exit the function if no button is found. We
+added a `prev` argument to the method with a default value of `null`. This will
+allow us to call the method recursively with our `next` node if it exists.
+
+Let's complete our new method like so:
+
+```javascript
+export class TikTokVideoBehavior extends Behavior {
+  // ...
+  async* crawlThread(parentNode, prev = null) {
+    const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
+    if (!next) return;
+    await scrollAndClick(next, 500);
+    yield this.getState("View more replies", "replies");
+    yield* this.crawlThread(parentNode, next);
+  }
+  // ...
+}
+```
+
+> Rest incoming...
+
+## 🔌 Defining behavior options
+
+> Content pending...
