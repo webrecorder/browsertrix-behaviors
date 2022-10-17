@@ -115,7 +115,7 @@ class TikTokVideoBehavior extends Behavior {
 
 For now we're just logging out the result returned by the query.
 
-## 🏁 Checkpoint: Testing our code so far
+## 🏳  Checkpoint: Testing our code so far
 
 Let's test the pieces we've built so far in the browser. At this point your
 `src/site/tiktok.js` module should look something like this:
@@ -189,7 +189,7 @@ Chrome for example by following these steps:
 1. At the bottom of the window click the "Play" button or press `Ctrl/Cmd+Enter`
 
 Our code is now loaded into the browser, and we can interact with it directly.
-In order to run our new behvaior, open the `Console` tab in the Developer Tools
+In order to run our new behavior, open the `Console` tab in the Developer Tools
 and run the following code:
 
 ```javascript
@@ -337,7 +337,7 @@ export class TikTokVideoBehavior extends Behavior {
 }
 ```
 
-As you can see, we've targetted the "View more replies" button with our query
+As you can see, we've targeted the "View more replies" button with our query
 using `xpathNode`; note that it also takes a "parent" argument that specifies
 where to look. Our new method then checks whether or not the button exists
 before continuing on. Let's import a handy function that will both scroll the
@@ -385,7 +385,7 @@ Note that we use the `yield*` keyword in order to yield each result of the
 `expandThread` method one at a time. This maintains our fine-grained control
 over pausing and resuming the behavior.
 
-## 🏁 Checkpoint: Testing our behavior in ArchiveWeb.page
+## 🏳  Checkpoint: Testing our behavior in ArchiveWeb.page
 
 > Content pending...
 
@@ -467,8 +467,255 @@ export class TikTokVideoBehavior extends Behavior {
 }
 ```
 
-> Rest incoming...
+Using recursion is the key to this method, as it relies on previous versions of
+a similar node in order to iterate through the entirety of a comment thread.
+
+There is a slight edge-case that can occur that we must account for, however. In
+some instances, an element matching our `viewMoreThread` button will appear with
+empty text. For our purposes, this indicates that there's either a delay in all
+of the properties of new element appearing or that our thread has no more
+replies to load. We can fix this by adding an additional logic check, but a more
+elegant solution lies within our XPath query:
+
+```javascript
+const Q = {
+  // ...
+  viewMoreThread: ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]"
+};
+```
+
+By using the `string-length(text())` function, we have access to the inner text
+of our target element. Our query now ignores the edge-case when a blank button
+appears on the page.
+
+Lastly, our expandThread method needs to call our new crawling method after it's
+finished expanding the first round of replies:
+
+```javascript
+export class TikTokVideoBehavior extends Behavior {
+  // ...
+  async* expandThread(item) {
+    const viewMore = xpathNode(Q.viewMoreReplies, item);
+    if (!viewMore) return;
+    await scrollAndClick(viewMore, 500);
+    yield this.getState("Expand thread", "expandedThreads");
+    yield* this.crawlThread(item, null);
+    // ^ Begin crawling through additional replies
+  }
+  // ...
+}
+```
+
+We pass `null` as our second argument to `crawlThread` in order to specify that
+no previous element exists. This allows for the first `waitUntilNode` call to
+return the first element matching our `viewMoreThread` query without checking
+for a previous version of the element.
 
 ## 🔌 Defining behavior options
 
-> Content pending...
+While passing options to our behavior through the extension isn't currently
+available, we can both plan for that future functionality as well as allow code
+that injects these behaviors to use them.
+
+One example of a useful option is defining `breadth`, that is how many times
+we'd like to expand each thread before moving on to the next. In some cases we
+may want to see every reply, but for videos with a large number of comments it's
+often more practical to only see a limited amount of top replies.
+
+We'll define the `breadth` option one of two types:
+- a number representing how many times we want to click the "more replies" button
+- a symbol that tells the behavior to look through every reply
+
+Since the latter option is how our behavior has worked all along, we'll define
+it as a default when no `breadth` option is provided.
+
+### The `setOpts` and `getOpts` methods
+
+First let's define a symbol:
+
+```javascript
+export const BREADTH_ALL = Symbol("BREADTH_ALL");
+```
+
+Next, we modify our `constructor` class method:
+
+```javascript
+export class TikTokVideoBehavior extends Behavior {
+  // ...
+  constructor({ breadth = BREADTH_ALL }) {
+    super();
+    this.setOpts({ breadth });
+  }
+  // ...
+}
+```
+
+As we can see, our behavior expects all options to be passed as an object to the
+class constructor. We then use the `setOpts` method included in the base class,
+which stores our `breadth` option for later use.
+
+Let's define a `breadthComplete` method that checks whether a number exceeds the
+amount of iterations defined in our behavior's options:
+
+```javascript
+export class TikTokVideoBehavior extends Behavior {
+  // ...
+  breadthComplete(iter) {
+    const breadth = this.getOpt("breadth");
+    return breadth !== BREADTH_ALL && breadth <= iter;
+  }
+  // ...
+}
+```
+
+This method uses the corresponding `getOpts` method defined in the base class.
+
+### Integrating `breadthComplete` into our behavior
+
+We can now use our new helper method to check whether we want to expand any
+threads at all in our `Symbol.asyncIterator` method:
+
+```javascript
+export class TikTokVideoBehavior extends Behavior {
+  // ...
+  async* [Symbol.asyncIterator]() {
+    const commentList = xpathNode(Q.commentListContainer);
+    const commentItems = iterChildMatches(Q.commentItemContainer, commentList);
+    for await (const item of commentItems) {
+      item.scrollIntoView(this.scrollOpts);
+      yield this.getState("View thread", "threads");
+      if (this.breadthComplete(0)) continue;
+      // ^ Continue without expanding the thread if `breadth` is 0
+      yield* this.expandThread(item);
+    }
+    yield "TikTok Video Behavior Complete";
+  }
+  // ...
+}
+```
+
+Next, we'll modify our `crawlThread` method:
+
+```javascript
+export class TikTokVideoBehavior extends Behavior {
+  // ...
+  async* crawlThread(parentNode, prev = null, iter = 0) {
+    const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
+    if (!next || this.breadthComplete(iter)) return;
+    await scrollAndClick(next, 500);
+    yield this.getState("View more replies", "replies");
+    yield* this.crawlThread(parentNode, next, iter + 1);
+  }
+  // ...
+}
+```
+
+We've added a new extra `iter` parameter in order to track how many times we've
+loaded new replies. This number is incremented on each recursive call.
+Additionally, we check if `breadthComplete` is true when looking for our next
+button.
+
+Finally, the `expandThread` method needs to pass an initial `iter` parameter to
+`crawlThread`. Since `expandThread` does load more replies, our initial number
+is `1`:
+
+```javascript
+export class TikTokVideoBehavior extends Behavior {
+  // ...
+  async* expandThread(item) {
+    const viewMore = xpathNode(Q.viewMoreReplies, item);
+    if (!viewMore) return;
+    await scrollAndClick(viewMore, 500);
+    yield this.getState("Expand thread", "expandedThreads");
+    yield* this.crawlThread(item, null, 1);
+  }
+  // ...
+}
+```
+
+## 🏁 Finishing up: Our TikTok video behavior
+
+Congratulations! We've completed a working TikTok video behavior that iterates
+through each thread and their replies. The final code looks something like this:
+
+```javascript
+import { Behavior } from "../lib/behavior";
+import { iterChildMatches, scrollAndClick, waitUntilNode, xpathNode } from "../lib/utils";
+
+const Q = {
+  commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
+  commentItemContainer: "div[contains(@class, 'CommentItemContainer')]",
+  viewMoreReplies:      ".//p[contains(@class, 'ReplyActionText')]",
+  viewMoreThread:       ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]"
+};
+
+export const BREADTH_ALL = Symbol("BREADTH_ALL");
+
+export class TikTokVideoBehavior extends Behavior {
+  static get name() {
+    return "TikTokVideo";
+  }
+
+  static isMatch() {
+    const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@.+\/video\/\d+/;
+    return window.location.href.match(pathRegex);
+  }
+
+  constructor({ breadth = BREADTH_ALL }) {
+    super();
+    this.setOpts({ breadth });
+  }
+
+  breadthComplete(iter) {
+    const breadth = this.getOpt("breadth");
+    return breadth !== BREADTH_ALL && breadth <= iter;
+  }
+
+  async* crawlThread(parentNode, prev = null, iter = 0) {
+    const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
+    if (!next || this.breadthComplete(iter)) return;
+    await scrollAndClick(next, 500);
+    yield this.getState("View more replies", "replies");
+    yield* this.crawlThread(parentNode, next, iter + 1);
+  }
+
+  async* expandThread(item) {
+    const viewMore = xpathNode(Q.viewMoreReplies, item);
+    if (!viewMore) return;
+    await scrollAndClick(viewMore, 500);
+    yield this.getState("Expand thread", "expandedThreads");
+    yield* this.crawlThread(item, null, 1);
+  }
+
+  async* [Symbol.asyncIterator]() {
+    const commentList = xpathNode(Q.commentListContainer);
+    const commentItems = iterChildMatches(Q.commentItemContainer, commentList);
+    for await (const item of commentItems) {
+      item.scrollIntoView(this.scrollOpts);
+      yield this.getState("View thread", "threads");
+      if (this.breadthComplete(0)) continue;
+      yield* this.expandThread(item);
+    }
+    yield "TikTok Video Behavior Complete";
+  }
+}
+```
+
+In our first checkpoint we saw how to run our behavior on a webpage. We can also
+include our new `breadth` option in this process in our console. To do so, we
+pass an object instead of `true` to the `siteSpecific` option. We use the string
+found in the static `name` method to reference our class:
+
+```javascript
+self.__bx_behaviors.run({
+  autofetch: false,
+  autoplay: false,
+  autoscroll: false,
+  siteSpecific: {
+    TikTokVideo: { breadth: 3 }
+  }
+});
+```
+
+Running this code on a video page will now only expand threads three times
+before moving on to the next.

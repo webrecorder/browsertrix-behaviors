@@ -1821,7 +1821,7 @@ const Q = {
   commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
   commentItemContainer: "div[contains(@class, 'CommentItemContainer')]",
   viewMoreReplies:      ".//p[contains(@class, 'ReplyActionText')]",
-  viewMoreThread:       ".//p[starts-with(@data-e2e, 'view-more')]"
+  viewMoreThread:       ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]"
 };
 
 const BREADTH_ALL = Symbol("BREADTH_ALL");
@@ -1841,17 +1841,16 @@ class TikTokVideoBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Beh
     this.setOpts({ breadth });
   }
 
-  shouldExitCrawlThread(next, iter) {
+  breadthComplete(iter) {
     const breadth = this.getOpt("breadth");
-    const exhausted = breadth !== BREADTH_ALL && breadth <= iter;
-    return exhausted || next === null || next.innerText === "";
+    return breadth !== BREADTH_ALL && breadth <= iter;
   }
 
   async* crawlThread(parentNode, prev = null, iter = 0) {
     const next = await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.waitUntilNode)(Q.viewMoreThread, parentNode, prev);
-    if (this.shouldExitCrawlThread(next, iter)) return;
-    yield this.getState("View more replies", "replies");
+    if (!next || this.breadthComplete(iter)) return;
     await (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.scrollAndClick)(next, 500);
+    yield this.getState("View more replies", "replies");
     yield* this.crawlThread(parentNode, next, iter + 1);
   }
 
@@ -1864,15 +1863,13 @@ class TikTokVideoBehavior extends _lib_behavior__WEBPACK_IMPORTED_MODULE_0__.Beh
   }
 
   async* [Symbol.asyncIterator]() {
-    const breadth = this.getOpt("breadth");
     const commentList = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.xpathNode)(Q.commentListContainer);
     const commentItems = (0,_lib_utils__WEBPACK_IMPORTED_MODULE_1__.iterChildMatches)(Q.commentItemContainer, commentList);
     for await (const item of commentItems) {
       item.scrollIntoView(this.scrollOpts);
       yield this.getState("View thread", "threads");
-      if (breadth === BREADTH_ALL || breadth > 0) {
-        yield* this.expandThread(item);
-      }
+      if (this.breadthComplete(0)) continue;
+      yield* this.expandThread(item);
     }
     yield "TikTok Video Behavior Complete";
   }
