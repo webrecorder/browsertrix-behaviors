@@ -17,13 +17,6 @@ export class BehaviorManager
   }
 
   init(opts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true}) {
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    console.log(">>>>>>>>>>>>>>>>>>> OPTIONS:", opts);
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     if (this.inited) {
       return;
     }
@@ -72,6 +65,9 @@ export class BehaviorManager
 
     if (opts.siteSpecific) {
       for (const siteBehaviorClass of siteBehaviors) {
+        console.log(siteBehaviorClass.name);
+        console.log(window.location.href);
+        console.log(siteBehaviorClass.isMatch());
         if (siteBehaviorClass.isMatch()) {
           behaviorLog("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
           this.mainBehaviorClass = siteBehaviorClass;
