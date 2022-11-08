@@ -186,16 +186,16 @@ export async function* iterChildMatches(
   const getMatch = (node) => xpathNode(`./following-sibling::${path}`, node);
   while (node) {
     yield node;
-    const next = getMatch(node);
+    let next = getMatch(node);
     if (next) { node = next; continue; }
     await Promise.race([
       waitUntil(() => {
-        const match = getMatch();
-        if (match) node = match;
-        return match;
+        next = getMatch(node);
+        return next;
       }, interval),
       sleep(timeout)
     ]);
+    node = next;
   }
 }
 
