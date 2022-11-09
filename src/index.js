@@ -65,9 +65,6 @@ export class BehaviorManager
 
     if (opts.siteSpecific) {
       for (const siteBehaviorClass of siteBehaviors) {
-        console.log(siteBehaviorClass.name);
-        console.log(window.location.href);
-        console.log(siteBehaviorClass.isMatch());
         if (siteBehaviorClass.isMatch()) {
           behaviorLog("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
           this.mainBehaviorClass = siteBehaviorClass;
