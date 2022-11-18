@@ -1,16 +1,38 @@
 let _logFunc = console.log;
 let _behaviorMgrClass = null;
 
+const scrollOpts = {behavior: "smooth", block: "center", inline: "center"};
+
+export async function scrollAndClick(node, interval = 500, opts = scrollOpts) {
+  node.scrollIntoView(opts);
+  await sleep(interval);
+  node.click();
+}
+
 export const waitUnit = 200;
 
 export function sleep(timeout) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 }
 
-export async function waitUntil(pred, timeout) {
+export async function waitUntil(pred, interval = waitUnit) {
   while (!pred()) {
-    await sleep(timeout);
+    await sleep(interval);
   }
+}
+
+export async function waitUntilNode(path, root = document, old = null, timeout = 1000, interval = waitUnit) {
+  let node = null;
+  let stop = false;
+  const waitP = waitUntil(() => {
+    node = xpathNode(path, root);
+    return stop || (node !== old && node !== null);
+  }, interval);
+  const timeoutP = new Promise((r) =>
+    setTimeout(() => { stop = true; r("TIMEOUT"); }, timeout)
+  );
+  await Promise.race([waitP, timeoutP]);
+  return node;
 }
 
 export function awaitLoad() {
@@ -79,7 +101,7 @@ export class RestoreState {
 
   async restore(rootPath, childMatch) {
     let root = null;
-    
+
     while (root = xpathNode(rootPath), !root) {
       await sleep(100);
     }
@@ -120,7 +142,6 @@ export class HistoryState {
   }
 }
 
-
 // ===========================================================================
 export function xpathNode(path, root) {
   root = root || document;
@@ -158,6 +179,25 @@ export async function* iterChildElem(root, timeout, totalTimeout) {
   }
 }
 
+export async function* iterChildMatches(
+  path, root, interval = waitUnit, timeout = 5000
+) {
+  let node = xpathNode(`.//${path}`, root);
+  const getMatch = (node) => xpathNode(`./following-sibling::${path}`, node);
+  while (node) {
+    yield node;
+    let next = getMatch(node);
+    if (next) { node = next; continue; }
+    await Promise.race([
+      waitUntil(() => {
+        next = getMatch(node);
+        return next;
+      }, interval),
+      sleep(timeout)
+    ]);
+    node = next;
+  }
+}
 
 // ===========================================================================
 export function isInViewport(elem) {
@@ -168,4 +208,10 @@ export function isInViewport(elem) {
       bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
       bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
   );
+}
+
+export function scrollToOffset(element, offset = 0) {
+  const elPosition = element.getBoundingClientRect().top;
+  const topPosition = elPosition + window.pageYOffset - offset;
+  window.scrollTo({ top: topPosition, behavior: "smooth" });
 }

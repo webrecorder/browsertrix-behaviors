@@ -3,7 +3,7 @@
 const webpack = require("webpack");
 const TerserPlugin = require("terser-webpack-plugin");
 
-module.exports = (env, argv) => {
+module.exports = (_env, argv) => {
   const config = {
     mode: argv.mode,
     plugins: [
@@ -24,7 +24,7 @@ module.exports = (env, argv) => {
     }
   };
 
-  console.log(argv.mode);
+  console.log(">>> Running build in", argv.mode, "mode");
   if (argv.mode === "development") {
     config.devtool = "nosources-source-map";
     config.optimization.minimize = false;
@@ -32,4 +32,3 @@ module.exports = (env, argv) => {
 
   return config;
 };
-
