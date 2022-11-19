@@ -1,7 +1,6 @@
 import { Behavior } from "../lib/behavior";
 import { sleep, xpathNode, xpathString, HistoryState, RestoreState, waitUnit } from "../lib/utils";
 
-
 // ===========================================================================
 export class TwitterTimelineBehavior extends Behavior
 {
@@ -13,9 +12,9 @@ export class TwitterTimelineBehavior extends Behavior
     return "Twitter";
   }
 
-  constructor(maxDepth = 0) {
+  constructor({ maxDepth = 0}) {
     super();
-    this.maxDepth = maxDepth || 0;
+    this.setOpts({ maxDepth });
 
     //this.rootPath = "//div[starts-with(@aria-label, 'Timeline')]/*[1]";
     this.rootPath = "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]/*[1]";
@@ -119,7 +118,7 @@ export class TwitterTimelineBehavior extends Behavior
       }
 
       if (child && child.innerText) {
-        child.scrollIntoView(this.scrollOpts);      
+        child.scrollIntoView(this.scrollOpts);
       }
 
       if (child && anchorElem) {
@@ -218,7 +217,6 @@ export class TwitterTimelineBehavior extends Behavior
       // await any video or audio
       yield* this.mediaPlaying(tweet);
 
-
       // track location to see if click goes to new url
       yield* this.clickTweet(tweet, depth);
 
@@ -267,9 +265,9 @@ export class TwitterTimelineBehavior extends Behavior
 
     if (tweetState.changed) {
       yield this.getState("Capturing Tweet: " + window.location.href, "tweets");
-
-      if (depth < this.maxDepth && !this.seenTweets.has(window.location.href)) {
-        yield* this.iterTimeline(depth + 1, this.maxDepth);
+      const maxDepth = this.getOpt("maxDepth");
+      if (depth < maxDepth && !this.seenTweets.has(window.location.href)) {
+        yield* this.iterTimeline(depth + 1, maxDepth);
       }
 
       this.seenTweets.add(window.location.href);
