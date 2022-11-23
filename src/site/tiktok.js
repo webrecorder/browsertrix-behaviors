@@ -1,11 +1,14 @@
 import { Behavior } from "../lib/behavior";
-import { iterChildMatches, scrollAndClick, waitUntilNode, xpathNode } from "../lib/utils";
+import { HistoryState, iterChildMatches, scrollAndClick, sleep, waitUntilNode, xpathNode } from "../lib/utils";
 
 const Q = {
-  commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
-  commentItemContainer: "div[contains(@class, 'CommentItemContainer')]",
-  viewMoreReplies:      ".//p[contains(@class, 'ReplyActionText')]",
-  viewMoreThread:       ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]"
+  commentList:      "//div[contains(@class, 'CommentListContainer')]",
+  commentItem:      "div[contains(@class, 'CommentItemContainer')]",
+  viewMoreReplies:  ".//p[contains(@class, 'ReplyActionText')]",
+  viewMoreThread:   ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]",
+  profileVideoList: "//div[starts-with(@data-e2e, 'user-post-item-list')]",
+  profileVideoItem: "div[contains(@class, 'DivItemContainerV2')]",
+  backButton:       "button[contains(@class, 'StyledCloseIconContainer')]"
 };
 
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
@@ -16,7 +19,7 @@ export class TikTokVideoBehavior extends Behavior {
   }
 
   static isMatch() {
-    const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@.+\/video\/\d+/;
+    const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@.+\/video\/\d+\/?.*/;
     return window.location.href.match(pathRegex);
   }
 
@@ -47,8 +50,8 @@ export class TikTokVideoBehavior extends Behavior {
   }
 
   async* [Symbol.asyncIterator]() {
-    const commentList = xpathNode(Q.commentListContainer);
-    const commentItems = iterChildMatches(Q.commentItemContainer, commentList);
+    const commentList = xpathNode(Q.commentList);
+    const commentItems = iterChildMatches(Q.commentItem, commentList);
     for await (const item of commentItems) {
       item.scrollIntoView(this.scrollOpts);
       yield this.getState("View thread", "threads");
@@ -56,5 +59,46 @@ export class TikTokVideoBehavior extends Behavior {
       yield* this.expandThread(item);
     }
     yield "TikTok Video Behavior Complete";
+  }
+}
+
+export class TiktokPofileBehavior extends Behavior {
+  static get name() {
+    return "TikTokVideo";
+  }
+
+  static isMatch() {
+    const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@.+\/?.*/;
+    return window.location.href.match(pathRegex);
+  }
+
+  constructor({ breadth = BREADTH_ALL }) {
+    super();
+    this.setOpts({ breadth });
+  }
+
+  async* openVideo(item) {
+    const link = xpathNode(".//a", item);
+    if (!link) return;
+    const viewState = new HistoryState(() => link.click());
+    await sleep(500);
+    if (viewState.changed) {
+      const videoBehavior = new TikTokVideoBehavior({});
+      yield* videoBehavior;
+      await sleep(500);
+      await viewState.goBack(Q.backButton);
+    }
+  }
+
+  async* [Symbol.asyncIterator]() {
+    const profileVideoList = xpathNode(Q.profileVideoList);
+    const profileVideos = iterChildMatches(Q.profileVideoItem, profileVideoList);
+    for await (const item of profileVideos) {
+      item.scrollIntoView(this.scrollOpts);
+      yield this.getState("View video", "videos");
+      yield* this.openVideo(item);
+      await sleep(500);
+    }
+    yield "TikTok Profile Behavior Complete";
   }
 }

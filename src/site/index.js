@@ -2,14 +2,15 @@ import { FacebookTimelineBehavior } from "./facebook";
 import { InstagramPostsBehavior } from "./instagram";
 import { TelegramBehavior } from "./telegram";
 import { TwitterTimelineBehavior } from "./twitter";
-import { TikTokVideoBehavior } from "./tiktok";
+import { TikTokVideoBehavior, TiktokPofileBehavior } from "./tiktok";
 
 const siteBehaviors = [
   InstagramPostsBehavior,
   TwitterTimelineBehavior,
   FacebookTimelineBehavior,
   TelegramBehavior,
-  TikTokVideoBehavior
+  TikTokVideoBehavior,
+  TiktokPofileBehavior
 ];
 
 export default siteBehaviors;
