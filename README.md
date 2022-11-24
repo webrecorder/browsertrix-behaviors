@@ -34,7 +34,7 @@ No additional dependencies are required, and the behaviors file can be pasted di
 The file can injected in a number of ways, using tools like puppeteer/playwright, a browser extension content script, or even a devtools Snippet, or even a regular
 `<script>` tag. Injecting the behaviors into the browser is outside the scope of this repo, but here are a few ways you can try the behaviors:
 
-For an extensive walkthrough of creating your own behaviors, [follow the Tutorial][docs/TUTORIAL.md].
+For an extensive walkthrough of creating your own behaviors, [follow the Tutorial](docs/TUTORIAL.md).
 
 ### Copy & Paste Behaviors (for testing)
 
