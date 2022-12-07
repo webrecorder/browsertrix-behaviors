@@ -83,7 +83,8 @@ export class TiktokPofileBehavior extends Behavior {
     const viewState = new HistoryState(() => link.click());
     await sleep(500);
     if (viewState.changed) {
-      const videoBehavior = new TikTokVideoBehavior({});
+      const breadth = this.getOpts("breadth");
+      const videoBehavior = new TikTokVideoBehavior({ breadth });
       yield* videoBehavior;
       await sleep(500);
       await viewState.goBack(Q.backButton);

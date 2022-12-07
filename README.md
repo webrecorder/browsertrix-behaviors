@@ -64,7 +64,7 @@ self.__bx_behaviors.init({
 });
 `);
 
-# call and await run on top frame and all child iframes
+// call and await run on top frame and all child iframes
 await Promise.allSettled(page.frames().map(frame => frame.evaluate("self.__bx_behaviors.run()")));
 
 ```
