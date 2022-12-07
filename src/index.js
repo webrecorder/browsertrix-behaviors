@@ -125,6 +125,19 @@ export class BehaviorManager
     }
   }
 
+  async runOne(name, opts = {}) {
+    const siteBehaviorClass = siteBehaviors.find(b => b.name === name);
+    if (typeof siteBehaviorClass === "undefined") {
+      console.error(`No behavior of name ${name} found`);
+      return;
+    }
+    const behavior = new siteBehaviorClass(opts);
+    behavior.start();
+    console.log(`Running behavior: ${name}`);
+    await behavior.done();
+    console.log(`Behavior ${name} completed`);
+  }
+
   pause() {
     behaviorLog("Pausing Main Behavior" + this.mainBehaviorClass.name);
     if (this.mainBehavior) {

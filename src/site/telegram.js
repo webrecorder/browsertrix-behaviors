@@ -1,10 +1,13 @@
 import { Behavior } from "../lib/behavior";
 import { sleep, xpathNode, waitUnit, xpathString } from "../lib/utils";
 
-
 // ===========================================================================
 export class TelegramBehavior extends Behavior
 {
+  static name() {
+    return "Telegram";
+  }
+
   static isMatch() {
     return window.location.href.match(/https:\/\/t.me\/s\/\w[\w]+/);
   }
