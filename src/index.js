@@ -125,13 +125,13 @@ export class BehaviorManager
     }
   }
 
-  async runOne(name, opts = {}) {
+  async runOne(name, behaviorOpts = {}) {
     const siteBehaviorClass = siteBehaviors.find(b => b.name === name);
     if (typeof siteBehaviorClass === "undefined") {
       console.error(`No behavior of name ${name} found`);
       return;
     }
-    const behavior = new siteBehaviorClass(opts);
+    const behavior = new siteBehaviorClass(behaviorOpts);
     behavior.start();
     console.log(`Running behavior: ${name}`);
     await behavior.done();
