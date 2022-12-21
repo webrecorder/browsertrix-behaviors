@@ -89,7 +89,7 @@ export class Behavior extends BackgroundBehavior
       self.__bx_behaviors.load(this);
     } else {
       console.warn(
-        `Could not load ${this.name}, window.__bx_behaviors is not initialized`
+        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`
       );
     }
   }
