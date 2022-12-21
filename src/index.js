@@ -10,6 +10,7 @@ export class BehaviorManager
 {
   constructor() {
     this.behaviors = [];
+    this.siteBehaviors = siteBehaviors;
     this.mainBehavior = null;
     this.inited = false;
     this.started = false;
@@ -64,7 +65,7 @@ export class BehaviorManager
     }
 
     if (opts.siteSpecific) {
-      for (const siteBehaviorClass of siteBehaviors) {
+      for (const siteBehaviorClass of this.siteBehaviors) {
         if (siteBehaviorClass.isMatch()) {
           behaviorLog("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
           this.mainBehaviorClass = siteBehaviorClass;
@@ -90,6 +91,10 @@ export class BehaviorManager
     }
 
     return "";
+  }
+
+  load(behaviorClass) {
+    this.siteBehaviors.push(behaviorClass);
   }
 
   async run(opts) {

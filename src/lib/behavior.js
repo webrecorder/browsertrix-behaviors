@@ -83,4 +83,14 @@ export class Behavior extends BackgroundBehavior
   getOpt(opt) {
     return this.opts ? this.opts[opt] : null;
   }
+
+  static load() {
+    if (self.__bx_behaviors) {
+      self.__bx_behaviors.load(this);
+    } else {
+      console.warn(
+        `Could not load ${this.name}, window.__bx_behaviors is not initialized`
+      );
+    }
+  }
 }
