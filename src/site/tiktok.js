@@ -83,7 +83,7 @@ export class TikTokProfileBehavior extends Behavior {
     const viewState = new HistoryState(() => link.click());
     await sleep(500);
     if (viewState.changed) {
-      const breadth = this.getOpts("breadth");
+      const breadth = this.getOpt("breadth");
       const videoBehavior = new TikTokVideoBehavior({ breadth });
       yield* videoBehavior;
       await sleep(500);
