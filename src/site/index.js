@@ -2,7 +2,7 @@ import { FacebookTimelineBehavior } from "./facebook";
 import { InstagramPostsBehavior } from "./instagram";
 import { TelegramBehavior } from "./telegram";
 import { TwitterTimelineBehavior } from "./twitter";
-import { TikTokVideoBehavior, TiktokPofileBehavior } from "./tiktok";
+import { TikTokVideoBehavior, TikTokProfileBehavior } from "./tiktok";
 
 const siteBehaviors = [
   InstagramPostsBehavior,
@@ -10,7 +10,7 @@ const siteBehaviors = [
   FacebookTimelineBehavior,
   TelegramBehavior,
   TikTokVideoBehavior,
-  TiktokPofileBehavior
+  TikTokProfileBehavior
 ];
 
 export default siteBehaviors;

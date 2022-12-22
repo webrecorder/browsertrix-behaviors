@@ -62,7 +62,7 @@ export class TikTokVideoBehavior extends Behavior {
   }
 }
 
-export class TiktokProfileBehavior extends Behavior {
+export class TikTokProfileBehavior extends Behavior {
   static get name() {
     return "TikTokVideo";
   }
