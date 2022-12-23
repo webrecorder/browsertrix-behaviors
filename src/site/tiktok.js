@@ -23,9 +23,11 @@ export class TikTokVideoBehavior extends Behavior {
     return window.location.href.match(pathRegex);
   }
 
-  constructor({ breadth = BREADTH_ALL }) {
+  constructor({ breadth = BREADTH_ALL }, state = {}) {
     super();
     this.setOpts({ breadth });
+
+    this.state = state;
   }
 
   breadthComplete(iter) {
@@ -58,7 +60,7 @@ export class TikTokVideoBehavior extends Behavior {
       if (this.breadthComplete(0)) continue;
       yield* this.expandThread(item);
     }
-    yield "TikTok Video Behavior Complete";
+    yield this.getState("TikTok Video Behavior Complete");
   }
 }
 
@@ -75,6 +77,10 @@ export class TikTokProfileBehavior extends Behavior {
   constructor({ breadth = BREADTH_ALL }) {
     super();
     this.setOpts({ breadth });
+
+    this.state = {
+      videos: 0,
+    };
   }
 
   async* openVideo(item) {
@@ -84,7 +90,7 @@ export class TikTokProfileBehavior extends Behavior {
     await sleep(500);
     if (viewState.changed) {
       const breadth = this.getOpt("breadth");
-      const videoBehavior = new TikTokVideoBehavior({ breadth });
+      const videoBehavior = new TikTokVideoBehavior({ breadth }, this.state);
       yield* videoBehavior;
       await sleep(500);
       await viewState.goBack(Q.backButton);
@@ -100,6 +106,6 @@ export class TikTokProfileBehavior extends Behavior {
       yield* this.openVideo(item);
       await sleep(500);
     }
-    yield "TikTok Profile Behavior Complete";
+    yield this.getState("TikTok Profile Behavior Complete");
   }
 }
