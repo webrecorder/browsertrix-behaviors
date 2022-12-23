@@ -39,7 +39,7 @@ export class TikTokVideoBehavior extends Behavior {
     const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
     if (!next || this.breadthComplete(iter)) return;
     await scrollAndClick(next, 500);
-    yield this.getState("View more replies", "replies");
+    yield this.getState("View more replies", "comments");
     yield* this.crawlThread(parentNode, next, iter + 1);
   }
 
