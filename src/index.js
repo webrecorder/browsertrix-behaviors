@@ -1,7 +1,6 @@
 import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
-import { Behavior } from "./lib/behavior";
 import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors } from "./lib/utils";
 
 import siteBehaviors from "./site";
@@ -69,7 +68,6 @@ export class BehaviorManager
     }
 
     if (opts.siteSpecific) {
-      console.log(this.loadedBehaviors);
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
