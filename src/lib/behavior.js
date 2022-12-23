@@ -65,8 +65,12 @@ export class Behavior extends BackgroundBehavior
   }
 
   getState(msg, incrValue) {
-    if (incrValue && this.state[incrValue] !== undefined) {
-      this.state[incrValue]++;
+    if (incrValue) {
+      if (this.state[incrValue] === undefined) {
+        this.state[incrValue] = 1;
+      } else {
+        this.state[incrValue]++;
+      }
     }
 
     return {state: this.state, msg};

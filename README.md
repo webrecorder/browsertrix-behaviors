@@ -34,6 +34,8 @@ No additional dependencies are required, and the behaviors file can be pasted di
 The file can injected in a number of ways, using tools like puppeteer/playwright, a browser extension content script, or even a devtools Snippet, or even a regular
 `<script>` tag. Injecting the behaviors into the browser is outside the scope of this repo, but here are a few ways you can try the behaviors:
 
+For an extensive walkthrough of creating your own behaviors, [follow the Tutorial](docs/TUTORIAL.md).
+
 ### Copy & Paste Behaviors (for testing)
 
 To test out the behaviors in your current browser, you can:
@@ -44,7 +46,6 @@ To test out the behaviors in your current browser, you can:
 4. Open devtools console, and paste the script
 5. Enter `self.__bx_behaviors.run();`
 6. You should see the Twitter page automatically scrolling and visiting tweets.
-
 
 ### Use Puppeteer
 
@@ -63,11 +64,10 @@ self.__bx_behaviors.init({
 });
 `);
 
-# call and await run on top frame and all child iframes
+// call and await run on top frame and all child iframes
 await Promise.allSettled(page.frames().map(frame => frame.evaluate("self.__bx_behaviors.run()")));
 
 ```
-
 
 see [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) for a complete working example of injection using puppeteer.
 
@@ -88,13 +88,11 @@ The `autoplay` and `autofetch` are background behaviors, and will run as soon as
 Background behaviors do not change the page, but attempt to do additional fetching to ensure more resources are loaded.
 Background behaviors can be used with user-directed browsing, and can also be loaded in any iframes on the page.
 
-
 ### Active Behaviors
 
 The `autoscroll` and `siteSpecific` enable 'active' behaviors, modify the page, and run until they are finished or timeout.
 
 If both `siteSpecific` and `autoscroll` is specified, only one behavior is run. If a site-specific behavior exists, it takes precedence over auto-scroll, otherwise, auto-scroll is useed.
-
 
 Currently, the available site-specific behaviors are available for:
 
