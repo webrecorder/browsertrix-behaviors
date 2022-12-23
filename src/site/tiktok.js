@@ -47,7 +47,7 @@ export class TikTokVideoBehavior extends Behavior {
     const viewMore = xpathNode(Q.viewMoreReplies, item);
     if (!viewMore) return;
     await scrollAndClick(viewMore, 500);
-    yield this.getState("Expand thread", "expandedThreads");
+    yield this.getState("View comment", "comments");
     yield* this.crawlThread(item, null, 1);
   }
 
@@ -56,7 +56,7 @@ export class TikTokVideoBehavior extends Behavior {
     const commentItems = iterChildMatches(Q.commentItem, commentList);
     for await (const item of commentItems) {
       item.scrollIntoView(this.scrollOpts);
-      yield this.getState("View thread", "threads");
+      yield this.getState("View comment", "comments");
       if (this.breadthComplete(0)) continue;
       yield* this.expandThread(item);
     }
@@ -80,6 +80,7 @@ export class TikTokProfileBehavior extends Behavior {
 
     this.state = {
       videos: 0,
+      comments: 0
     };
   }
 
