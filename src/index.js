@@ -10,6 +10,10 @@ export class BehaviorManager
 {
   constructor() {
     this.behaviors = [];
+    this.loadedBehaviors = siteBehaviors.reduce((behaviors, next) => {
+      behaviors[next.name] = next;
+      return behaviors;
+    }, {});
     this.mainBehavior = null;
     this.inited = false;
     this.started = false;
@@ -64,12 +68,13 @@ export class BehaviorManager
     }
 
     if (opts.siteSpecific) {
-      for (const siteBehaviorClass of siteBehaviors) {
+      for (const name in this.loadedBehaviors) {
+        const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
-          behaviorLog("Starting Site-Specific Behavior: " + siteBehaviorClass.name);
+          behaviorLog("Starting Site-Specific Behavior: " + name);
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
-            (opts.siteSpecific[siteBehaviorClass.name] || {}) : {};
+            (opts.siteSpecific[name] || {}) : {};
           this.mainBehavior = new siteBehaviorClass(siteSpecificOpts);
           siteMatch = true;
           break;
@@ -90,6 +95,21 @@ export class BehaviorManager
     }
 
     return "";
+  }
+
+  load(behaviorClass) {
+    this.loadedBehaviors[behaviorClass.name] = behaviorClass;
+  }
+
+  async resolve(target) {
+    const imported = await import(`${target}`); // avoid Webpack warning
+    if (Array.isArray(imported)) {
+      for (const behavior of imported) {
+        this.load(behavior);
+      }
+    } else {
+      this.load(imported);
+    }
   }
 
   async run(opts) {
@@ -146,7 +166,7 @@ export class BehaviorManager
   }
 
   unpause() {
-    behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
+    // behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
     if (this.mainBehavior) {
       this.mainBehavior.unpause();
     }
