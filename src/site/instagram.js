@@ -29,7 +29,9 @@ export class InstagramPostsBehavior extends Behavior
 
     //this.nextPost = "//div[@role='dialog']//a[text()='Next']";
     //this.nextPost = "//div[@role='dialog']//a[contains(@class, 'coreSpriteRightPaginationArrow')]";
-    this.nextPost = "//button[.//*[local-name() = 'svg' and @aria-label='Next']]";
+		this.nextPost =
+			"//button[.//*[local-name() = 'svg'] and .//div/span[contains(@style, 'rotate(90deg)')]]";
+      
     this.postLoading = "//*[@aria-label='Loading...']";
 
     this.subpostNextOnlyChevron = "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
