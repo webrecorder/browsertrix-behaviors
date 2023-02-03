@@ -29,7 +29,7 @@ export class InstagramPostsBehavior extends Behavior
 
     //this.nextPost = "//div[@role='dialog']//a[text()='Next']";
     //this.nextPost = "//div[@role='dialog']//a[contains(@class, 'coreSpriteRightPaginationArrow')]";
-		this.nextPost =
+    this.nextPost =
 			"//button[.//*[local-name() = 'svg'] and .//div/span[contains(@style, 'rotate(90deg)')]]";
       
     this.postLoading = "//*[@aria-label='Loading...']";

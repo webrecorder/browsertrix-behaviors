@@ -47,5 +47,5 @@ jobs:
       run: cat ./log
 
     - name: compare crawl log to expected
-      run: grep '"state"' ./log | diff - ./test/expected-twitter-logged-in.log
+      run: grep '"state"' ./log | awk '{sub(/\?[^"]+/,""); print}' | diff - ./test/expected-twitter.log
 
