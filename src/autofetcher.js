@@ -17,7 +17,7 @@ const SRCSET_REGEX = /\s*(\S*\s+[\d.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/;
 const STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
 const IMPORT_REGEX = /(@import\s*[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
 
-const MAX_CONCURRENT = 12;
+const MAX_CONCURRENT = 6;
 
 
 // ===========================================================================
@@ -88,20 +88,52 @@ export class AutoFetcher extends BackgroundBehavior
     return true;
   }
 
+  // fetch with default CORS mode, read entire stream
+  async doFetchStream(url) {
+    try {
+      const resp = await fetch(url, {"credentials": "include", "referrerPolicy": "origin-when-cross-origin"});
+      this.debug(`Autofetch: started ${url}`);
+
+      const reader = resp.body.getReader();
+
+      let res = null;
+      while ((res = await reader.read()) && !res.done);
+
+      this.debug(`Autofetch: finished ${url}`);
+
+    } catch (e) {
+      this.debug(e);
+    }
+  }
+
+  // start non-cors fetch, abort immediately (assumes full streaming by backend)
+  async doFetchNonCors(url) {
+    try {
+      const abort = new AbortController();
+      await fetch(url, {"mode": "no-cors", "credentials": "include", "referrerPolicy": "origin-when-cross-origin", abort});
+      abort.abort();
+      this.debug(`Autofetch: started non-cors stream for ${url}`);
+    } catch (e) {
+      this.debug(`Autofetch: failed non-cors for ${url}`);
+    }
+  }
+
   async doFetch(url) {
     this.urlqueue.push(url);
     if (this.numPending <= MAX_CONCURRENT) {
       while (this.urlqueue.length > 0) {
         const url = this.urlqueue.shift();
-        try {
-          this.numPending++;
-          this.debug("AutoFetching: " + url);
-          const resp = await fetch(url, {"mode": "no-cors", "credentials": "include"});
-          this.debug(`AutoFetch Result ${resp.status} for ${url}`);
-          await resp.blob();
-        } catch (e) {
-          this.debug(e);
+        let resp = null;
+
+        // todo: option to use cors or non-cors fetch
+        await this.doFetchNonCors();
+
+        this.numPending++;
+
+        if (!resp) {
+          await this.doFetchNonCors(url);
         }
+
         this.numPending--;
         this.numDone++;
       }

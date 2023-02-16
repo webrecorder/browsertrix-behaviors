@@ -11,6 +11,8 @@ export class Autoplay extends BackgroundBehavior {
 
     this.autofetcher = autofetcher;
 
+    this.numPlaying = 0;
+
     this.promises = [];
 
     this.promises.push(new Promise((resolve) => this._initDone = resolve));
@@ -24,26 +26,28 @@ export class Autoplay extends BackgroundBehavior {
 
     this.pollAudioVideo();
 
-    setInterval(() => this.pollAudioVideo(), 500);
-
     this._initDone();
   }
 
-  pollAudioVideo() {
-    for (const [, elem] of document.querySelectorAll("video, audio, picture").entries()) {
-      if (!elem.__bx_autoplay_seen) {
-        elem.__bx_autoplay_seen = true;
-        this.addMediaWait(elem);
+  async pollAudioVideo() {
+    const run = true;
+    while (run) {
+      for (const [, elem] of document.querySelectorAll("video, audio, picture").entries()) {
+        if (!elem.__bx_autoplay_found) {
+          elem.__bx_autoplay_found = await this.loadMedia(elem);
+        }
       }
+
+      await sleep(500);
     }
   }
 
   fetchSrcUrl(source) {
-    if (!source.src) {
+    const url = source.src || source.currentSrc;
+
+    if (!url) {
       return false;
     }
-
-    const url = source.src;
 
     if (!url.startsWith("http:") && !url.startsWith("https:")) {
       return false;
@@ -60,8 +64,8 @@ export class Autoplay extends BackgroundBehavior {
     return true;
   }
 
-  addMediaWait(media) {
-    this.debug("media: " + media.outerHTML);
+  async loadMedia(media) {
+    this.debug("processing media element: " + media.outerHTML);
 
     let found = this.fetchSrcUrl(media);
 
@@ -73,11 +77,14 @@ export class Autoplay extends BackgroundBehavior {
     }
 
     if (!found && media.play) {
-      this.attemptMediaPlay(media);
+      found = await this.attemptMediaPlay(media);
     }
+
+    return found;
   }
 
   async attemptMediaPlay(media) {
+    this.debug("no src url found, attempting to click or play: " + media.outerHTML);
     let resolve;
 
     const p = new Promise((res) => {
@@ -99,23 +106,35 @@ export class Autoplay extends BackgroundBehavior {
     media.addEventListener("suspend", () => { this.debug("suspend"); resolve(); });
 
     if (media.paused) {
-      this.debug("generic play event for: " + media.outerHTML);
       media.muted = true;
-      //media.play().reject(() => media.click()).finally(() => resolve());
-      media.play();
-
-      await sleep(500);
-
-      if (loadingStarted) {
-        return;
-      }
 
       const hasA = media.closest("a");
 
       // if contained in <a> tag, clicking may navigate away, so avoid
       if (!hasA) {
+        //this.debug("click() on media with src: " + media.currentSrc);
         media.click();
+
+        await sleep(500);
+  
+        if (loadingStarted) {
+          return false;
+        }
+        //this.debug("click() did not initiate loading");
       }
+
+      //this.debug("play() on media with src: " + media.currentSrc);
+      media.play();
+
+      await sleep(500);
+
+      if (loadingStarted) {
+        return false;
+      }
+
+      await Promise.race([p, sleep(3000)]);
+
+      //this.debug("play() did not initiate loading");
     }
   }
 
