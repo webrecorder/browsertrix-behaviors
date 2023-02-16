@@ -104,7 +104,9 @@ export class Autoplay extends BackgroundBehavior {
       this.attemptMediaPlay(media).then(async (finished) => {
         let check = true;
         
-        finished.then(() => check = false);
+        if (finished) {
+          finished.then(() => check = false);
+        }
 
         while (check) {
           if (this.processFetchableUrl(media)) {
