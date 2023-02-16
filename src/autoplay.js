@@ -164,7 +164,7 @@ export class Autoplay extends BackgroundBehavior {
       await sleep(500);
 
       if (loadingStarted) {
-        return;
+        return finished;
       }
       //this.debug("click() did not initiate loading");
     }
