@@ -101,8 +101,12 @@ export class AutoFetcher extends BackgroundBehavior
 
       this.debug(`Autofetch: finished ${url}`);
 
+      return true;
+
     } catch (e) {
       this.debug(e);
+
+      return false;
     }
   }
 
@@ -123,14 +127,15 @@ export class AutoFetcher extends BackgroundBehavior
     if (this.numPending <= MAX_CONCURRENT) {
       while (this.urlqueue.length > 0) {
         const url = this.urlqueue.shift();
-        let resp = null;
-
-        // todo: option to use cors or non-cors fetch
-        await this.doFetchNonCors();
 
         this.numPending++;
 
-        if (!resp) {
+        let success = false;
+
+        // todo: option to use cors or non-cors fetch
+        // success = await this.doFetchNonCors();
+
+        if (!success) {
           await this.doFetchNonCors(url);
         }
 
