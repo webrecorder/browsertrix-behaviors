@@ -216,7 +216,7 @@ A few outputs should appear in your console that look like the following:
 
 Since we've identified the element containing the video's comemnts, we can now
 write an XPath query that matches against them. This query is very similar to
-the one we're using for the `commentListContianer`, with one notable difference:
+the one we're using for the `commentListContainer`, with one notable difference:
 
 ```javascript
 const Q = {
