@@ -92,7 +92,7 @@ Background behaviors can be used with user-directed browsing, and can also be lo
 
 The `autoscroll` and `siteSpecific` enable 'active' behaviors, modify the page, and run until they are finished or timeout.
 
-If both `siteSpecific` and `autoscroll` is specified, only one behavior is run. If a site-specific behavior exists, it takes precedence over auto-scroll, otherwise, auto-scroll is useed.
+If both `siteSpecific` and `autoscroll` is specified, only one behavior is run. If a site-specific behavior exists, it takes precedence over auto-scroll, otherwise, auto-scroll is used.
 
 Currently, the available site-specific behaviors are available for:
 
