@@ -1,7 +1,7 @@
 let _logFunc = console.log;
 let _behaviorMgrClass = null;
 
-const scrollOpts = {behavior: "smooth", block: "center", inline: "center"};
+const scrollOpts = { behavior: "smooth", block: "center", inline: "center" };
 
 export async function scrollAndClick(node, interval = 500, opts = scrollOpts) {
   node.scrollIntoView(opts);
@@ -38,7 +38,7 @@ export async function waitUntilNode(path, root = document, old = null, timeout =
 export function awaitLoad() {
   return new Promise((resolve) => {
     if (document.readyState === "complete") {
-      resolve();
+      resolve(null);
     } else {
       window.addEventListener("load", resolve);
     }
@@ -55,14 +55,14 @@ function callBinding(binding, obj) {
 
 export function behaviorLog(data, type = "debug") {
   if (_logFunc) {
-    callBinding(_logFunc, {data, type});
+    callBinding(_logFunc, { data, type });
   }
 }
 
 export async function openWindow(url) {
-  if (self.__bx_open) {
-    const p = new Promise((resolve) => self.__bx_openResolve = resolve);
-    callBinding(self.__bx_open, {url});
+  if (self["__bx_open"]) {
+    const p = new Promise((resolve) => self["__bx_openResolve"] = resolve);
+    callBinding(self["__bx_open"], { url });
 
     let win = null;
 
@@ -74,7 +74,7 @@ export async function openWindow(url) {
     } catch (e) {
       console.warn(e);
     } finally {
-      delete self.__bx_openResolve;
+      delete self["__bx_openResolve"];
     }
   }
 
@@ -95,6 +95,7 @@ export function installBehaviors(obj) {
 
 // ===========================================================================
 export class RestoreState {
+  matchValue: string;
   constructor(childMatchSelect, child) {
     this.matchValue = xpathString(childMatchSelect, child);
   }
@@ -112,6 +113,7 @@ export class RestoreState {
 
 // ===========================================================================
 export class HistoryState {
+  loc: string;
   constructor(op) {
     this.loc = window.location.href;
     op();
@@ -130,11 +132,11 @@ export class HistoryState {
 
     return new Promise((resolve) => {
       window.addEventListener("popstate", () => {
-        resolve();
-      }, {once: true});
+        resolve(null);
+      }, { once: true });
 
       if (backButton) {
-        backButton.click();
+        backButton["click"]();
       } else {
         window.history.back();
       }
@@ -143,7 +145,7 @@ export class HistoryState {
 }
 
 // ===========================================================================
-export function xpathNode(path, root) {
+export function xpathNode(path, root?) {
   root = root || document;
   return document.evaluate(path, root, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
 }
@@ -204,9 +206,9 @@ export function isInViewport(elem) {
   var bounding = elem.getBoundingClientRect();
   return (
     bounding.top >= 0 &&
-      bounding.left >= 0 &&
-      bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-      bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
+    bounding.left >= 0 &&
+    bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+    bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
   );
 }
 
@@ -214,4 +216,25 @@ export function scrollToOffset(element, offset = 0) {
   const elPosition = element.getBoundingClientRect().top;
   const topPosition = elPosition + window.pageYOffset - offset;
   window.scrollTo({ top: topPosition, behavior: "smooth" });
+}
+
+export function scrollIntoView(element, opts = {
+  behavior: "smooth", block: "center", inline: "center"
+}) {
+  element.scrollIntoView(opts);
+}
+
+export function getState(ctx, msg, incrValue?) {
+  if (typeof ctx.state === undefined) {
+    ctx.state = {};
+  }
+  if (incrValue) {
+    if (ctx.state[incrValue] === undefined) {
+      ctx.state[incrValue] = 1;
+    } else {
+      ctx.state[incrValue]++;
+    }
+  }
+
+  return { state: ctx.state, msg };
 }

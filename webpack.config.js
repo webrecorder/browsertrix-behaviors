@@ -3,7 +3,7 @@
 const webpack = require("webpack");
 const TerserPlugin = require("terser-webpack-plugin");
 
-module.exports = (_env, argv) => {
+const jsConfig = (_env, argv) => {
   const config = {
     mode: argv.mode,
     plugins: [
@@ -32,3 +32,31 @@ module.exports = (_env, argv) => {
 
   return config;
 };
+
+const path = require('path');
+
+const tsConfig = (_env, argv) => {
+  return {
+    mode: argv.mode,
+    entry: './index.ts',
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          use: 'ts-loader',
+          exclude: /node_modules/,
+        },
+      ],
+    },
+    resolve: {
+      extensions: ['.tsx', '.ts', '.js'],
+    },
+    output: {
+      filename: 'behaviors.js',
+      path: path.resolve(__dirname, 'dist'),
+    },
+  }
+};
+
+// module.exports = jsConfig;
+module.exports = tsConfig;

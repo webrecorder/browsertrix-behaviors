@@ -6,11 +6,11 @@
 import { BackgroundBehavior } from "./lib/behavior";
 import { awaitLoad, sleep } from "./lib/utils";
 
-const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy'], " +  
-"video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
-"picture > source[srcset], picture > source[data-srcset], picture > source[data-src], " +
-"video > source[srcset], video > source[data-srcset], video > source[data-src], " +
-"audio > source[srcset], audio > source[data-srcset], audio > source[data-src]";
+const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy'], " +
+  "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
+  "picture > source[srcset], picture > source[data-srcset], picture > source[data-src], " +
+  "video > source[srcset], video > source[data-srcset], video > source[data-src], " +
+  "audio > source[srcset], audio > source[data-srcset], audio > source[data-src]";
 
 const SRCSET_REGEX = /\s*(\S*\s+[\d.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/;
 
@@ -21,12 +21,19 @@ const MAX_CONCURRENT = 6;
 
 
 // ===========================================================================
-export class AutoFetcher extends BackgroundBehavior
-{
+export class AutoFetcher extends BackgroundBehavior {
+  urlSet: Set<string>;
+  urlQueue: string[];
+  mutationObserver: MutationObserver;
+  numPending: number;
+  numDone: number;
+  _donePromise: Promise<null>;
+  _markDone: (value: any) => void;
+
   constructor(active = false) {
     super();
     this.urlSet = new Set();
-    this.urlqueue = [];
+    this.urlQueue = [];
     this.numPending = 0;
     this.numDone = 0;
 
@@ -38,7 +45,7 @@ export class AutoFetcher extends BackgroundBehavior
   }
 
   get numFetching() {
-    return this.numDone + this.numPending + this.urlqueue.length;
+    return this.numDone + this.numPending + this.urlQueue.length;
   }
 
   async start() {
@@ -48,8 +55,8 @@ export class AutoFetcher extends BackgroundBehavior
 
     await sleep(500);
 
-    if (!this.urlqueue.length && !this.numPending) {
-      this._markDone();
+    if (!this.urlQueue.length && !this.numPending) {
+      this._markDone(null);
     }
   }
 
@@ -62,11 +69,11 @@ export class AutoFetcher extends BackgroundBehavior
     this.extractStyleSheets();
   }
 
-  isValidUrl(url) {
+  isValidUrl(url: string) {
     return url && (url.startsWith("http:") || url.startsWith("https:"));
   }
 
-  queueUrl(url) {
+  queueUrl(url: string) {
     try {
       url = new URL(url, document.baseURI).href;
     } catch (e) {
@@ -89,9 +96,9 @@ export class AutoFetcher extends BackgroundBehavior
   }
 
   // fetch with default CORS mode, read entire stream
-  async doFetchStream(url) {
+  async doFetchStream(url: string) {
     try {
-      const resp = await fetch(url, {"credentials": "include", "referrerPolicy": "origin-when-cross-origin"});
+      const resp = await fetch(url, { "credentials": "include", "referrerPolicy": "origin-when-cross-origin" });
       this.debug(`Autofetch: started ${url}`);
 
       const reader = resp.body.getReader();
@@ -111,10 +118,15 @@ export class AutoFetcher extends BackgroundBehavior
   }
 
   // start non-cors fetch, abort immediately (assumes full streaming by backend)
-  async doFetchNonCors(url) {
+  async doFetchNonCors(url: string) {
     try {
       const abort = new AbortController();
-      await fetch(url, {"mode": "no-cors", "credentials": "include", "referrerPolicy": "origin-when-cross-origin", abort});
+      await fetch(url, {
+        "mode": "no-cors",
+        "credentials": "include",
+        "referrerPolicy": "origin-when-cross-origin",
+        abort
+      } as {});
       abort.abort();
       this.debug(`Autofetch: started non-cors stream for ${url}`);
     } catch (e) {
@@ -122,11 +134,11 @@ export class AutoFetcher extends BackgroundBehavior
     }
   }
 
-  async doFetch(url) {
-    this.urlqueue.push(url);
+  async doFetch(url: string) {
+    this.urlQueue.push(url);
     if (this.numPending <= MAX_CONCURRENT) {
-      while (this.urlqueue.length > 0) {
-        const url = this.urlqueue.shift();
+      while (this.urlQueue.length > 0) {
+        const url = this.urlQueue.shift();
 
         this.numPending++;
 
@@ -143,15 +155,15 @@ export class AutoFetcher extends BackgroundBehavior
         this.numDone++;
       }
       if (!this.numPending) {
-        this._markDone();
+        this._markDone(null);
       }
     }
   }
 
   initObserver() {
-    this.mutobz = new MutationObserver((changes) => this.observeChange(changes));
+    this.mutationObserver = new MutationObserver((changes) => this.observeChange(changes));
 
-    this.mutobz.observe(document.documentElement, {
+    this.mutationObserver.observe(document.documentElement, {
       characterData: false,
       characterDataOldValue: false,
       attributes: true,
@@ -164,31 +176,31 @@ export class AutoFetcher extends BackgroundBehavior
 
   processChangedNode(target) {
     switch (target.nodeType) {
-    case Node.ATTRIBUTE_NODE:
-      if (target.nodeName === "srcset") {
-        this.extractSrcSetAttr(target.nodeValue);
-      }
-      if (target.nodeName === "loading" && target.nodeValue === "lazy") {
-        const elem = target.parentNode;
-        if (elem.tagName === "IMG") {
-          elem.setAttribute("loading", "eager");
+      case Node.ATTRIBUTE_NODE:
+        if (target.nodeName === "srcset") {
+          this.extractSrcSetAttr(target.nodeValue);
         }
-      }
-      break;
+        if (target.nodeName === "loading" && target.nodeValue === "lazy") {
+          const elem = target.parentNode;
+          if (elem.tagName === "IMG") {
+            elem.setAttribute("loading", "eager");
+          }
+        }
+        break;
 
-    case Node.TEXT_NODE:
-      if (target.parentNode && target.parentNode.tagName === "STYLE") {
-        this.extractStyleText(target.nodeValue);
-      }
-      break;
+      case Node.TEXT_NODE:
+        if (target.parentNode && target.parentNode.tagName === "STYLE") {
+          this.extractStyleText(target.nodeValue);
+        }
+        break;
 
-    case Node.ELEMENT_NODE:
-      if (target.sheet) {
-        this.extractStyleSheet(target.sheet);
-      }
-      this.extractSrcSrcSet(target);
-      setTimeout(() => this.extractSrcSrcSetAll(target), 1000);
-      break;
+      case Node.ELEMENT_NODE:
+        if (target.sheet) {
+          this.extractStyleSheet(target.sheet);
+        }
+        this.extractSrcSrcSet(target);
+        setTimeout(() => this.extractSrcSrcSetAll(target), 1000);
+        break;
     }
   }
 
@@ -209,7 +221,7 @@ export class AutoFetcher extends BackgroundBehavior
 
     for (const elem of elems) {
       this.extractSrcSrcSet(elem);
-    } 
+    }
   }
 
   extractSrcSrcSet(elem) {
@@ -258,7 +270,7 @@ export class AutoFetcher extends BackgroundBehavior
     }
   }
 
-  extractStyleSheets(root) {
+  extractStyleSheets(root?) {
     root = root || document;
 
     for (const sheet of root.styleSheets) {
@@ -268,7 +280,7 @@ export class AutoFetcher extends BackgroundBehavior
 
   extractStyleSheet(sheet) {
     let rules;
-    
+
     try {
       rules = sheet.cssRules || sheet.rules;
     } catch (e) {

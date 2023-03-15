@@ -1,22 +1,24 @@
 import { BackgroundBehavior } from "./lib/behavior";
 import { awaitLoad, sleep } from "./lib/utils";
+import { type AutoFetcher } from "./autofetcher";
 
 
 // ===========================================================================
 export class Autoplay extends BackgroundBehavior {
-  constructor(autofetcher) {
+  mediaSet: Set<string>;
+  autofetcher: AutoFetcher;
+  numPlaying: number;
+  promises: Promise<any>[];
+  _initDone: Function;
+
+  constructor(autofetcher: AutoFetcher) {
     super();
-    
     this.mediaSet = new Set();
-
     this.autofetcher = autofetcher;
-
     this.numPlaying = 0;
-
     this.promises = [];
-
+    this._initDone = () => null;
     this.promises.push(new Promise((resolve) => this._initDone = resolve));
-
     this.start();
   }
 
@@ -34,9 +36,9 @@ export class Autoplay extends BackgroundBehavior {
 
     while (run) {
       for (const [, elem] of document.querySelectorAll("video, audio, picture").entries()) {
-        if (!elem.__bx_autoplay_found) {
+        if (!elem["__bx_autoplay_found"]) {
           await this.loadMedia(elem);
-          elem.__bx_autoplay_found = true;
+          elem["__bx_autoplay_found"] = true;
         }
       }
 
@@ -45,7 +47,7 @@ export class Autoplay extends BackgroundBehavior {
   }
 
   fetchSrcUrl(source) {
-    const url = source.src || source.currentSrc;
+    const url: string = source.src || source.currentSrc;
 
     if (!url) {
       return false;
@@ -101,7 +103,7 @@ export class Autoplay extends BackgroundBehavior {
     if (media.paused) {
       this.debug("no src url found, attempting to click or play: " + media.outerHTML);
 
-      this.attemptMediaPlay(media).then(async (finished) => {
+      this.attemptMediaPlay(media).then(async (finished: Promise<any> | null) => {
         let check = true;
 
         if (finished) {

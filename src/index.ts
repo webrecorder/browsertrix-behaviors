@@ -2,16 +2,38 @@ import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
 import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors } from "./lib/utils";
+import { BehaviorRunner } from "./lib/behavior";
 
 import siteBehaviors from "./site";
 
 // ===========================================================================
-export class BehaviorManager
-{
+// ====                  WIP: New Behavior Manager                        ====
+// ===========================================================================
+//
+
+interface BehaviorManagerOpts {
+  autofetch?: boolean;
+  autoplay?: boolean;
+  autoscroll?: boolean;
+  log?: ((...message: string[]) => void) | string | false;
+  siteSpecific?: boolean | object;
+  timeout?: number;
+}
+
+export class BehaviorManager {
+  autofetch: AutoFetcher;
+  behaviors: any[];
+  loadedBehaviors: any;
+  mainBehavior: any;
+  mainBehaviorClass: any;
+  inited: boolean;
+  started: boolean;
+  timeout?: number;
+
   constructor() {
     this.behaviors = [];
     this.loadedBehaviors = siteBehaviors.reduce((behaviors, next) => {
-      behaviors[next.name] = next;
+      behaviors[next.id] = next;
       return behaviors;
     }, {});
     this.mainBehavior = null;
@@ -20,7 +42,7 @@ export class BehaviorManager
     behaviorLog("Loaded behaviors for: " + self.location.href);
   }
 
-  init(opts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true}) {
+  init(opts: BehaviorManagerOpts) {
     if (this.inited) {
       return;
     }
@@ -37,13 +59,13 @@ export class BehaviorManager
     if (opts.log !== undefined) {
       let logger = opts.log;
       // if string, look up as global
-      if (typeof(logger) === "string") {
+      if (typeof (logger) === "string") {
         logger = self[logger];
       }
       // if function, set to it
-      if (typeof(logger) === "function") {
+      if (typeof (logger) === "function") {
         _setLogFunc(logger);
-      // if false, disable logging
+        // if false, disable logging
       } else if (logger === false) {
         _setLogFunc(null);
       }
@@ -75,7 +97,7 @@ export class BehaviorManager
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
             (opts.siteSpecific[name] || {}) : {};
-          this.mainBehavior = new siteBehaviorClass(siteSpecificOpts);
+          this.mainBehavior = new BehaviorRunner(siteBehaviorClass, siteSpecificOpts);
           siteMatch = true;
           break;
         }
@@ -88,7 +110,7 @@ export class BehaviorManager
       this.mainBehavior = new AutoScroll(this.autofetch);
     }
 
-    if (this.mainBehavior)  {
+    if (this.mainBehavior) {
       this.behaviors.push(this.mainBehavior);
 
       return this.mainBehavior.name;
@@ -113,6 +135,7 @@ export class BehaviorManager
   }
 
   async run(opts) {
+    console.log("DEBUG: Running Behaviors 2");
     if (this.started) {
       this.unpause();
       return;
@@ -132,12 +155,12 @@ export class BehaviorManager
 
     if (this.timeout) {
       behaviorLog(`Waiting for behaviors to finish or ${this.timeout}ms timeout`);
-      allBehaviors = Promise.race([allBehaviors, sleep(this.timeout)]);
+      await Promise.race([allBehaviors, sleep(this.timeout)]);
     } else {
       behaviorLog("Waiting for behaviors to finish");
+      await allBehaviors;
     }
 
-    await allBehaviors;
     behaviorLog("All Behaviors Done for " + self.location.href);
 
     if (this.mainBehavior && this.mainBehaviorClass.cleanup) {
@@ -151,7 +174,8 @@ export class BehaviorManager
       console.error(`No behavior of name ${name} found`);
       return;
     }
-    const behavior = new siteBehaviorClass(behaviorOpts);
+    //const behavior = new siteBehaviorClass(behaviorOpts);
+    const behavior = new BehaviorRunner(siteBehaviorClass, behaviorOpts);
     behavior.start();
     console.log(`Running behavior: ${name}`);
     await behavior.done();
@@ -177,6 +201,7 @@ export class BehaviorManager
     return this.autofetch.queueUrl(url);
   }
 }
+
 
 _setBehaviorManager(BehaviorManager);
 
