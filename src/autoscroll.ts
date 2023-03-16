@@ -147,7 +147,7 @@ export class AutoScroll extends Behavior {
         const waitSecs = elapsedWait / (this.state.segments - 1);
         // only add extra wait if actually changed height
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
-        this.debug(`Waiting upto ${waitSecs} seconds for more scroll segments`);
+        this.debug(`Waiting up to ${waitSecs} seconds for more scroll segments`);
 
         const startTime = Date.now();
 
