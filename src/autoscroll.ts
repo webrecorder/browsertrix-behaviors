@@ -1,40 +1,42 @@
 import { Behavior } from "./lib/behavior";
 import { sleep, waitUnit, xpathNode, isInViewport, waitUntil } from "./lib/utils";
+import { type AutoFetcher } from "./autofetcher";
 
 
 // ===========================================================================
-export class AutoScroll extends Behavior
-{
-  constructor(autofetcher) {
+export class AutoScroll extends Behavior {
+  autoFetcher: AutoFetcher;
+  showMoreQuery: string;
+  state: { segments: number }
+
+  constructor(autofetcher: AutoFetcher) {
     super();
 
-    this.autofetcher = autofetcher;
+    this.autoFetcher = autofetcher;
 
     this.showMoreQuery = "//*[contains(text(), 'show more') or contains(text(), 'Show more')]";
-  
+
     this.state = {
       segments: 1
     };
   }
 
-  static get name() {
-    return "Autoscroll";
-  }
+  static id = "Autoscroll";
 
   canScrollMore() {
     return Math.round(self.scrollY + self.innerHeight) <
-    Math.max(
-      self.document.body.scrollHeight,
-      self.document.body.offsetHeight,
-      self.document.scrollingElement.clientHeight,
-      self.document.scrollingElement.scrollHeight,
-      self.document.scrollingElement.offsetHeight
-    );
+      Math.max(
+        self.document.body.scrollHeight,
+        self.document.body.offsetHeight,
+        self.document.scrollingElement.clientHeight,
+        self.document.scrollingElement.scrollHeight,
+        self.document.scrollingElement["offsetHeight"]
+      );
   }
 
   hasScrollEL(obj) {
     try {
-      return !!self.getEventListeners(obj).scroll;
+      return !!self["getEventListeners"](obj).scroll;
     } catch (e) {
       // unknown, assume has listeners
       this.debug("getEventListeners() not available");
@@ -44,13 +46,13 @@ export class AutoScroll extends Behavior
 
   async shouldScroll() {
     if (!this.hasScrollEL(self.window) &&
-        !this.hasScrollEL(self.document) &&
-        !this.hasScrollEL(self.document.body)) {
+      !this.hasScrollEL(self.document) &&
+      !this.hasScrollEL(self.document.body)) {
       return false;
     }
 
     const lastScrollHeight = self.document.scrollingElement.scrollHeight;
-    const numFetching = this.autofetcher.numFetching;
+    const numFetching = this.autoFetcher.numFetching;
 
     // scroll to almost end of page
     const scrollEnd = (document.scrollingElement.scrollHeight * 0.98) - self.innerHeight;
@@ -62,7 +64,7 @@ export class AutoScroll extends Behavior
 
     // scroll height changed, should scroll
     if (lastScrollHeight !== self.document.scrollingElement.scrollHeight ||
-        numFetching < this.autofetcher.numFetching) {
+      numFetching < this.autoFetcher.numFetching) {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
       return true;
     }
@@ -75,14 +77,14 @@ export class AutoScroll extends Behavior
       return false;
     }
 
-    if ((self.window.scrollY + self.scrollHeight) / self.document.scrollingElement.scrollHeight < 0.90) {
+    if ((self.window.scrollY + self["scrollHeight"]) / self.document.scrollingElement.scrollHeight < 0.90) {
       return false;
     }
 
     return true;
   }
 
-  async* [Symbol.asyncIterator]() {
+  async*[Symbol.asyncIterator]() {
     if (this.shouldScrollUp()) {
       yield* this.scrollUp();
       return;
@@ -120,7 +122,7 @@ export class AutoScroll extends Behavior
 
       if (showMoreElem && isInViewport(showMoreElem)) {
         yield this.getState("Clicking 'Show More', awaiting more content");
-        showMoreElem.click();
+        showMoreElem["click"]();
 
         await sleep(waitUnit);
 
@@ -132,7 +134,8 @@ export class AutoScroll extends Behavior
         showMoreElem = null;
       }
 
-      self.scrollBy(scrollOpts);
+      // eslint-disable-next-line
+      self.scrollBy(scrollOpts as ScrollToOptions);
 
       await sleep(interval);
 
@@ -174,7 +177,8 @@ export class AutoScroll extends Behavior
         lastScrollHeight = scrollHeight;
       }
 
-      self.scrollBy(scrollOpts);
+      // eslint-disable-next-line
+      self.scrollBy(scrollOpts as ScrollToOptions);
 
       await sleep(interval);
 

@@ -13,12 +13,12 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [16.x]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
 
@@ -46,6 +46,10 @@ jobs:
     - name: cat log
       run: cat ./log
 
-    - name: compare crawl log to expected
-      run: grep '"state"' ./log | diff - ./test/expected-facebook-page.log
-
+    - uses: sergeysova/jq-action@v2
+      name: compare crawl log to expected
+      with:
+        cmd: >
+          cat log
+          | jq -Rr -c 'fromjson? | .details | select(type == "object") | {msg,state} | select(.msg != null)'
+          | diff - ./test/expected-facebook-page.log
