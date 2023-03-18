@@ -7,7 +7,8 @@ import { type AutoFetcher } from "./autofetcher";
 export class AutoScroll extends Behavior {
   autoFetcher: AutoFetcher;
   showMoreQuery: string;
-  state: { segments: number }
+  state: { segments: number };
+  lastScrollPos: number;
 
   constructor(autofetcher: AutoFetcher) {
     super();
@@ -19,19 +20,19 @@ export class AutoScroll extends Behavior {
     this.state = {
       segments: 1
     };
+
+    this.lastScrollPos = -1;
   }
 
   static id = "Autoscroll";
 
+  currScrollPos() {
+    return Math.round(self.scrollY + self.innerHeight);
+  }
+
   canScrollMore() {
-    return Math.round(self.scrollY + self.innerHeight) <
-      Math.max(
-        self.document.body.scrollHeight,
-        self.document.body.offsetHeight,
-        self.document.scrollingElement.clientHeight,
-        self.document.scrollingElement.scrollHeight,
-        self.document.scrollingElement["offsetHeight"]
-      );
+    const scrollElem = self.document.scrollingElement || self.document.body;
+    return this.currScrollPos() < Math.max(scrollElem.clientHeight, scrollElem.scrollHeight);
   }
 
   hasScrollEL(obj) {
@@ -104,6 +105,7 @@ export class AutoScroll extends Behavior {
     let elapsedWait = 0;
 
     let showMoreElem = null;
+    let ignoreShowMoreElem = false;
 
     const scrollOpts = { top: scrollInc, left: 0, behavior: "auto" };
     let lastScrollHeight = self.document.scrollingElement.scrollHeight;
@@ -116,7 +118,7 @@ export class AutoScroll extends Behavior {
         lastScrollHeight = scrollHeight;
       }
 
-      if (!showMoreElem) {
+      if (!showMoreElem && !ignoreShowMoreElem) {
         showMoreElem = xpathNode(this.showMoreQuery);
       }
 
@@ -131,6 +133,10 @@ export class AutoScroll extends Behavior {
           sleep(30000)
         ]);
 
+        if (self.document.scrollingElement.scrollHeight === scrollHeight) {
+          ignoreShowMoreElem = true;
+        }
+
         showMoreElem = null;
       }
 
@@ -143,21 +149,30 @@ export class AutoScroll extends Behavior {
         // only print this the first time
         yield this.getState(`Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
         elapsedWait = 2.0;
+
       } else {
         const waitSecs = elapsedWait / (this.state.segments - 1);
         // only add extra wait if actually changed height
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
         this.debug(`Waiting upto ${waitSecs} seconds for more scroll segments`);
 
-        const startTime = Date.now();
+        //const startTime = Date.now();
 
         await Promise.race([
           waitUntil(() => this.canScrollMore(), interval),
           sleep(waitSecs)
         ]);
 
-        elapsedWait += (Date.now() - startTime) * 2;
+        elapsedWait = this.state.segments * 2.0;
+        //elapsedWait += (Date.now() - startTime) * 2;
       }
+
+      const currPos = this.currScrollPos();
+
+      if (currPos === this.lastScrollPos) {
+        break;
+      }
+      this.lastScrollPos = currPos;
     }
   }
 
