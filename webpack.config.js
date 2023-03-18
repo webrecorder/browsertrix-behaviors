@@ -3,16 +3,31 @@
 const webpack = require("webpack");
 const TerserPlugin = require("terser-webpack-plugin");
 
-const jsConfig = (_env, argv) => {
-  const config = {
+const path = require("path");
+
+const tsConfig = (_env, argv) => {
+  return {
     mode: argv.mode,
     plugins: [
-      new webpack.BannerPlugin("behaviors.js is part of Webrecorder project. Copyright (C) 2021, Webrecorder Software. Licensed under the Affero General Public License v3."),
+      new webpack.BannerPlugin(`behaviors.js is part of Webrecorder project. Copyright (C) 2021-${new Date().getFullYear()}, Webrecorder Software. Licensed under the Affero General Public License v3.`),
       new webpack.ProgressPlugin()
     ],
+    entry: "./index.ts",
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          use: "ts-loader",
+          exclude: /node_modules/,
+        },
+      ],
+    },
+    resolve: {
+      extensions: [".tsx", ".ts", ".js"],
+    },
     output: {
-      iife: true,
-      filename: "behaviors.js"
+      filename: "behaviors.js",
+      path: path.resolve(__dirname, "dist"),
     },
     optimization: {
       minimize: true,
@@ -23,39 +38,6 @@ const jsConfig = (_env, argv) => {
       ],
     }
   };
-
-  console.log(">>> Running build in", argv.mode, "mode");
-  if (argv.mode === "development") {
-    config.devtool = "nosources-source-map";
-    config.optimization.minimize = false;
-  }
-
-  return config;
-};
-
-const path = require('path');
-
-const tsConfig = (_env, argv) => {
-  return {
-    mode: argv.mode,
-    entry: './index.ts',
-    module: {
-      rules: [
-        {
-          test: /\.tsx?$/,
-          use: 'ts-loader',
-          exclude: /node_modules/,
-        },
-      ],
-    },
-    resolve: {
-      extensions: ['.tsx', '.ts', '.js'],
-    },
-    output: {
-      filename: 'behaviors.js',
-      path: path.resolve(__dirname, 'dist'),
-    },
-  }
 };
 
 // module.exports = jsConfig;
