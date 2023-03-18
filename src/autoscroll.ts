@@ -9,6 +9,7 @@ export class AutoScroll extends Behavior {
   showMoreQuery: string;
   state: { segments: number };
   lastScrollPos: number;
+  samePosCount: number;
 
   constructor(autofetcher: AutoFetcher) {
     super();
@@ -22,6 +23,7 @@ export class AutoScroll extends Behavior {
     };
 
     this.lastScrollPos = -1;
+    this.samePosCount = 0;
   }
 
   static id = "Autoscroll";
@@ -156,22 +158,26 @@ export class AutoScroll extends Behavior {
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
         this.debug(`Waiting upto ${waitSecs} seconds for more scroll segments`);
 
-        //const startTime = Date.now();
+        const startTime = Date.now();
 
         await Promise.race([
           waitUntil(() => this.canScrollMore(), interval),
           sleep(waitSecs)
         ]);
 
-        elapsedWait = this.state.segments * 2.0;
-        //elapsedWait += (Date.now() - startTime) * 2;
+        elapsedWait += (Date.now() - startTime) * 2;
       }
 
       const currPos = this.currScrollPos();
 
       if (currPos === this.lastScrollPos) {
-        break;
+        if (++this.samePosCount >= 2) {
+          break;
+        }
+      } else {
+        this.samePosCount = 0;
       }
+
       this.lastScrollPos = currPos;
     }
   }
