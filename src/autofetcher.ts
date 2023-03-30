@@ -125,6 +125,7 @@ export class AutoFetcher extends BackgroundBehavior {
         "mode": "no-cors",
         "credentials": "include",
         "referrerPolicy": "origin-when-cross-origin",
+        "headers": {"x-browsertrix-fetch": "1"},
         abort
       } as {});
       abort.abort();
