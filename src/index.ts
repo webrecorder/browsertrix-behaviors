@@ -42,8 +42,8 @@ export class BehaviorManager {
     behaviorLog("Loaded behaviors for: " + self.location.href);
   }
 
-  init(opts: BehaviorManagerOpts) {
-    if (this.inited) {
+  init(opts: BehaviorManagerOpts, restart = false) {
+    if (this.inited && !restart) {
       return;
     }
 
@@ -139,13 +139,17 @@ export class BehaviorManager {
     }
   }
 
-  async run(opts) {
+  async run(opts, restart = false) {
+    if (restart) {
+      this.started = false;
+    }
+
     if (this.started) {
       this.unpause();
       return;
     }
 
-    this.init(opts);
+    this.init(opts, restart);
 
     await awaitLoad();
 

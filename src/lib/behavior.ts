@@ -134,6 +134,7 @@ export class BehaviorRunner extends BackgroundBehavior {
       throw Error("Invalid behavior found: missing `isMatch`, `init`, or `id` static methods");
     }
     super();
+    this.behaviorProps = behavior;
     this.inst = new behavior;
 
     if (
