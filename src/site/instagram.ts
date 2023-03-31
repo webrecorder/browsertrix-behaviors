@@ -22,7 +22,7 @@ export class InstagramPostsBehavior {
   static id = "Instagram";
 
   static isMatch() {
-    return window.location.href.match(/https:\/\/(www\.)?instagram\.com\/\w[\w.-]+/);
+    return !!window.location.href.match(/https:\/\/(www\.)?instagram\.com\/\w[\w.-]+/);
   }
 
   static init() {

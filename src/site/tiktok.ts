@@ -22,7 +22,7 @@ export class TikTokVideoBehavior {
 
   static isMatch() {
     const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@.+\/video\/\d+\/?.*/;
-    return window.location.href.match(pathRegex);
+    return !!window.location.href.match(pathRegex);
   }
 
   breadthComplete({ opts: { breadth } }, iter) {
@@ -66,7 +66,7 @@ export class TikTokProfileBehavior {
 
   static isMatch() {
     const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@[a-zA-Z0-9]+(\/?$|\/\?.*)/;
-    return window.location.href.match(pathRegex);
+    return !!window.location.href.match(pathRegex);
   }
 
   static init() {

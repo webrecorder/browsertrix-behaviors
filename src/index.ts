@@ -2,7 +2,7 @@ import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
 import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors } from "./lib/utils";
-import { BehaviorRunner } from "./lib/behavior";
+import { Behavior, BehaviorRunner } from "./lib/behavior";
 
 import siteBehaviors from "./site";
 
@@ -24,7 +24,7 @@ export class BehaviorManager {
   autofetch: AutoFetcher;
   behaviors: any[];
   loadedBehaviors: any;
-  mainBehavior: any;
+  mainBehavior: Behavior | BehaviorRunner | null;
   mainBehaviorClass: any;
   inited: boolean;
   started: boolean;
@@ -113,7 +113,12 @@ export class BehaviorManager {
     if (this.mainBehavior) {
       this.behaviors.push(this.mainBehavior);
 
-      return this.mainBehavior.name;
+      if (this.mainBehavior instanceof Behavior) {
+
+      }
+      if (this.mainBehavior instanceof BehaviorRunner) {
+        return this.mainBehavior.behaviorProps.id;
+      }
     }
 
     return "";
@@ -135,7 +140,6 @@ export class BehaviorManager {
   }
 
   async run(opts) {
-    console.log("DEBUG: Running Behaviors 2");
     if (this.started) {
       this.unpause();
       return;

@@ -8,7 +8,7 @@ export class TelegramBehavior {
   static id = "Telegram";
 
   static isMatch() {
-    return window.location.href.match(/https:\/\/t.me\/s\/\w[\w]+/);
+    return !!window.location.href.match(/https:\/\/t.me\/s\/\w[\w]+/);
   }
 
   static init() {

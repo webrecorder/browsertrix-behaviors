@@ -105,22 +105,36 @@ export class Behavior extends BackgroundBehavior {
 // WIP: BehaviorRunner class allows for arbitrary behavirs outside of the
 // library to be run through the BehaviorManager
 
+abstract class AbstractBehaviorInst {
+  abstract run: (ctx: any) => AsyncIterable<any>;
+}
+
+interface StaticAbstractBehavior {
+  id: String;
+  isMatch: () => boolean;
+  init: () => any;
+}
+
+type AbstractBehavior =
+  (new () => AbstractBehaviorInst) & StaticAbstractBehavior;
+
 export class BehaviorRunner extends BackgroundBehavior {
-  inst: any;
+  inst: AbstractBehaviorInst;
+  behaviorProps: StaticAbstractBehavior;
   ctx: any;
   _running: any;
   paused: any;
   _unpause: any;
 
-  constructor(behavior, opts = {}) {
+  constructor(behavior: AbstractBehavior, opts = {}) {
     if (
       typeof behavior.isMatch !== "function" ||
-      typeof behavior.name !== "string"
+      typeof behavior.id !== "string"
     ) {
-      throw Error("Invalid behavior found: missing `isMatch`, `init`, or `name` static methods");
+      throw Error("Invalid behavior found: missing `isMatch`, `init`, or `id` static methods");
     }
     super();
-    this.inst = new behavior();
+    this.inst = new behavior;
 
     if (
       typeof this.inst.run !== "function" ||
