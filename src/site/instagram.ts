@@ -1,249 +1,351 @@
-const subpostNextOnlyChevron = "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
+const subpostNextOnlyChevron =
+	"//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
 
 const Q = {
-  rootPath: "//article/div/div",
-  childMatchSelect: "string(.//a[starts-with(@href, '/')]/@href)",
-  childMatch: "child::div[.//a[@href='$1']]",
-  firstPostInRow: "div[1]/a",
-  postCloseButton: "/html/body/div[last()]/div[1]/button[.//*[@aria-label]]",
-  nextPost: "//button[.//*[local-name() = 'svg' and @aria-label='Next']]",
-  postLoading: "//*[@aria-label='Loading...']",
-  subpostNextOnlyChevron,
-  subpostPrevNextChevron: subpostNextOnlyChevron + "[2]",
-  commentRoot: "//article[@role='presentation']/div[1]/div[2]//ul",
-  viewReplies: "//li//button[span[not(count(*)) and text()!='$1']]",
-  loadMore: "//button[span[@aria-label]]",
+	rootPath: "//article/div/div",
+	childMatchSelect: "string(.//a[starts-with(@href, '/')]/@href)",
+	childMatch: "child::div[.//a[@href='$1']]",
+	firstPostInRow: "div[1]/a",
+	postCloseButton: "/html/body/div[last()]/div[1]/button[.//*[@aria-label]]",
+	nextPost: "//button[.//*[local-name() = 'svg' and @aria-label='Next']]",
+	postLoading: "//*[@aria-label='Loading...']",
+	subpostNextOnlyChevron,
+	subpostPrevNextChevron: subpostNextOnlyChevron + "[2]",
+	commentRoot: "//article[@role='presentation']/div[1]/div[2]//ul",
+	viewReplies: "//li//button[span[not(count(*)) and text()!='$1']]",
+	loadMore: "//button[span[@aria-label]]",
+	stories: "//div[@role='menu']//li[@tabindex='-1']",
+	storyClickTarget: ".//div[@role='menuitem']",
+	storiesNext: "//section/div/button[2]",
+	lastStoryProgress: "//div/section//header/div[1]/div[last()]/*[@style]",
+	nextImageInStory: "//section/div/button[last()]",
+	storyCloseButton: "//section/div/div[@tabindex]",
+	nextStory: "//div[@role='menu']//button[last()]",
 };
 
 export class InstagramPostsBehavior {
-  maxCommentsTime: number;
-  postOnlyWindow: any;
+	maxCommentsTime: number;
+	postOnlyWindow: any;
+
+	static id = "Instagram";
+
+	static isMatch() {
+		return window.location.href.match(
+			/https:\/\/(www\.)?instagram\.com\/\w[\w.-]+/
+		);
+	}
+
+	static init() {
+		return {
+			state: {
+				posts: 0,
+				slides: 0,
+				rows: 0,
+				comments: 0,
+				stories: 0,
+			},
+		};
+	}
+
+	constructor() {
+		this.maxCommentsTime = 10000;
+		// extra window for first post, if allowed
+		this.postOnlyWindow = null;
+	}
+
+	cleanup() {
+		if (this.postOnlyWindow) {
+			this.postOnlyWindow.close();
+			this.postOnlyWindow = null;
+		}
+	}
+
+	async waitForNext(ctx, child) {
+		if (!child) {
+			return null;
+		}
+
+		await ctx.Lib.sleep(ctx.Lib.waitUnit);
+
+		if (!child.nextElementSibling) {
+			return null;
+		}
+
+		return child.nextElementSibling;
+	}
+
+	async *iterRow(ctx) {
+		const { RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
+		let root = xpathNode(Q.rootPath);
+
+		if (!root) {
+			return;
+		}
 
-  static id = "Instagram";
+		let child = root.firstElementChild;
 
-  static isMatch() {
-    return window.location.href.match(/https:\/\/(www\.)?instagram\.com\/\w[\w.-]+/);
-  }
+		if (!child) {
+			return;
+		}
 
-  static init() {
-    return {
-      state: {
-        posts: 0,
-        slides: 0,
-        rows: 0,
-        comments: 0,
-      }
-    };
-  }
+		while (child) {
+			await sleep(waitUnit);
 
-  constructor() {
-    this.maxCommentsTime = 10000;
-    // extra window for first post, if allowed
-    this.postOnlyWindow = null;
-  }
+			const restorer = new RestoreState(Q.childMatchSelect, child);
 
-  cleanup() {
-    if (this.postOnlyWindow) {
-      this.postOnlyWindow.close();
-      this.postOnlyWindow = null;
-    }
-  }
+			if (restorer.matchValue) {
+				yield child;
 
-  async waitForNext(ctx, child) {
-    if (!child) {
-      return null;
-    }
+				child = await restorer.restore(Q.rootPath, Q.childMatch);
+			}
 
-    await ctx.Lib.sleep(ctx.Lib.waitUnit);
+			child = await this.waitForNext(ctx, child);
+		}
+	}
 
-    if (!child.nextElementSibling) {
-      return null;
-    }
+	async *viewStandalonePost(ctx, origLoc) {
+		const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } =
+			ctx.Lib;
+		let root = xpathNode(Q.rootPath);
 
-    return child.nextElementSibling;
-  }
+		if (!root || !root.firstElementChild) {
+			return;
+		}
 
-  async* iterRow(ctx) {
-    const { RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    let root = xpathNode(Q.rootPath);
+		const firstPostHref = xpathString(
+			Q.childMatchSelect,
+			root.firstElementChild
+		);
 
-    if (!root) {
-      return;
-    }
+		yield getState(
+			ctx,
+			"Loading single post view for first post: " + firstPostHref
+		);
+
+		window.history.replaceState({}, "", firstPostHref);
+		window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
 
-    let child = root.firstElementChild;
+		let root2 = null;
+		let root3 = null;
 
-    if (!child) {
-      return;
-    }
+		await sleep(waitUnit * 5);
 
-    while (child) {
-      await sleep(waitUnit);
+		await waitUntil(
+			() => (root2 = xpathNode(Q.rootPath)) !== root && root2,
+			waitUnit * 5
+		);
 
-      const restorer = new RestoreState(Q.childMatchSelect, child);
+		await sleep(waitUnit * 5);
 
-      if (restorer.matchValue) {
-        yield child;
+		window.history.replaceState({}, "", origLoc);
+		window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
 
-        child = await restorer.restore(Q.rootPath, Q.childMatch);
-      }
+		await waitUntil(
+			() => (root3 = xpathNode(Q.rootPath)) !== root2 && root3,
+			waitUnit * 5
+		);
+		//}
+	}
 
-      child = await this.waitForNext(ctx, child);
-    }
-  }
+	async *iterSubposts(ctx) {
+		const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
+		let next = xpathNode(Q.subpostNextOnlyChevron);
 
-  async* viewStandalonePost(ctx, origLoc) {
-    const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } = ctx.Lib;
-    let root = xpathNode(Q.rootPath);
+		let count = 1;
 
-    if (!root || !root.firstElementChild) {
-      return;
-    }
+		while (next) {
+			next.click();
+			await sleep(waitUnit * 5);
 
-    const firstPostHref = xpathString(Q.childMatchSelect, root.firstElementChild);
+			yield getState(
+				ctx,
+				`Loading Slide ${++count} for ${window.location.href}`,
+				"slides"
+			);
 
-    yield getState(ctx, "Loading single post view for first post: " + firstPostHref);
+			next = xpathNode(Q.subpostPrevNextChevron);
+		}
 
-    window.history.replaceState({}, "", firstPostHref);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+		await sleep(waitUnit * 5);
+	}
 
-    let root2 = null;
-    let root3 = null;
+	async iterComments(ctx) {
+		const { scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } = ctx.Lib;
+		const root = xpathNode(Q.commentRoot);
 
-    await sleep(waitUnit * 5);
+		if (!root) {
+			return;
+		}
 
-    await waitUntil(() => (root2 = xpathNode(Q.rootPath)) !== root && root2, waitUnit * 5);
+		let child = root.firstElementChild;
 
-    await sleep(waitUnit * 5);
+		let commentsLoaded = false;
 
-    window.history.replaceState({}, "", origLoc);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+		let text = "";
 
-    await waitUntil(() => (root3 = xpathNode(Q.rootPath)) !== root2 && root3, waitUnit * 5);
-    //}
-  }
+		while (child) {
+			scrollIntoView(child);
 
-  async *iterSubposts(ctx) {
-    const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    let next = xpathNode(Q.subpostNextOnlyChevron);
+			commentsLoaded = true;
 
-    let count = 1;
+			let viewReplies = xpathNode(Q.viewReplies.replace("$1", text), child);
 
-    while (next) {
-      next.click();
-      await sleep(waitUnit * 5);
+			while (viewReplies) {
+				const orig = viewReplies.textContent;
+				viewReplies.click();
+				ctx.state.comments++;
+				await sleep(waitUnit * 2.5);
 
-      yield getState(ctx, `Loading Slide ${++count} for ${window.location.href}`, "slides");
+				await waitUntil(() => orig !== viewReplies.textContent, waitUnit);
 
-      next = xpathNode(Q.subpostPrevNextChevron);
-    }
+				text = viewReplies.textContent;
+				viewReplies = xpathNode(Q.viewReplies.replace("$1", text), child);
+			}
 
-    await sleep(waitUnit * 5);
-  }
+			if (
+				child.nextElementSibling &&
+				child.nextElementSibling.tagName === "LI" &&
+				!child.nextElementSibling.nextElementSibling
+			) {
+				let loadMore = xpathNode(Q.loadMore, child.nextElementSibling);
+				if (loadMore) {
+					loadMore.click();
+					ctx.state.comments++;
+					await sleep(waitUnit * 5);
+				}
+			}
 
-  async iterComments(ctx) {
-    const { scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } = ctx.Lib;
-    const root = xpathNode(Q.commentRoot);
+			child = child.nextElementSibling;
+			await sleep(waitUnit * 2.5);
+		}
 
-    if (!root) {
-      return;
-    }
+		return commentsLoaded;
+	}
 
-    let child = root.firstElementChild;
+	async *iterPosts(ctx, next) {
+		const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
+		let count = 0;
 
-    let commentsLoaded = false;
+		while (next && ++count <= 3) {
+			next.click();
+			await sleep(waitUnit * 10);
 
-    let text = "";
+			yield getState(ctx, "Loading Post: " + window.location.href, "posts");
 
-    while (child) {
-      scrollIntoView(child);
+			await fetch(window.location.href);
 
-      commentsLoaded = true;
+			yield* this.iterSubposts(ctx);
 
-      let viewReplies = xpathNode(Q.viewReplies.replace("$1", text), child);
+			yield getState(ctx, "Loaded Comments", "comments");
 
-      while (viewReplies) {
-        const orig = viewReplies.textContent;
-        viewReplies.click();
-        ctx.state.comments++;
-        await sleep(waitUnit * 2.5);
+			await Promise.race([this.iterComments(ctx), sleep(this.maxCommentsTime)]);
 
-        await waitUntil(() => orig !== viewReplies.textContent, waitUnit);
+			next = xpathNode(Q.nextPost);
 
-        text = viewReplies.textContent;
-        viewReplies = xpathNode(Q.viewReplies.replace("$1", text), child);
-      }
+			while (!next && xpathNode(Q.postLoading)) {
+				await sleep(waitUnit * 2.5);
+			}
+		}
 
-      if (child.nextElementSibling && child.nextElementSibling.tagName === "LI" && !child.nextElementSibling.nextElementSibling) {
-        let loadMore = xpathNode(Q.loadMore, child.nextElementSibling);
-        if (loadMore) {
-          loadMore.click();
-          ctx.state.comments++;
-          await sleep(waitUnit * 5);
-        }
-      }
+		await sleep(waitUnit * 5);
+	}
 
-      child = child.nextElementSibling;
-      await sleep(waitUnit * 2.5);
-    }
+	async *iterStory(ctx, story) {
+		const { getState, sleep, waitUnit, xpathNode, waitUntil } = ctx.Lib;
+		let node = xpathNode(`//li[contains(@style, '${story}')]`);
 
-    return commentsLoaded;
-  }
+		let nextButton = xpathNode(Q.nextStory);
+		while (node == null && nextButton != null) {
+			nextButton.click();
 
-  async* iterPosts(ctx, next) {
-    const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    let count = 0;
+			node = xpathNode(`//li[contains(@style, '${story}')]`);
 
-    while (next && ++count <= 3) {
-      next.click();
-      await sleep(waitUnit * 10);
+			nextButton = xpathNode(Q.nextStory);
 
-      yield getState(ctx, "Loading Post: " + window.location.href, "posts");
+			yield;
+		}
 
-      await fetch(window.location.href);
+		const target = node.firstChild.firstChild;
 
-      yield* this.iterSubposts(ctx);
+		target.scrollIntoView();
 
-      yield getState(ctx, "Loaded Comments", "comments");
+		await sleep(waitUnit * 2);
 
-      await Promise.race([
-        this.iterComments(ctx),
-        sleep(this.maxCommentsTime)
-      ]);
+		target.click();
 
-      next = xpathNode(Q.nextPost);
+		await waitUntil(() => xpathNode(Q.storiesNext) != null, waitUnit * 2);
 
-      while (!next && xpathNode(Q.postLoading)) {
-        await sleep(waitUnit * 2.5);
-      }
-    }
+		let lastStoryIndicator = xpathNode(Q.lastStoryProgress);
 
-    await sleep(waitUnit * 5);
-  }
+		const nextStoryButton = xpathNode(Q.nextImageInStory);
 
-  async* run(ctx) {
-    const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
-    const origLoc = window.location.href;
+		while (lastStoryIndicator == null) {
+			nextStoryButton.click();
 
-    yield* this.viewStandalonePost(ctx, origLoc);
+			await sleep(waitUnit * 5);
 
-    for await (const row of this.iterRow(ctx)) {
-      scrollIntoView(row);
+			lastStoryIndicator = xpathNode(Q.lastStoryProgress);
+		}
 
-      await sleep(waitUnit * 2.5);
+		const closeTarget = xpathNode(Q.storyCloseButton);
 
-      yield getState(ctx, "Loading Row", "rows");
+		closeTarget.click();
 
-      const first = xpathNode(Q.firstPostInRow, row);
+		await sleep(waitUnit * 10);
 
-      yield* this.iterPosts(ctx, first);
+		yield getState("Loaded story", "stories");
+	}
 
-      const close = xpathNode(Q.postCloseButton);
-      if (close) {
-        close.click();
-      }
+	async *iterStories(ctx) {
+		const { xpathNode } = ctx.Lib;
+		let storyNode = xpathNode(Q.stories);
 
-      await sleep(waitUnit * 5);
-    }
-  }
+		if (!storyNode) return;
+
+		while (storyNode) {
+			yield storyNode;
+			storyNode = storyNode.nextElementSibling;
+		}
+	}
+
+	async *run(ctx) {
+		const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
+		const origLoc = window.location.href;
+
+		const storySelector = [];
+		for await (const story of this.iterStories(ctx)) {
+			story.scrollIntoView({ behavior: "smooth" });
+
+			yield getState(`Found story`);
+
+			await sleep(waitUnit * 5);
+
+			storySelector.push(story.getAttribute("style"));
+		}
+
+		for (const selector of storySelector) {
+			yield* this.iterStory(ctx, selector);
+		}
+
+		yield* this.viewStandalonePost(ctx, origLoc);
+
+		for await (const row of this.iterRow(ctx)) {
+			scrollIntoView(row);
+
+			await sleep(waitUnit * 2.5);
+
+			yield getState(ctx, "Loading Row", "rows");
+
+			const first = xpathNode(Q.firstPostInRow, row);
+
+			yield* this.iterPosts(ctx, first);
+
+			const close = xpathNode(Q.postCloseButton);
+			if (close) {
+				close.click();
+			}
+
+			await sleep(waitUnit * 5);
+		}
+	}
 }
