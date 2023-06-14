@@ -223,7 +223,7 @@ export class InstagramPostsBehavior {
 
   async* run(ctx) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
-    const origLoc = window.location.href;
+    //const origLoc = window.location.href;
 
     //yield* this.viewStandalonePost(ctx, origLoc);
 
