@@ -1,5 +1,5 @@
 import { behaviorLog, getState } from "./utils";
-import * as LibUtils from "./utils";
+import * as Lib from "./utils";
 
 // ===========================================================================
 export class BackgroundBehavior {
@@ -126,13 +126,7 @@ export class BehaviorRunner extends BackgroundBehavior {
   paused: any;
   _unpause: any;
 
-  constructor(behavior: AbstractBehavior, opts = {}) {
-    if (
-      typeof behavior.isMatch !== "function" ||
-      typeof behavior.id !== "string"
-    ) {
-      throw Error("Invalid behavior found: missing `isMatch`, `init`, or `id` static methods");
-    }
+  constructor(behavior: AbstractBehavior, mainOpts = {}) {
     super();
     this.behaviorProps = behavior;
     this.inst = new behavior;
@@ -141,15 +135,15 @@ export class BehaviorRunner extends BackgroundBehavior {
       typeof this.inst.run !== "function" ||
       this.inst.run.constructor.name !== "AsyncGeneratorFunction"
     ) {
-      throw Error("Invalid behavior found: missing `async run*` instance method");
+      throw Error("Invalid behavior: missing `async run*` instance method");
     }
 
-    const _ctx = behavior.init() || {};
-    this.ctx = {
-      Lib: LibUtils,
-      state: _ctx.state || {},
-      opts: { ...(_ctx.opts || {}), ...opts }
-    };
+    let {state, opts} = behavior.init();
+    state = state || {};
+    opts = opts ? {...opts, ...mainOpts} : mainOpts;
+    const log = behaviorLog;
+
+    this.ctx = { Lib, state, opts, log };
 
     this._running = null;
     this.paused = null;

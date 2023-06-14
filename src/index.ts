@@ -18,7 +18,10 @@ interface BehaviorManagerOpts {
   log?: ((...message: string[]) => void) | string | false;
   siteSpecific?: boolean | object;
   timeout?: number;
+  fetchHeaders?: object | null;
 }
+
+const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true};
 
 export class BehaviorManager {
   autofetch: AutoFetcher;
@@ -42,7 +45,7 @@ export class BehaviorManager {
     behaviorLog("Loaded behaviors for: " + self.location.href);
   }
 
-  init(opts: BehaviorManagerOpts, restart = false) {
+  init(opts: BehaviorManagerOpts = DEFAULT_OPTS, restart = false, customBehaviors: any[] = null) {
     if (this.inited && !restart) {
       return;
     }
@@ -71,7 +74,7 @@ export class BehaviorManager {
       }
     }
 
-    this.autofetch = new AutoFetcher(!!opts.autofetch);
+    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders);
 
     if (opts.autofetch) {
       behaviorLog("Enable AutoFetcher");
@@ -90,6 +93,15 @@ export class BehaviorManager {
     }
 
     if (opts.siteSpecific) {
+      if (customBehaviors) {
+        for (const behaviorClass of customBehaviors) {
+          try {
+            this.load(behaviorClass);
+          } catch (e) {
+            behaviorLog(`Failed to load custom behavior: ${e} ${behaviorClass}`);
+          }
+        }
+      }
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
@@ -97,7 +109,11 @@ export class BehaviorManager {
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
             (opts.siteSpecific[name] || {}) : {};
-          this.mainBehavior = new BehaviorRunner(siteBehaviorClass, siteSpecificOpts);
+          try {
+            this.mainBehavior = new BehaviorRunner(siteBehaviorClass, siteSpecificOpts);
+          } catch (e) {
+            behaviorLog(e.toString(), "error");
+          }
           siteMatch = true;
           break;
         }
@@ -125,7 +141,27 @@ export class BehaviorManager {
   }
 
   load(behaviorClass) {
-    this.loadedBehaviors[behaviorClass.name] = behaviorClass;
+    if (typeof(behaviorClass) !== "function") {
+      behaviorLog(`Must pass a class object, got ${behaviorClass}`, "error");
+      return;
+    }
+
+    if (typeof(behaviorClass.id) !== "string") {
+      behaviorLog(`Behavior class must have a string string "id" property`, "error");
+      return;
+    }
+
+    if (
+      typeof(behaviorClass.isMatch) !== "function" ||
+      typeof(behaviorClass.init) !== "function"
+    ) {
+      behaviorLog("Behavior class must have an is `isMatch()` and `init()` static methods", "error");
+      return;
+    }
+
+    const name = behaviorClass.id;
+    behaviorLog(`Loading external class ${name}: ${behaviorClass}`, "debug");
+    this.loadedBehaviors[name] = behaviorClass;
   }
 
   async resolve(target) {
@@ -139,7 +175,7 @@ export class BehaviorManager {
     }
   }
 
-  async run(opts, restart = false) {
+  async run(opts: BehaviorManagerOpts = DEFAULT_OPTS, restart = false) {
     if (restart) {
       this.started = false;
     }
