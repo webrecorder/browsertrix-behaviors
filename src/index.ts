@@ -18,6 +18,7 @@ interface BehaviorManagerOpts {
   log?: ((...message: string[]) => void) | string | false;
   siteSpecific?: boolean | object;
   timeout?: number;
+  fetchHeaders?: object | null;
 }
 
 const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true};
@@ -73,7 +74,7 @@ export class BehaviorManager {
       }
     }
 
-    this.autofetch = new AutoFetcher(!!opts.autofetch);
+    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders);
 
     if (opts.autofetch) {
       behaviorLog("Enable AutoFetcher");

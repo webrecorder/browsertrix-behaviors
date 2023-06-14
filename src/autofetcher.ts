@@ -27,15 +27,18 @@ export class AutoFetcher extends BackgroundBehavior {
   mutationObserver: MutationObserver;
   numPending: number;
   numDone: number;
+  headers: object;
   _donePromise: Promise<null>;
   _markDone: (value: any) => void;
 
-  constructor(active = false) {
+  constructor(active = false, headers = null) {
     super();
     this.urlSet = new Set();
     this.urlQueue = [];
     this.numPending = 0;
     this.numDone = 0;
+
+    this.headers = headers || {};
 
     this._donePromise = new Promise((resolve) => this._markDone = resolve);
 
@@ -125,7 +128,7 @@ export class AutoFetcher extends BackgroundBehavior {
         "mode": "no-cors",
         "credentials": "include",
         "referrerPolicy": "origin-when-cross-origin",
-        "headers": {"x-browsertrix-fetch": "1"},
+        "headers": this.headers,
         abort
       } as {});
       abort.abort();
