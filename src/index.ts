@@ -20,6 +20,8 @@ interface BehaviorManagerOpts {
   timeout?: number;
 }
 
+const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true};
+
 export class BehaviorManager {
   autofetch: AutoFetcher;
   behaviors: any[];
@@ -42,7 +44,7 @@ export class BehaviorManager {
     behaviorLog("Loaded behaviors for: " + self.location.href);
   }
 
-  init(opts: BehaviorManagerOpts, restart = false, customBehaviors: any[] = null) {
+  init(opts: BehaviorManagerOpts = DEFAULT_OPTS, restart = false, customBehaviors: any[] = null) {
     if (this.inited && !restart) {
       return;
     }
@@ -172,7 +174,7 @@ export class BehaviorManager {
     }
   }
 
-  async run(opts, restart = false) {
+  async run(opts: BehaviorManagerOpts = DEFAULT_OPTS, restart = false) {
     if (restart) {
       this.started = false;
     }

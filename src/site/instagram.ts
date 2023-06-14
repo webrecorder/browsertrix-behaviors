@@ -225,7 +225,7 @@ export class InstagramPostsBehavior {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
     const origLoc = window.location.href;
 
-    yield* this.viewStandalonePost(ctx, origLoc);
+    //yield* this.viewStandalonePost(ctx, origLoc);
 
     for await (const row of this.iterRow(ctx)) {
       scrollIntoView(row);
