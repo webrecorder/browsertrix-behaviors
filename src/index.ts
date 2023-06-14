@@ -42,7 +42,7 @@ export class BehaviorManager {
     behaviorLog("Loaded behaviors for: " + self.location.href);
   }
 
-  init(opts: BehaviorManagerOpts, restart = false) {
+  init(opts: BehaviorManagerOpts, restart = false, customBehaviors: any[] = null) {
     if (this.inited && !restart) {
       return;
     }
@@ -90,6 +90,15 @@ export class BehaviorManager {
     }
 
     if (opts.siteSpecific) {
+      if (customBehaviors) {
+        for (const behaviorClass of customBehaviors) {
+          try {
+            this.load(behaviorClass);
+          } catch (e) {
+            behaviorLog(`Failed to load custom behavior: ${e} ${behaviorClass}`);
+          }
+        }
+      }
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
@@ -97,7 +106,11 @@ export class BehaviorManager {
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
             (opts.siteSpecific[name] || {}) : {};
-          this.mainBehavior = new BehaviorRunner(siteBehaviorClass, siteSpecificOpts);
+          try {
+            this.mainBehavior = new BehaviorRunner(siteBehaviorClass, siteSpecificOpts);
+          } catch (e) {
+            behaviorLog(e.toString(), "error");
+          }
           siteMatch = true;
           break;
         }
@@ -125,7 +138,27 @@ export class BehaviorManager {
   }
 
   load(behaviorClass) {
-    this.loadedBehaviors[behaviorClass.name] = behaviorClass;
+    if (typeof(behaviorClass) !== "function") {
+      behaviorLog(`Must pass a class object, got ${behaviorClass}`, "error");
+      return;
+    }
+
+    if (typeof(behaviorClass.id) !== "string") {
+      behaviorLog(`Behavior class must have a string string "id" property`, "error");
+      return;
+    }
+
+    if (
+      typeof(behaviorClass.isMatch) !== "function" ||
+      typeof(behaviorClass.init) !== "function"
+    ) {
+      behaviorLog("Behavior class must have an is `isMatch()` and `init()` static methods", "error");
+      return;
+    }
+
+    const name = behaviorClass.id;
+    behaviorLog(`Loading external class ${name}: ${behaviorClass}`, "debug");
+    this.loadedBehaviors[name] = behaviorClass;
   }
 
   async resolve(target) {
