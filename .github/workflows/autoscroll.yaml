@@ -38,5 +38,5 @@ jobs:
       run: cat ./log
 
     - name: compare crawl log to expected
-      run: grep '"msg"' ./log | diff - ./test/expected-autoscroll.log
+      run: jq -c 'select(.context == "behaviorScript") | .details' | diff - ./test/expected-autoscroll.log
 
