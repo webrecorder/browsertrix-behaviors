@@ -1,22 +1,22 @@
 
 const Q = {
-  entryTPLEinverstanden: "//*[@id=\"notice\"]/div[3]/div[1]/button",
+  entryTCFEinverstanden: "//*[@id=\"notice\"]/div[3]/div[1]/button",
   classMessageOverlay: ".message-overlay",
 };
 
 
+
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
 
-export class DerStandardAtBehavior {
-  static id = "DerStandardAt";
+export class DerStandardAtTCFBehavior {
+  static id = "DerStandardAt_TCF";
 
 
   isMobile: boolean;
 
   static isMatch() {
-    return !!window.location.href.match( /https:\/\/(www\.)?derstandard\.at/ );
+    return !!window.location.href.match( /https:\/\/www\.derstandard\.at\/consent\/tcf/ );
   }
-
   static init() {
     return {
       state: {},
@@ -29,15 +29,17 @@ export class DerStandardAtBehavior {
 
   }
 
-  async* clickTPLAway(ctx) {
+  async* clickTCFAway(ctx) {
     const {getState, waitRandom, scrollAndClick, xpathNode } = ctx.Lib;
 
     await waitRandom();
 
-    const entryTPLEinverstanden = xpathNode(Q.entryTPLEinverstanden);
+    const entryTPLEinverstanden = xpathNode(Q.entryTCFEinverstanden);
+
+    console.log(entryTPLEinverstanden);
 
     if ( entryTPLEinverstanden ) {
-      yield getState(ctx, "Clicking TPL away, Button found!");
+      yield getState(ctx, "Clicking TCF away, Button found!");
       await scrollAndClick(entryTPLEinverstanden);
       await waitRandom(25, 30);
 
@@ -47,11 +49,11 @@ export class DerStandardAtBehavior {
         return false;
       }
       else {
-        yield getState(ctx, "TPL Button clicked and overlay removed", "TPL");
+        yield getState(ctx, "TCF Button clicked and overlay removed", "TCF");
       }
     }
     else {
-      yield getState(ctx, "ERROR: Can't click TPL away, Button NOT found!");
+      yield getState(ctx, "ERROR: Can't click TCF away, Button NOT found!");
       return false;
     }
     return true;
@@ -60,7 +62,7 @@ export class DerStandardAtBehavior {
 
   async* run(ctx) {
 
-    const {getState, waitRandom} = ctx.Lib;
+    const {getState, waitRandom, xpathNode} = ctx.Lib;
 
     const userAgent = navigator.userAgent;
     const regexsMobile = [/(Android)(.+)(Mobile)/i, /BlackBerry/i, /iPhone|iPod/i, /Opera Mini/i, /IEMobile/i];
@@ -76,18 +78,17 @@ export class DerStandardAtBehavior {
 
     await waitRandom();
 
-    ctx.state = {"TPL": 0, "Articles": 0 , "Comments" : 0 };
+    ctx.state = {"TCF": 0 };
 
-    let tpl_away = await this.clickTPLAway(ctx);
-    if( tpl_away ) {
-      const url_res = await fetch( "https://www.derstandard.at" );
-      console.log(url_res);
+    await this.clickTCFAway(ctx);
+
+    const entryTPLEinverstanden = xpathNode(Q.entryTCFEinverstanden);
+
+    if( !entryTPLEinverstanden ) {
+      yield getState(ctx, "TCF Overlay clicked away");
     }
     else {
-      yield getState(ctx, "ERROR: Aborted due TPL Overlay");
-
+      yield getState(ctx, "ERROR: Aborted due TCF Overlay");
     }
-
   }
-
 }

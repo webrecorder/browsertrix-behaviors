@@ -6,6 +6,8 @@ import { TikTokVideoBehavior, TikTokProfileBehavior } from "./tiktok";
 import { MetaAdsReportDownloadBehavior } from "./meta_ads_report";
 import { MetaAdsLibaryBehavior } from "./meta_ads";
 import { DerStandardAtBehavior } from "./derstandard_at";
+import { DerStandardAtTCFBehavior } from "./derstandard_at_tcf";
+
 
 const siteBehaviors = [
 
@@ -16,6 +18,7 @@ const siteBehaviors = [
   TelegramBehavior,
   TikTokVideoBehavior,
   TikTokProfileBehavior,
+  DerStandardAtTCFBehavior,
   DerStandardAtBehavior,
   MetaAdsLibaryBehavior,
 ];
