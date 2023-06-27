@@ -1,27 +1,8 @@
-# Browsertrix Behaviors
+# Browsertrix Behaviors ONB
 
-<details>
-  <summary><b>Behavior Testing Results</b></summary>
+Fork of the webrecorder Project https://github.com/webrecorder/browsertrix-behaviors
 
-[![Autoscroll Behavior](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoscroll.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoscroll.yaml)
-
-[![Autoplay Behavior: Youtube](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoplay-youtube.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoplay-youtube.yaml)
-
-[![Autoplay Behavior: Vimeo](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoplay-vimeo.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/autoplay-vimeo.yaml)
-
-[![Instagram Behavior (Logged In)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/instagram.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/instagram.yaml)
-
-[![Twitter Behavior](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter.yaml)
-
-[![Twitter Behavior (Logged In)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter-logged-in.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/twitter-logged-in.yaml)
-
-[![Facebook Behavior: Page (Owner Logged In)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/facebook-page.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/facebook-page.yaml)
-
-[![Facebook Behavior: Page Photos (Owner Logged In)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/facebook-photos.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/facebook-photos.yaml)
-
-[![Facebook Behavior: Page Videos (Owner Logged In)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/facebook-videos.yaml/badge.svg)](https://github.com/webrecorder/browsertrix-behaviors/actions/workflows/facebook-videos.yaml)
-
-</details>
+Adding speficic behaviors for Austrian Pages  
 
 A set of behaviors injected into the browser to perform certain operations on a page, such as scrolling, fetching additional URLs, or performing
 customized actions for social-media sites.
