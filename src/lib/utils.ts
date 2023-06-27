@@ -59,6 +59,12 @@ export function behaviorLog(data, type = "debug") {
   }
 }
 
+export async function waitRandom( min = 2, max= 10) {
+  const factor = Math.floor(Math.random() * (max - min + 1) + min);
+  await sleep(waitUnit * factor);
+}
+
+
 export async function openWindow(url) {
   if (self["__bx_open"]) {
     const p = new Promise((resolve) => self["__bx_openResolve"] = resolve);
@@ -149,6 +155,12 @@ export function xpathNode(path, root?) {
   root = root || document;
   return document.evaluate(path, root, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
 }
+
+export function xpathNodeDocument(path, cur_tab, root?) {
+  root = root || cur_tab;
+  return cur_tab.evaluate(path, root, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+}
+
 
 export function* xpathNodes(path, root) {
   root = root || document;
