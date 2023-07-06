@@ -32,6 +32,7 @@ export class BehaviorManager {
   inited: boolean;
   started: boolean;
   timeout?: number;
+  opts?: BehaviorManagerOpts;
 
   constructor() {
     this.behaviors = [];
@@ -51,6 +52,7 @@ export class BehaviorManager {
     }
 
     this.inited = true;
+    this.opts = opts;
 
     if (!self.window) {
       return;
@@ -86,22 +88,26 @@ export class BehaviorManager {
       this.behaviors.push(new Autoplay(this.autofetch));
     }
 
-    let siteMatch = false;
-
     if (self.window.top !== self.window) {
       return;
     }
 
-    if (opts.siteSpecific) {
-      if (customBehaviors) {
-        for (const behaviorClass of customBehaviors) {
-          try {
-            this.load(behaviorClass);
-          } catch (e) {
-            behaviorLog(`Failed to load custom behavior: ${e} ${behaviorClass}`);
-          }
+    if (customBehaviors) {
+      for (const behaviorClass of customBehaviors) {
+        try {
+          this.load(behaviorClass);
+        } catch (e) {
+          behaviorLog(`Failed to load custom behavior: ${e} ${behaviorClass}`);
         }
       }
+    }
+  }
+
+  selectMainBehavior() {
+    const opts = this.opts;
+    let siteMatch = false;
+
+    if (opts.siteSpecific) {
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
@@ -186,6 +192,7 @@ export class BehaviorManager {
     }
 
     this.init(opts, restart);
+    this.selectMainBehavior();
 
     await awaitLoad();
 
