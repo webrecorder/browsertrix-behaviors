@@ -1,5 +1,5 @@
 const Q = {
-  rootPath: "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]/*[1]",
+  rootPath: "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]//div[@style]",
   anchor: ".//article",
   childMatchSelect: "string(.//article//a[starts-with(@href, '/') and @aria-label]/@href)",
   childMatch: "child::div[.//a[@href='$1']]",
