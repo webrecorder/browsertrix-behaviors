@@ -2,6 +2,8 @@
 const Q = {
   entryTCFEinverstanden: "//*[@id=\"notice\"]/div[3]/div[1]/button",
   classMessageOverlay: ".message-overlay",
+  textEinverstanden: "//*[contains(text(), 'EINVERSTANDEN') or contains(text(), 'Einverstanden')]",
+
 };
 
 
@@ -35,6 +37,10 @@ export class DerStandardAtTCFBehavior {
     await waitRandom();
 
     const entryTPLEinverstanden = xpathNode(Q.entryTCFEinverstanden);
+    if( !entryTPLEinverstanden ) {
+      const textEinverstanden = xpathNode(Q.textEinverstanden);
+      console.log(textEinverstanden);
+    }
 
     console.log(entryTPLEinverstanden);
 

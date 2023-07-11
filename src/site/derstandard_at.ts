@@ -1,7 +1,14 @@
-
 const Q = {
-  entryTPLEinverstanden: "//*[@id=\"notice\"]/div[3]/div[1]/button",
-  classMessageOverlay: ".message-overlay",
+  entryTPLEinverstanden: "//*[contains(text(), 'EINVERSTANDEN') or contains(text(), 'Einverstanden')]",
+  entryTPLTitle: "//*[title=\"Einverstanden\"]",
+  entryTPLButtonTitle: "//button[title=\"Einverstanden\"]",
+  entryTPLXPath: "//*[@id=\"notice\"]/div[3]/div[1]/button",
+  iFrameButton: "//iframe/preceding-sibling::button",
+  //messageDiv: "//*[@id=\"sp_message_container_759155\"]",
+  messageDiv: "//*[@id=\"sp_message_iframe_759155\"]",
+  anyButton: "//button",
+  anyIFrame: "//iframe",
+  classMessageOverlay: "//*[@class=\"message-overlay\"]",
 };
 
 
@@ -26,33 +33,77 @@ export class DerStandardAtBehavior {
 
   constructor() {
     this.isMobile = false;
+  }
 
+  haveButtons( ctx ) {
+    const { xpathNode } = ctx.Lib;
+    for (let key in Q) {
+      let selector = Q[key];
+      const searchElem = xpathNode( selector );
+      if (searchElem) {
+        console.log(searchElem);
+        return searchElem;
+
+      }
+      console.log(selector + " and key " + key + " was not found in page");
+    }
+    return false;
   }
 
   async* clickTPLAway(ctx) {
-    const {getState, waitRandom, scrollAndClick, xpathNode } = ctx.Lib;
+    const {getState, waitRandom, xpathNode  } = ctx.Lib;
+    yield getState(ctx, "Clicking TPL away, Starting");
 
     await waitRandom();
 
-    const entryTPLEinverstanden = xpathNode(Q.entryTPLEinverstanden);
+    const parent_element = xpathNode(Q.messageDiv); //this.haveButtons( ctx );
 
-    if ( entryTPLEinverstanden ) {
+    if (parent_element) {
+      console.log(parent_element);
       yield getState(ctx, "Clicking TPL away, Button found!");
-      await scrollAndClick(entryTPLEinverstanden);
+      const btnEin = xpathNode("/html" , parent_element);
+      console.log(btnEin);
+      btnEin["click"]();
       await waitRandom(25, 30);
-
-      const classMessageOverlay = xpathNode(Q.classMessageOverlay);
+      const classMessageOverlay = xpathNode(Q.classMessageOverlay, parent_element);
       if (classMessageOverlay) {
         yield getState(ctx, "ERROR: Button clicked but overlay still exists!");
         return false;
-      }
-      else {
+      } else {
         yield getState(ctx, "TPL Button clicked and overlay removed", "TPL");
       }
-    }
-    else {
-      yield getState(ctx, "ERROR: Can't click TPL away, Button NOT found!");
-      return false;
+
+      /*
+      const entryTPLEinverstanden = xpathNode(selector);
+      console.log(entryTPLEinverstanden);
+
+      if(!entryTPLEinverstanden) {
+        const buttons = Array.from(xpathNodes(selector));
+        console.log(buttons);
+        buttons.forEach(function ( value ) {
+          console.log(value);
+        });
+      }
+
+
+      if (entryTPLEinverstanden) {
+        yield getState(ctx, "Clicking TPL away, Button found!");
+        await scrollAndClick(entryTPLEinverstanden);
+        await waitRandom(25, 30);
+        const classMessageOverlay = xpathNode(Q.classMessageOverlay);
+        if (classMessageOverlay) {
+          yield getState(ctx, "ERROR: Button clicked but overlay still exists!");
+          return false;
+        } else {
+          yield getState(ctx, "TPL Button clicked and overlay removed", "TPL");
+        }
+      } else {
+        yield getState(ctx, "ERROR: Can't click TPL away, Button NOT found!");
+        return false;
+      }
+
+       */
+
     }
     return true;
 
@@ -78,7 +129,7 @@ export class DerStandardAtBehavior {
 
     ctx.state = {"TPL": 0, "Articles": 0 , "Comments" : 0 };
 
-    let tpl_away = await this.clickTPLAway(ctx);
+    let tpl_away = yield* await this.clickTPLAway(ctx);
     if( tpl_away ) {
       const url_res = await fetch( "https://www.derstandard.at" );
       console.log(url_res);

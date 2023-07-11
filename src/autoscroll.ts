@@ -1,8 +1,17 @@
 import { Behavior } from "./lib/behavior";
-import { sleep, waitUnit, xpathNode, isInViewport, waitUntil } from "./lib/utils";
+import {sleep, waitUnit, xpathNode, waitUntil, scrollAndClick} from "./lib/utils";
 import { type AutoFetcher } from "./autofetcher";
 
-
+const Q = {
+  byTextEn: "//button[contains(text(), 'more') or contains(text(), 'Show more') or contains(text(), 'More') or contains(text(), 'show more') ]",
+  byTextDe: "//button[contains(text(), 'Weiter') or contains(text(), 'Mehr') or contains(text(), 'Lade') or contains(text(), 'mehr') ]",
+  byId: "//button[@id=\"load-more\" or @id=\"load_more\" ]",
+  byClass: "//button[@class=\"load-more\" or @class=\"load_more\" ]",
+  bySpanText: "//span[contains(text(), 'Weiterlesen') or contains(text(), 'Lesen') or contains(text(), 'lesen')]",
+  bySpanClass: "//span[@class=\"inline-comment-marker\"]",
+  inIFramebyType: "//iframe/preceding-sibling::button",
+  byType: "//button",
+};
 // ===========================================================================
 export class AutoScroll extends Behavior {
   autoFetcher: AutoFetcher;
@@ -15,8 +24,6 @@ export class AutoScroll extends Behavior {
     super();
 
     this.autoFetcher = autofetcher;
-
-    this.showMoreQuery = "//*[contains(text(), 'show more') or contains(text(), 'Show more')]";
 
     this.state = {
       segments: 1
@@ -80,34 +87,104 @@ export class AutoScroll extends Behavior {
       return false;
     }
 
-    if ((self.window.scrollY + self["scrollHeight"]) / self.document.scrollingElement.scrollHeight < 0.90) {
-      return false;
-    }
-
-    return true;
+    return (self.window.scrollY + self["scrollHeight"]) / self.document.scrollingElement.scrollHeight >= 0.90;
   }
 
-  async*[Symbol.asyncIterator]() {
+  haveButtons() {
+    for (var key in Q) {
+      let selector = Q[key];
+      const showMoreElem = xpathNode( selector );
+      if (showMoreElem) {
+        return key;
+      }
+      else {
+        console.log(selector + " and key " + key + " was not found in page");
+      }
+    }
+    return false;
+  }
+
+  async* [Symbol.asyncIterator]() {
+    var selector = null;
+    var buttons_away = null;
+
     if (this.shouldScrollUp()) {
-      yield* this.scrollUp();
-      return;
+      while (!buttons_away) {
+        yield* this.scrollUp();
+        selector = await this.haveButtons();
+        if (selector) {
+          buttons_away = yield* this.clickButtons(Q[selector], true);
+        }
+      }
     }
 
     if (await this.shouldScroll()) {
-      yield* this.scrollDown();
+      while (!buttons_away) {
+        yield* this.scrollDown();
+        selector = await this.haveButtons();
+        if (selector) {
+          buttons_away = yield* this.clickButtons(Q[selector], false);
+        }
+      }
+    }
+    if (buttons_away === null) {
       return;
     }
 
+
     yield this.getState("Skipping autoscroll, page seems to not be responsive to scrolling events");
+  }
+
+  async* clickButtons(showMoreQuery , scrollUp) {
+    const lastScrollHeight = self.document.scrollingElement.scrollHeight;
+
+    let showMoreElem = null;
+    let ignoreShowMoreElem = false;
+
+    while(!ignoreShowMoreElem)
+    {
+      yield this.getState("Show More + " + showMoreElem);
+      console.log(showMoreQuery);
+
+      showMoreElem = xpathNode(showMoreQuery);
+
+      if (showMoreElem) {
+        yield this.getState("Clicking 'Show More', awaiting more content");
+        await scrollAndClick(showMoreElem);
+        await sleep(waitUnit);
+
+        if  (scrollUp ) {
+          await Promise.race([
+            waitUntil(() => self.document.scrollingElement.scrollHeight < lastScrollHeight , 500),
+            sleep(30000)
+          ]);
+        }
+        else {
+          await Promise.race([
+            waitUntil(() => self.document.scrollingElement.scrollHeight > lastScrollHeight
+              , 500),
+            sleep(30000)
+          ]);
+        }
+
+        await sleep(waitUnit);
+        if (self.document.scrollingElement.scrollHeight === lastScrollHeight) {
+          ignoreShowMoreElem = true;
+        }
+        showMoreElem = null;
+      }
+      else
+      {
+        return false;
+      }
+    }
+    return true;
   }
 
   async* scrollDown() {
     const scrollInc = Math.min(self.document.scrollingElement.clientHeight * 0.10, 30);
     const interval = 75;
     let elapsedWait = 0;
-
-    let showMoreElem = null;
-    let ignoreShowMoreElem = false;
 
     const scrollOpts = { top: scrollInc, left: 0, behavior: "auto" };
     let lastScrollHeight = self.document.scrollingElement.scrollHeight;
@@ -120,27 +197,10 @@ export class AutoScroll extends Behavior {
         lastScrollHeight = scrollHeight;
       }
 
-      if (!showMoreElem && !ignoreShowMoreElem) {
-        showMoreElem = xpathNode(this.showMoreQuery);
-      }
+      await sleep(waitUnit);
 
-      if (showMoreElem && isInViewport(showMoreElem)) {
-        yield this.getState("Clicking 'Show More', awaiting more content");
-        showMoreElem["click"]();
+      await Promise.race([ waitUntil(() => self.document.scrollingElement.scrollHeight > scrollHeight, 500), sleep(30000) ]);
 
-        await sleep(waitUnit);
-
-        await Promise.race([
-          waitUntil(() => self.document.scrollingElement.scrollHeight > scrollHeight, 500),
-          sleep(30000)
-        ]);
-
-        if (self.document.scrollingElement.scrollHeight === scrollHeight) {
-          ignoreShowMoreElem = true;
-        }
-
-        showMoreElem = null;
-      }
 
       // eslint-disable-next-line
       self.scrollBy(scrollOpts as ScrollToOptions);
@@ -167,7 +227,6 @@ export class AutoScroll extends Behavior {
 
         elapsedWait += (Date.now() - startTime) * 2;
       }
-
       const currPos = this.currScrollPos();
 
       if (currPos === this.lastScrollPos) {
@@ -177,14 +236,13 @@ export class AutoScroll extends Behavior {
       } else {
         this.samePosCount = 0;
       }
-
       this.lastScrollPos = currPos;
     }
   }
 
   async* scrollUp() {
     const scrollInc = Math.min(self.document.scrollingElement.clientHeight * 0.10, 30);
-    const interval = 75;
+    const interval = 5;
 
     const scrollOpts = { top: -scrollInc, left: 0, behavior: "auto" };
 
