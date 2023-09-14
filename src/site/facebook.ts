@@ -280,7 +280,7 @@ export class FacebookTimelineBehavior {
 
 
     let nextSlideButton = null;
-		let currentHref;
+		let currentHref = "";
 
     while ((nextSlideButton = xpathNode(Q.nextSlideQuery))) {
       lastHref = window.location.href;

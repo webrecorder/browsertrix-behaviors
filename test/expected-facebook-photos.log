@@ -1,10 +1,7 @@
-{"state":{},"msg":"Starting..."}
-{"state":{"photos":1,"comments":0},"msg":"Viewing photo https://www.facebook.com/Capture-Sample-105559135004406/photos/105560261670960"}
-{"state":{"photos":1,"comments":1},"msg":"Loading comments"}
-{"state":{"photos":1,"comments":2},"msg":"Loading comments"}
-{"state":{"photos":2,"comments":2},"msg":"Viewing photo https://www.facebook.com/Capture-Sample-105559135004406/photos/105560188337634"}
-{"state":{"photos":3,"comments":2},"msg":"Viewing photo https://www.facebook.com/Capture-Sample-105559135004406/photos/105560165004303"}
-{"state":{"photos":3,"comments":3},"msg":"Loading comments"}
-{"state":{"photos":3,"comments":4},"msg":"Loading comments"}
-{"state":{"photos":4,"comments":4},"msg":"Viewing photo https://www.facebook.com/Capture-Sample-105559135004406/photos/105560131670973"}
-{"state":{"photos":4,"comments":4},"msg":"done!"}
+{"msg":"Starting...","state":{}}
+{"msg":"Viewing photo https://www.facebook.com/photo/?fbid=105737024986069&set=pb.100066493156766.-2207520000","state":{"photos":1,"comments":0}}
+{"msg":"Viewing photo https://www.facebook.com/photo/?fbid=105736844986087&set=pb.100066493156766.-2207520000","state":{"photos":2,"comments":0}}
+{"msg":"Viewing photo https://www.facebook.com/photo/?fbid=105736801652758&set=pb.100066493156766.-2207520000","state":{"photos":3,"comments":0}}
+{"msg":"Viewing photo https://www.facebook.com/photo/?fbid=105736774986094&set=pb.100066493156766.-2207520000","state":{"photos":4,"comments":0}}
+{"msg":"Viewing photo https://www.facebook.com/photo/?fbid=105736638319441&set=pb.100066493156766.-2207520000","state":{"photos":5,"comments":0}}
+{"msg":"done!","state":{"photos":5,"comments":0}}
