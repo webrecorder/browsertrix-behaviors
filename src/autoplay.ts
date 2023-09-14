@@ -32,7 +32,7 @@ export class Autoplay extends BackgroundBehavior {
     this.running = true;
     //this.initObserver();
 
-    this.pollAudioVideo()
+    this.pollAudioVideo();
 
     this._initDone();
   }
