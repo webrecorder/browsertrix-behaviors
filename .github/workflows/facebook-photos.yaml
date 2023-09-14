@@ -41,7 +41,7 @@ jobs:
       run:  docker pull $BROWSERTRIX_IMAGE
 
     - name: run crawl
-      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/profile.tar.gz:/profile.tar.gz $BROWSERTRIX_IMAGE crawl --url https://www.facebook.com/Capture-Sample-105559135004406/photos --limit 1 --logging behaviors --profile /profile.tar.gz > ./log
+      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/profile.tar.gz:/profile.tar.gz $BROWSERTRIX_IMAGE crawl --url https://www.facebook.com/capture.sample/photos/ --limit 1 --logging behaviors --profile /profile.tar.gz > ./log
 
     - name: cat log
       run: cat ./log
