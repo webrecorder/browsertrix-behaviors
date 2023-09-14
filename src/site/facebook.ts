@@ -14,8 +14,8 @@ const Q = {
   commentMoreComments: "./following-sibling::div/div/div[2][@role='button'][./span/span]",
   viewComments: ".//h4/..//div[@role='button']",
   photoCommentList: "//ul[../h2]",
-  firstPhotoThumbnail: "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']",
   firstVideoThumbnail: "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']",
+  firstPhotoThumbnail: "/html/body/div[1]/div/div[1]/div/div[3]/div/div/div/div[1]/div[1]/div/div/div[4]/div/div/div/div/div/div/div/div/div[3]/div[1]/div[1]/div/div/a/img",
   firstVideoSimple: "//div[@role='main']//a[contains(@href, '/videos/') and @aria-hidden!='true']",
   mainVideo: "//div[@data-pagelet='root']//div[@role='dialog']//div[@role='main']//video",
   nextVideo: "following::a[contains(@href, '/videos/') and @aria-hidden!='true']",
@@ -275,8 +275,12 @@ export class FacebookTimelineBehavior {
     firstPhoto.click();
     await sleep(waitUnit * 5);
     await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+		const fromQuestionMark = window.location.href.indexOf("?");
+    const firstPhotoHref = window.location.href.substring(fromQuestionMark, window.location.href.length - 7); // Facebook adds &type=3 on click from thumbnail but not on scroll
+
 
     let nextSlideButton = null;
+		let currentHref;
 
     while ((nextSlideButton = xpathNode(Q.nextSlideQuery))) {
       lastHref = window.location.href;
@@ -290,7 +294,9 @@ export class FacebookTimelineBehavior {
         sleep(3000)
       ]);
 
-      if (window.location.href === lastHref) {
+      // Exit once we've looped
+			currentHref = window.location.href.substring(window.location.href.indexOf("?"), window.location.href.length);
+      if (currentHref === firstPhotoHref) {
         break;
       }
 
