@@ -4,7 +4,7 @@
 // (May not work for cross-origin stylesheets)
 
 import { BackgroundBehavior } from "./lib/behavior";
-import { awaitLoad, sleep } from "./lib/utils";
+import { sleep } from "./lib/utils";
 
 const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy'], " +
   "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
@@ -30,6 +30,9 @@ export class AutoFetcher extends BackgroundBehavior {
   headers: object;
   _donePromise: Promise<null>;
   _markDone: (value: any) => void;
+  active: boolean;
+
+  static id = "AutoFetcher";
 
   constructor(active = false, headers = null) {
     super();
@@ -42,9 +45,7 @@ export class AutoFetcher extends BackgroundBehavior {
 
     this._donePromise = new Promise((resolve) => this._markDone = resolve);
 
-    if (active) {
-      this.start();
-    }
+    this.active = active;
   }
 
   get numFetching() {
@@ -52,15 +53,18 @@ export class AutoFetcher extends BackgroundBehavior {
   }
 
   async start() {
-    await awaitLoad();
+    if (!this.active) {
+      return;
+    }
+
     this.run();
     this.initObserver();
 
-    await sleep(500);
-
-    if (!this.urlQueue.length && !this.numPending) {
-      this._markDone(null);
-    }
+    sleep(500).then(() => {
+      if (!this.urlQueue.length && !this.numPending) {
+        this._markDone(null);
+      }
+    });
   }
 
   done() {
