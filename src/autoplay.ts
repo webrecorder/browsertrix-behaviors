@@ -10,10 +10,12 @@ export class Autoplay extends BackgroundBehavior {
   numPlaying: number;
   promises: Promise<any>[];
   _initDone: Function;
+  running = false;
+  polling = false;
 
   static id = "Autoplay";
 
-  constructor(autofetcher: AutoFetcher) {
+  constructor(autofetcher: AutoFetcher, startEarly = false) {
     super();
     this.mediaSet = new Set();
     this.autofetcher = autofetcher;
@@ -21,12 +23,16 @@ export class Autoplay extends BackgroundBehavior {
     this.promises = [];
     this._initDone = () => null;
     this.promises.push(new Promise((resolve) => this._initDone = resolve));
+    if (startEarly) {
+      document.addEventListener("DOMContentLoaded", () => this.pollAudioVideo());
+    }
   }
 
   async start() {
+    this.running = true;
     //this.initObserver();
 
-    this.pollAudioVideo();
+    this.pollAudioVideo()
 
     this._initDone();
   }
@@ -34,9 +40,23 @@ export class Autoplay extends BackgroundBehavior {
   async pollAudioVideo() {
     const run = true;
 
+    if (this.polling) {
+      return
+    }
+
+    this.polling = true;
+
     while (run) {
       for (const [, elem] of document.querySelectorAll("video, audio, picture").entries()) {
         if (!elem["__bx_autoplay_found"]) {
+
+          if (!this.running) {
+            if (this.processFetchableUrl(elem)) {
+              elem["__bx_autoplay_found"] = true;
+            }
+            continue;
+          }
+
           await this.loadMedia(elem);
           elem["__bx_autoplay_found"] = true;
         }
@@ -44,6 +64,8 @@ export class Autoplay extends BackgroundBehavior {
 
       await sleep(500);
     }
+
+    this.polling = false;
   }
 
   fetchSrcUrl(source) {

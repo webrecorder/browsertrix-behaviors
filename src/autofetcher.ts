@@ -22,34 +22,35 @@ const MAX_CONCURRENT = 6;
 
 // ===========================================================================
 export class AutoFetcher extends BackgroundBehavior {
-  urlSet: Set<string>;
-  urlQueue: string[];
+  urlSet: Set<string> = new Set();
+  pendingQueue: string[] = [];
+  waitQueue: string[] = [];
   mutationObserver: MutationObserver;
-  numPending: number;
-  numDone: number;
+  numPending: number = 0;
+  numDone: number = 0;
   headers: object;
   _donePromise: Promise<null>;
   _markDone: (value: any) => void;
   active: boolean;
+  running = false;
 
   static id = "AutoFetcher";
 
-  constructor(active = false, headers = null) {
+  constructor(active = false, headers = null, startEarly = false) {
     super();
-    this.urlSet = new Set();
-    this.urlQueue = [];
-    this.numPending = 0;
-    this.numDone = 0;
 
     this.headers = headers || {};
 
     this._donePromise = new Promise((resolve) => this._markDone = resolve);
 
     this.active = active;
+    if (this.active && startEarly) {
+      document.addEventListener("DOMContentLoaded", () => this.initObserver());
+    }
   }
 
   get numFetching() {
-    return this.numDone + this.numPending + this.urlQueue.length;
+    return this.numDone + this.numPending + this.pendingQueue.length;
   }
 
   async start() {
@@ -57,11 +58,12 @@ export class AutoFetcher extends BackgroundBehavior {
       return;
     }
 
-    this.run();
     this.initObserver();
 
+    this.run();
+
     sleep(500).then(() => {
-      if (!this.urlQueue.length && !this.numPending) {
+      if (!this.pendingQueue.length && !this.numPending) {
         this._markDone(null);
       }
     });
@@ -72,6 +74,13 @@ export class AutoFetcher extends BackgroundBehavior {
   }
 
   async run() {
+    this.running = true;
+
+    for (const url of this.waitQueue) {
+      this.doFetch(url);
+    }
+    this.waitQueue = [];
+
     this.extractSrcSrcSetAll(document);
     this.extractStyleSheets();
   }
@@ -97,7 +106,11 @@ export class AutoFetcher extends BackgroundBehavior {
 
     this.urlSet.add(url);
 
-    this.doFetch(url);
+    if (!this.running) {
+      this.waitQueue.push(url);
+    } else {
+      this.doFetch(url);
+    }
 
     return true;
   }
@@ -143,10 +156,10 @@ export class AutoFetcher extends BackgroundBehavior {
   }
 
   async doFetch(url: string) {
-    this.urlQueue.push(url);
+    this.pendingQueue.push(url);
     if (this.numPending <= MAX_CONCURRENT) {
-      while (this.urlQueue.length > 0) {
-        const url = this.urlQueue.shift();
+      while (this.pendingQueue.length > 0) {
+        const url = this.pendingQueue.shift();
 
         this.numPending++;
 
@@ -169,6 +182,9 @@ export class AutoFetcher extends BackgroundBehavior {
   }
 
   initObserver() {
+    if (this.mutationObserver) {
+      return;
+    }
     this.mutationObserver = new MutationObserver((changes) => this.observeChange(changes));
 
     this.mutationObserver.observe(document.documentElement, {

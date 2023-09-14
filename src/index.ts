@@ -19,6 +19,7 @@ interface BehaviorManagerOpts {
   siteSpecific?: boolean | object;
   timeout?: number;
   fetchHeaders?: object | null;
+  startEarly?: boolean | null;
 }
 
 const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true};
@@ -76,7 +77,7 @@ export class BehaviorManager {
       }
     }
 
-    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders);
+    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders, opts.startEarly);
 
     if (opts.autofetch) {
       behaviorLog("Using AutoFetcher");
@@ -85,7 +86,7 @@ export class BehaviorManager {
 
     if (opts.autoplay) {
       behaviorLog("Using Autoplay");
-      this.behaviors.push(new Autoplay(this.autofetch));
+      this.behaviors.push(new Autoplay(this.autofetch, opts.startEarly));
     }
 
     if (self.window.top !== self.window) {
