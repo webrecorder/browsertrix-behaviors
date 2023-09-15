@@ -30,6 +30,9 @@ jobs:
         SOURCE: ${{ secrets.PROFILE_URL }}
         DEST: './profile.tar.gz'
 
+    - name: see if profile exists
+      run: ls
+
     - name: install requirements
       run: yarn install
 
