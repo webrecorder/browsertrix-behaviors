@@ -275,12 +275,12 @@ export class FacebookTimelineBehavior {
     firstPhoto.click();
     await sleep(waitUnit * 5);
     await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
-		const fromQuestionMark = window.location.href.indexOf("?");
+    const fromQuestionMark = window.location.href.indexOf("?");
     const firstPhotoHref = window.location.href.substring(fromQuestionMark, window.location.href.length - 7); // Facebook adds &type=3 on click from thumbnail but not on scroll
 
 
     let nextSlideButton = null;
-		let currentHref = "";
+    let currentHref = "";
 
     while ((nextSlideButton = xpathNode(Q.nextSlideQuery))) {
       lastHref = window.location.href;
@@ -295,7 +295,7 @@ export class FacebookTimelineBehavior {
       ]);
 
       // Exit once we've looped
-			currentHref = window.location.href.substring(window.location.href.indexOf("?"), window.location.href.length);
+      currentHref = window.location.href.substring(window.location.href.indexOf("?"), window.location.href.length);
       if (currentHref === firstPhotoHref) {
         break;
       }
