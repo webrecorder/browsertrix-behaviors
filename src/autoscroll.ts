@@ -131,7 +131,6 @@ export class AutoScroll extends Behavior {
       return;
     }
 
-
     yield this.getState("Skipping autoscroll, page seems to not be responsive to scrolling events");
   }
 

@@ -4,6 +4,8 @@ import { TelegramBehavior } from "./telegram";
 import { TwitterTimelineBehavior } from "./twitter";
 import { TikTokVideoBehavior, TikTokProfileBehavior } from "./tiktok";
 import { MetaAdsReportDownloadBehavior } from "./meta_ads_report";
+import { WahlkabineAtBehaviors } from "./wahlkabine";
+
 
 const siteBehaviors = [
 
@@ -14,6 +16,7 @@ const siteBehaviors = [
   TelegramBehavior,
   TikTokVideoBehavior,
   TikTokProfileBehavior,
+  WahlkabineAtBehaviors,
 ];
 
 export default siteBehaviors;
