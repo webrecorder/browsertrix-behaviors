@@ -202,7 +202,18 @@ export class BehaviorManager {
 
     this.started = true;
 
-    let allBehaviors = Promise.allSettled(this.behaviors.map(x => x.done()));
+    let allBehaviors = ((promises) => Promise.all(
+      promises.map(p => p
+        .then(value => ({
+          status: "fulfilled",
+          value
+        }))
+        .catch(reason => ({
+          status: "rejected",
+          reason
+        }))
+      )
+    ));
 
     if (this.timeout) {
       behaviorLog(`Waiting for behaviors to finish or ${this.timeout}ms timeout`);
