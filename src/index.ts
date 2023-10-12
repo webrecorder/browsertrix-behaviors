@@ -153,7 +153,7 @@ export class BehaviorManager {
     }
 
     if (typeof(behaviorClass.id) !== "string") {
-      behaviorLog(`Behavior class must have a string string "id" property`, "error");
+      behaviorLog("Behavior class must have a string string \"id\" property", "error");
       return;
     }
 

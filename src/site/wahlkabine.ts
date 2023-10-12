@@ -69,7 +69,7 @@ export class WahlkabineAtBehaviors {
     await waitRandom();
 
 
-    yield getState(ctx, "Iterate Questions Done");
+    yield getState(ctx, "Iterate Questions " + button  + " Done");
   }
 
   async* run(ctx) {
@@ -107,6 +107,6 @@ export class WahlkabineAtBehaviors {
     yield* this.ClickThrewWithButton(ctx, Q.pressNo);
     await waitRandom();
 
-    yield "Wahlkabine Completed";
+    yield "Wahlkabine Site Completed";
   }
 }
