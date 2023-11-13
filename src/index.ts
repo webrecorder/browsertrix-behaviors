@@ -7,7 +7,7 @@ import { Behavior, BehaviorRunner } from "./lib/behavior";
 import siteBehaviors from "./site";
 
 // ===========================================================================
-// ====                  WIP: New Behavior Manager                        ====
+// ====                  Behavior Manager                        ====
 // ===========================================================================
 //
 
@@ -19,6 +19,7 @@ interface BehaviorManagerOpts {
   siteSpecific?: boolean | object;
   timeout?: number;
   fetchHeaders?: object | null;
+  startEarly?: boolean | null;
 }
 
 const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true};
@@ -76,16 +77,16 @@ export class BehaviorManager {
       }
     }
 
-    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders);
+    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders, opts.startEarly);
 
     if (opts.autofetch) {
-      behaviorLog("Enable AutoFetcher");
+      behaviorLog("Using AutoFetcher");
       this.behaviors.push(this.autofetch);
     }
 
     if (opts.autoplay) {
-      behaviorLog("Enable Autoplay");
-      this.behaviors.push(new Autoplay(this.autofetch));
+      behaviorLog("Using Autoplay");
+      this.behaviors.push(new Autoplay(this.autofetch, opts.startEarly));
     }
 
     if (self.window.top !== self.window) {
@@ -111,7 +112,7 @@ export class BehaviorManager {
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
-          behaviorLog("Starting Site-Specific Behavior: " + name);
+          behaviorLog("Using Site-Specific Behavior: " + name);
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
             (opts.siteSpecific[name] || {}) : {};
@@ -127,7 +128,7 @@ export class BehaviorManager {
     }
 
     if (!siteMatch && opts.autoscroll) {
-      behaviorLog("Starting Autoscroll");
+      behaviorLog("Using Autoscroll");
       this.mainBehaviorClass = AutoScroll;
       this.mainBehavior = new AutoScroll(this.autofetch);
     }
@@ -135,9 +136,6 @@ export class BehaviorManager {
     if (this.mainBehavior) {
       this.behaviors.push(this.mainBehavior);
 
-      if (this.mainBehavior instanceof Behavior) {
-
-      }
       if (this.mainBehavior instanceof BehaviorRunner) {
         return this.mainBehavior.behaviorProps.id;
       }
@@ -148,12 +146,12 @@ export class BehaviorManager {
 
   load(behaviorClass) {
     if (typeof(behaviorClass) !== "function") {
-      behaviorLog(`Must pass a class object, got ${behaviorClass}`, "error");
+      behaviorLog("Must pass a class object, got ${behaviorClass}", "error");
       return;
     }
 
     if (typeof(behaviorClass.id) !== "string") {
-      behaviorLog("Behavior class must have a string string \"id\" property", "error");
+      behaviorLog("Behavior class must have a string string `id` property", "error");
       return;
     }
 
@@ -192,28 +190,22 @@ export class BehaviorManager {
     }
 
     this.init(opts, restart);
-    this.selectMainBehavior();
+    if (!this.mainBehavior) {
+      this.selectMainBehavior();
+    }
 
     await awaitLoad();
 
-    if (this.mainBehavior) {
-      this.mainBehavior.start();
-    }
+    this.behaviors.forEach(x => {
+      behaviorLog("Starting behavior: " + x.constructor.id || "(Unnamed)");
+      x.start();
+    });
 
     this.started = true;
 
-    let allBehaviors = ((promises) => Promise.all(
-      promises.map(p => p
-        .then(value => ({
-          status: "fulfilled",
-          value
-        }))
-        .catch(reason => ({
-          status: "rejected",
-          reason
-        }))
-      )
-    ));
+    await sleep(500);
+
+    let allBehaviors = Promise.allSettled(this.behaviors.map(x => x.done()));
 
     if (this.timeout) {
       behaviorLog(`Waiting for behaviors to finish or ${this.timeout}ms timeout`);
@@ -246,16 +238,12 @@ export class BehaviorManager {
 
   pause() {
     behaviorLog("Pausing Main Behavior" + this.mainBehaviorClass.name);
-    if (this.mainBehavior) {
-      this.mainBehavior.pause();
-    }
+    this.behaviors.forEach(x => x.pause());
   }
 
   unpause() {
     // behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
-    if (this.mainBehavior) {
-      this.mainBehavior.unpause();
-    }
+    this.behaviors.forEach(x => x.unpause());
   }
 
   doAsyncFetch(url) {

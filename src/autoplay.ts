@@ -1,5 +1,5 @@
 import { BackgroundBehavior } from "./lib/behavior";
-import { awaitLoad, sleep } from "./lib/utils";
+import { sleep } from "./lib/utils";
 import { type AutoFetcher } from "./autofetcher";
 
 
@@ -10,8 +10,12 @@ export class Autoplay extends BackgroundBehavior {
   numPlaying: number;
   promises: Promise<any>[];
   _initDone: Function;
+  running = false;
+  polling = false;
 
-  constructor(autofetcher: AutoFetcher) {
+  static id = "Autoplay";
+
+  constructor(autofetcher: AutoFetcher, startEarly = false) {
     super();
     this.mediaSet = new Set();
     this.autofetcher = autofetcher;
@@ -19,11 +23,13 @@ export class Autoplay extends BackgroundBehavior {
     this.promises = [];
     this._initDone = () => null;
     this.promises.push(new Promise((resolve) => this._initDone = resolve));
-    this.start();
+    if (startEarly) {
+      document.addEventListener("DOMContentLoaded", () => this.pollAudioVideo());
+    }
   }
 
   async start() {
-    await awaitLoad();
+    this.running = true;
     //this.initObserver();
 
     this.pollAudioVideo();
@@ -34,9 +40,23 @@ export class Autoplay extends BackgroundBehavior {
   async pollAudioVideo() {
     const run = true;
 
+    if (this.polling) {
+      return;
+    }
+
+    this.polling = true;
+
     while (run) {
       for (const [, elem] of document.querySelectorAll("video, audio, picture").entries()) {
         if (!elem["__bx_autoplay_found"]) {
+
+          if (!this.running) {
+            if (this.processFetchableUrl(elem)) {
+              elem["__bx_autoplay_found"] = true;
+            }
+            continue;
+          }
+
           await this.loadMedia(elem);
           elem["__bx_autoplay_found"] = true;
         }
@@ -44,6 +64,8 @@ export class Autoplay extends BackgroundBehavior {
 
       await sleep(500);
     }
+
+    this.polling = false;
   }
 
   fetchSrcUrl(source) {
@@ -142,17 +164,17 @@ export class Autoplay extends BackgroundBehavior {
 
     started.then(() => this.promises.push(finished));
 
-    media.addEventListener("loadstart", () => { this.debug("loadstart"); resolve2(true); });
-    media.addEventListener("playing", () => { this.debug("playing"); resolve2(true); });
+    media.addEventListener("loadstart", () => { this.debug("media event: loadstart"); resolve2(true); });
+    media.addEventListener("playing", () => { this.debug("media event: playing"); resolve2(true); });
 
-    media.addEventListener("loadeddata", () => this.debug("loadeddata"));
+    media.addEventListener("loadeddata", () => this.debug("media event: loadeddata"));
 
-    media.addEventListener("ended", () => { this.debug("ended"); resolve(); });
-    media.addEventListener("pause", () => { this.debug("pause"); resolve(); });
-    media.addEventListener("abort", () => { this.debug("abort"); resolve(); });
-    media.addEventListener("error", () => { this.debug("error"); resolve(); });
-    media.addEventListener("stalled", () => { this.debug("stalled"); resolve(); });
-    media.addEventListener("suspend", () => { this.debug("suspend"); resolve(); });
+    media.addEventListener("ended", () => { this.debug("media event: ended"); resolve(); });
+    media.addEventListener("pause", () => { this.debug("media event: pause"); resolve(); });
+    media.addEventListener("abort", () => { this.debug("media event: abort"); resolve(); });
+    media.addEventListener("error", () => { this.debug("media event: error"); resolve(); });
+    media.addEventListener("stalled", () => { this.debug("media event: stalled"); resolve(); });
+    media.addEventListener("suspend", () => { this.debug("media event: suspend"); resolve(); });
 
     media.muted = true;
 
@@ -162,14 +184,17 @@ export class Autoplay extends BackgroundBehavior {
     if (!hasA) {
       media.click();
 
-      const loadingStarted = await Promise.race([started, sleep(1000)]);
-
-      if (loadingStarted) {
+      if (await Promise.race([started, sleep(1000)])) {
+        this.debug("play started after media.click()");
         return finished;
       }
     }
 
     media.play();
+
+    if (await Promise.race([started, sleep(1000)])) {
+      this.debug("play started after media.play()");
+    }
 
     return finished;
   }
@@ -178,4 +203,3 @@ export class Autoplay extends BackgroundBehavior {
     return Promise.allSettled(this.promises);
   }
 }
-
