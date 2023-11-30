@@ -59,6 +59,12 @@ export function behaviorLog(data, type = "debug") {
   }
 }
 
+
+export async function waitRandom( min = 2, max= 10) {
+  const factor = Math.floor(Math.random() * (max - min + 1) + min);
+  await sleep(waitUnit * factor);
+}
+
 export async function openWindow(url) {
   if (self["__bx_open"]) {
     const p = new Promise((resolve) => self["__bx_openResolve"] = resolve);
