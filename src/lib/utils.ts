@@ -58,6 +58,22 @@ export function behaviorLog(data, type = "debug") {
     callBinding(_logFunc, { data, type });
   }
 }
+export async function isMobile( ) {
+  const userAgent = navigator.userAgent;
+  const regexsMobile = [/(Android)(.+)(Mobile)/i, /BlackBerry/i, /iPhone|iPod/i, /Opera Mini/i, /IEMobile/i];
+  if (regexsMobile.some((b) => userAgent.match(b))) {
+    return true;
+  }
+  const regexTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/;
+  if(regexTablet.test(userAgent.toLowerCase())){
+    return true;
+  }
+  return false;
+}
+export async function waitRandom( min = 2, max= 10) {
+  const factor = Math.floor(Math.random() * (max - min + 1) + min);
+  await sleep(waitUnit * factor);
+}
 
 export async function openWindow(url) {
   if (self["__bx_open"]) {

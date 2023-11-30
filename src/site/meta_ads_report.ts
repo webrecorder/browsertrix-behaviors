@@ -85,17 +85,9 @@ export class MetaAdsReportDownloadBehavior {
   }
 
   async* run(ctx) {
-    const {getState, waitRandom} = ctx.Lib;
+    const {getState, waitRandom, isMobile} = ctx.Lib;
 
-    const userAgent = navigator.userAgent;
-    const regexsMobile = [/(Android)(.+)(Mobile)/i, /BlackBerry/i, /iPhone|iPod/i, /Opera Mini/i, /IEMobile/i];
-    if (regexsMobile.some((b) => userAgent.match(b))) {
-      this.isMobile = true;
-    }
-    const regexTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/;
-    if(regexTablet.test(userAgent.toLowerCase())){
-      this.isMobile = true;
-    }
+    this.isMobile = isMobile();
 
     yield getState(ctx, "Starting with isMobile " + this.isMobile );
 
