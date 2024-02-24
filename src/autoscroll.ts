@@ -1,5 +1,5 @@
 import { Behavior } from "./lib/behavior";
-import { sleep, waitUnit, xpathNode, isInViewport, waitUntil } from "./lib/utils";
+import { sleep, waitUnit, xpathNode, isInViewport, waitUntil, behaviorLog, addLink } from "./lib/utils";
 import { type AutoFetcher } from "./autofetcher";
 
 
@@ -10,6 +10,8 @@ export class AutoScroll extends Behavior {
   state: { segments: number };
   lastScrollPos: number;
   samePosCount: number;
+
+  origPath: string;
 
   constructor(autofetcher: AutoFetcher) {
     super();
@@ -24,6 +26,8 @@ export class AutoScroll extends Behavior {
 
     this.lastScrollPos = -1;
     this.samePosCount = 0;
+
+    this.origPath = document.location.pathname;
   }
 
   static id = "Autoscroll";
@@ -113,6 +117,13 @@ export class AutoScroll extends Behavior {
     let lastScrollHeight = self.document.scrollingElement.scrollHeight;
 
     while (this.canScrollMore()) {
+      if (document.location.pathname !== this.origPath) {
+        behaviorLog("Location Changed, stopping scroll: " +
+          `${document.location.pathname} != ${this.origPath}`, "info");
+        addLink(document.location.href);
+        return;
+      }
+
       const scrollHeight = self.document.scrollingElement.scrollHeight;
 
       if (scrollHeight > lastScrollHeight) {
