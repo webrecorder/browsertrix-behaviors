@@ -136,9 +136,6 @@ export class BehaviorManager {
     if (this.mainBehavior) {
       this.behaviors.push(this.mainBehavior);
 
-      // if (this.mainBehavior instanceof Behavior) {
-
-      // }
       if (this.mainBehavior instanceof BehaviorRunner) {
         return this.mainBehavior.behaviorProps.id;
       }
