@@ -41,7 +41,7 @@ export class Autoplay extends BackgroundBehavior {
     const run = true;
 
     if (this.polling) {
-      return
+      return;
     }
 
     this.polling = true;

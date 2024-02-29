@@ -89,7 +89,7 @@ export class BehaviorManager {
       this.behaviors.push(new Autoplay(this.autofetch, opts.startEarly));
     }
 
-    if (self.window.top !== self.window) {
+    if (self.window.top !== self.window && window["__WB_replay_top"] !== self.window) {
       return;
     }
 
@@ -136,9 +136,6 @@ export class BehaviorManager {
     if (this.mainBehavior) {
       this.behaviors.push(this.mainBehavior);
 
-      if (this.mainBehavior instanceof Behavior) {
-
-      }
       if (this.mainBehavior instanceof BehaviorRunner) {
         return this.mainBehavior.behaviorProps.id;
       }
@@ -154,7 +151,7 @@ export class BehaviorManager {
     }
 
     if (typeof(behaviorClass.id) !== "string") {
-      behaviorLog(`Behavior class must have a string string "id" property`, "error");
+      behaviorLog("Behavior class must have a string string \"id\" property", "error");
       return;
     }
 

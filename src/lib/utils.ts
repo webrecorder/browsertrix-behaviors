@@ -59,6 +59,12 @@ export function behaviorLog(data, type = "debug") {
   }
 }
 
+export function addLink(url) {
+  if (self["__bx_addLink"]) {
+    self["__bx_addLink"](url);
+  }
+}
+
 export async function openWindow(url) {
   if (self["__bx_open"]) {
     const p = new Promise((resolve) => self["__bx_openResolve"] = resolve);
