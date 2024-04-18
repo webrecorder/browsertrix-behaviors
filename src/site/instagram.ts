@@ -13,6 +13,7 @@ const Q = {
   commentRoot: "//article[@role='presentation']/div[1]/div[2]//ul",
   viewReplies: "//li//button[span[not(count(*)) and text()!='$1']]",
   loadMore: "//button[span[@aria-label]]",
+  pageLoadWaitUntil: "//main"
 };
 
 export class InstagramPostsBehavior {
@@ -245,5 +246,14 @@ export class InstagramPostsBehavior {
 
       await sleep(waitUnit * 5);
     }
+  }
+
+  async initialPageLoad(ctx: any) {
+    const { Lib, log } = ctx;
+    const { waitUntilNode } = Lib;
+
+    log("Waiting for Instagram to fully load", "info");
+
+    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 30000);
   }
 }

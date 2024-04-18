@@ -87,6 +87,10 @@ export class Behavior extends BackgroundBehavior {
 
   }
 
+  async initialPageLoad() {
+    // wait for initial page load here
+  }
+
   static load() {
     if (self["__bx_behaviors"]) {
       self["__bx_behaviors"].load(this);
@@ -102,11 +106,13 @@ export class Behavior extends BackgroundBehavior {
   }
 }
 
-// WIP: BehaviorRunner class allows for arbitrary behavirs outside of the
+// WIP: BehaviorRunner class allows for arbitrary behaviors outside of the
 // library to be run through the BehaviorManager
 
 abstract class AbstractBehaviorInst {
   abstract run: (ctx: any) => AsyncIterable<any>;
+
+  abstract initialPageLoad?: (ctx: any) => Promise<void>;
 }
 
 interface StaticAbstractBehavior {
@@ -191,6 +197,12 @@ export class BehaviorRunner extends BackgroundBehavior {
 
   cleanup() {
 
+  }
+
+  async initialPageLoad() {
+    if (this.inst.initialPageLoad) {
+      await this.inst.initialPageLoad(this.ctx);
+    }
   }
 
   static load() {

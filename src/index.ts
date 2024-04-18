@@ -89,7 +89,7 @@ export class BehaviorManager {
       this.behaviors.push(new Autoplay(this.autofetch, opts.startEarly));
     }
 
-    if (self.window.top !== self.window && window["__WB_replay_top"] !== self.window) {
+    if (!this.isInTopFrame()) {
       return;
     }
 
@@ -105,6 +105,9 @@ export class BehaviorManager {
   }
 
   selectMainBehavior() {
+    if (this.mainBehavior) {
+      return;
+    }
     const opts = this.opts;
     let siteMatch = false;
 
@@ -179,6 +182,13 @@ export class BehaviorManager {
     }
   }
 
+  async initialPageLoad() {
+    this.selectMainBehavior();
+    if (this.mainBehavior && this.mainBehavior) {
+      await this.mainBehavior.initialPageLoad();
+    }
+  }
+
   async run(opts: BehaviorManagerOpts = DEFAULT_OPTS, restart = false) {
     if (restart) {
       this.started = false;
@@ -190,9 +200,7 @@ export class BehaviorManager {
     }
 
     this.init(opts, restart);
-    if (!this.mainBehavior) {
-      this.selectMainBehavior();
-    }
+    this.selectMainBehavior();
 
     await awaitLoad();
 
@@ -249,6 +257,10 @@ export class BehaviorManager {
   doAsyncFetch(url) {
     behaviorLog("Queueing Async Fetch Url: " + url);
     return this.autofetch.queueUrl(url);
+  }
+
+  isInTopFrame() {
+    return self.window.top === self.window || window["__WB_replay_top"] === self.window;
   }
 }
 
