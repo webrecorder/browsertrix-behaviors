@@ -87,7 +87,7 @@ export class Behavior extends BackgroundBehavior {
 
   }
 
-  async initialPageLoad() {
+  async awaitPageLoad() {
     // wait for initial page load here
   }
 
@@ -112,7 +112,7 @@ export class Behavior extends BackgroundBehavior {
 abstract class AbstractBehaviorInst {
   abstract run: (ctx: any) => AsyncIterable<any>;
 
-  abstract initialPageLoad?: (ctx: any) => Promise<void>;
+  abstract awaitPageLoad?: (ctx: any) => Promise<void>;
 }
 
 interface StaticAbstractBehavior {
@@ -199,9 +199,9 @@ export class BehaviorRunner extends BackgroundBehavior {
 
   }
 
-  async initialPageLoad() {
-    if (this.inst.initialPageLoad) {
-      await this.inst.initialPageLoad(this.ctx);
+  async awaitPageLoad() {
+    if (this.inst.awaitPageLoad) {
+      await this.inst.awaitPageLoad(this.ctx);
     }
   }
 

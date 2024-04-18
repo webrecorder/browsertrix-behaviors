@@ -248,7 +248,7 @@ export class InstagramPostsBehavior {
     }
   }
 
-  async initialPageLoad(ctx: any) {
+  async awaitPageLoad(ctx: any) {
     const { Lib, log } = ctx;
     const { waitUntilNode } = Lib;
 

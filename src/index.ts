@@ -182,10 +182,10 @@ export class BehaviorManager {
     }
   }
 
-  async initialPageLoad() {
+  async awaitPageLoad() {
     this.selectMainBehavior();
-    if (this.mainBehavior && this.mainBehavior) {
-      await this.mainBehavior.initialPageLoad();
+    if (this.mainBehavior?.awaitPageLoad) {
+      await this.mainBehavior.awaitPageLoad();
     }
   }
 
