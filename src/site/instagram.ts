@@ -1,7 +1,7 @@
 const subpostNextOnlyChevron = "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
 
 const Q = {
-  rootPath: "//article/div/div",
+  rootPath: "//main/div/div[2]/div",
   childMatchSelect: "string(.//a[starts-with(@href, '/')]/@href)",
   childMatch: "child::div[.//a[@href='$1']]",
   firstPostInRow: "div[1]/a",
@@ -10,8 +10,8 @@ const Q = {
   postLoading: "//*[@aria-label='Loading...']",
   subpostNextOnlyChevron,
   subpostPrevNextChevron: subpostNextOnlyChevron + "[2]",
-  commentRoot: "//article[@role='presentation']/div[1]/div[2]//ul",
-  viewReplies: "//li//button[span[not(count(*)) and text()!='$1']]",
+  commentRoot: "//article[@role='presentation']/div[1]/div[2]//ul/div[last()]/div/div",
+  viewReplies: "ul/li//button[span[not(count(*)) and contains(text(), '(')]]",
   loadMore: "//button[span[@aria-label]]",
   pageLoadWaitUntil: "//main"
 };
@@ -154,14 +154,16 @@ export class InstagramPostsBehavior {
 
     let commentsLoaded = false;
 
-    let text = "";
+    const getViewRepliesButton = (child) => {
+      return xpathNode(Q.viewReplies, child);
+    };
 
     while (child) {
       scrollIntoView(child);
 
       commentsLoaded = true;
 
-      let viewReplies = xpathNode(Q.viewReplies.replace("$1", text), child);
+      let viewReplies = getViewRepliesButton(child);
 
       while (viewReplies) {
         const orig = viewReplies.textContent;
@@ -171,8 +173,7 @@ export class InstagramPostsBehavior {
 
         await waitUntil(() => orig !== viewReplies.textContent, waitUnit);
 
-        text = viewReplies.textContent;
-        viewReplies = xpathNode(Q.viewReplies.replace("$1", text), child);
+        viewReplies = getViewRepliesButton(child);
       }
 
       if (child.nextElementSibling && child.nextElementSibling.tagName === "LI" && !child.nextElementSibling.nextElementSibling) {
