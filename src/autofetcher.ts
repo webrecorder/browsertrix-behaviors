@@ -1,7 +1,8 @@
 // AutoFetcher script
-// extract and fetch all urls from srcsets, from images as well as audio/video
-// also extract any urls from media query stylesheets that have not necessarily been loaded
-// (May not work for cross-origin stylesheets)
+// extract and fetch all urls from 
+// - srcsets, from images as well as audio/video
+// - media query stylesheets that have not necessarily been loaded (may not work for cross-origin stylesheets)
+// - any data-xxx attribute
 
 import { BackgroundBehavior } from "./lib/behavior";
 import { sleep } from "./lib/utils";
@@ -83,6 +84,7 @@ export class AutoFetcher extends BackgroundBehavior {
 
     this.extractSrcSrcSetAll(document);
     this.extractStyleSheets();
+    this.extractDataAttributes(document);
   }
 
   isValidUrl(url: string) {
@@ -327,5 +329,20 @@ export class AutoFetcher extends BackgroundBehavior {
 
     text.replace(STYLE_REGEX, urlExtractor).replace(IMPORT_REGEX, urlExtractor);
   }
+
+  extractDataAttributes(document) {
+    const allElements = document.querySelectorAll('*');
+
+    for (const element of allElements) {
+      for (const attribute of element.attributes) {
+        if (attribute.name.startsWith('data-') &&
+          (attribute.value.startsWith('http') || attribute.value.startsWith('/') || attribute.value.startsWith('./') || attribute.value.startsWith('../'))) {
+          this.queueUrl(attribute.value);
+        }
+      }
+    }
+
+  }
+
 }
 
