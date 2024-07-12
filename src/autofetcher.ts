@@ -83,7 +83,6 @@ export class AutoFetcher extends BackgroundBehavior {
     this.waitQueue = [];
 
     this.extractSrcSrcSetAll(document);
-    this.extractDataAttributes(document);
     this.extractStyleSheets();
     this.extractDataAttributes(document);
   }
