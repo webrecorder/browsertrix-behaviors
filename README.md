@@ -75,7 +75,7 @@ see [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) fo
 
 Once the behavior script has been injected, run: `__bx_behaviors.init(opts)` to initialize which behaviors should be used. `opts` includes several boolean options:
 
-- `autofetch` - enable background autofetching of img srcsets, and stylesheets (when possible)
+- `autofetch` - enable background autofetching of img srcsets, stylesheets (when possible) and any data-* attribute
 - `autoplay` - attempt to automatically play and video/audio, or fetch the URLs for any video streams found on the page.
 - `autoscroll` - attempt to repeatedly scroll the page to the bottom as far as possible.
 - `timeout` - set a timeout (in ms) for all behaviors to finish.
