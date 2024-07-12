@@ -1,8 +1,8 @@
 // AutoFetcher script
-// extract and fetch all urls from 
+// extract and fetch all urls from
 // - srcsets, from images as well as audio/video
 // - media query stylesheets that have not necessarily been loaded (may not work for cross-origin stylesheets)
-// - any data-xxx attribute
+// - any data-* attribute
 
 import { BackgroundBehavior } from "./lib/behavior";
 import { sleep, xpathNodes } from "./lib/utils";
@@ -332,7 +332,9 @@ export class AutoFetcher extends BackgroundBehavior {
   }
 
   extractDataAttributes(root) {
-    const QUERY = "//@*[starts-with(name(), 'data-') and (starts-with(., 'http') or starts-with(., '/') or starts-with(., './') or starts-with(., '../'))]";
+    const QUERY = "//@*[starts-with(name(), 'data-') and " +
+    "(starts-with(., 'http') or starts-with(., '/') or starts-with(., './') or starts-with(., '../'))]";
+    
     for (const attr of xpathNodes(QUERY, root)) {
       this.queueUrl(attr.value);
     }
