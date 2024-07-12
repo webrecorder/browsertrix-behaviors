@@ -5,7 +5,7 @@
 // - any data-xxx attribute
 
 import { BackgroundBehavior } from "./lib/behavior";
-import { sleep } from "./lib/utils";
+import { sleep, xpathNodes } from "./lib/utils";
 
 const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy'], " +
   "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
@@ -83,6 +83,7 @@ export class AutoFetcher extends BackgroundBehavior {
     this.waitQueue = [];
 
     this.extractSrcSrcSetAll(document);
+    this.extractDataAttributes(document);
     this.extractStyleSheets();
     this.extractDataAttributes(document);
   }
@@ -226,6 +227,7 @@ export class AutoFetcher extends BackgroundBehavior {
         }
         this.extractSrcSrcSet(target);
         setTimeout(() => this.extractSrcSrcSetAll(target), 1000);
+        setTimeout(() => this.extractDataAttributes(target), 1000);
         break;
     }
   }
@@ -330,19 +332,11 @@ export class AutoFetcher extends BackgroundBehavior {
     text.replace(STYLE_REGEX, urlExtractor).replace(IMPORT_REGEX, urlExtractor);
   }
 
-  extractDataAttributes(document) {
-    const allElements = document.querySelectorAll('*');
-
-    for (const element of allElements) {
-      for (const attribute of element.attributes) {
-        if (attribute.name.startsWith('data-') &&
-          (attribute.value.startsWith('http') || attribute.value.startsWith('/') || attribute.value.startsWith('./') || attribute.value.startsWith('../'))) {
-          this.queueUrl(attribute.value);
-        }
-      }
+  extractDataAttributes(root) {
+    const QUERY = "//@*[starts-with(name(), 'data-') and (starts-with(., 'http') or starts-with(., '/') or starts-with(., './') or starts-with(., '../'))]";
+    for (const attr of xpathNodes(QUERY, root)) {
+      this.queueUrl(attr.value);
     }
-
   }
-
 }
 
