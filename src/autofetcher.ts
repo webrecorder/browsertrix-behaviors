@@ -4,6 +4,8 @@
 // - media query stylesheets that have not necessarily been loaded (may not work for cross-origin stylesheets)
 // - any data-* attribute
 
+import { querySelectorAllDeep } from "query-selector-shadow-dom";
+
 import { BackgroundBehavior } from "./lib/behavior";
 import { sleep, xpathNodes } from "./lib/utils";
 
@@ -244,7 +246,7 @@ export class AutoFetcher extends BackgroundBehavior {
   }
 
   extractSrcSrcSetAll(root) {
-    const elems = root.querySelectorAll(SRC_SET_SELECTOR);
+    const elems = querySelectorAllDeep(SRC_SET_SELECTOR, root);
 
     for (const elem of elems) {
       this.extractSrcSrcSet(elem);

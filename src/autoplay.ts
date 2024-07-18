@@ -1,3 +1,5 @@
+import { querySelectorAllDeep } from "query-selector-shadow-dom";
+
 import { BackgroundBehavior } from "./lib/behavior";
 import { sleep } from "./lib/utils";
 import { type AutoFetcher } from "./autofetcher";
@@ -47,7 +49,7 @@ export class Autoplay extends BackgroundBehavior {
     this.polling = true;
 
     while (run) {
-      for (const [, elem] of document.querySelectorAll("video, audio, picture").entries()) {
+      for (const [, elem] of querySelectorAllDeep("video, audio, picture").entries()) {
         if (!elem["__bx_autoplay_found"]) {
 
           if (!this.running) {
@@ -122,8 +124,12 @@ export class Autoplay extends BackgroundBehavior {
       return;
     }
 
-    if (media.paused) {
-      this.debug("no src url found, attempting to click or play: " + media.outerHTML);
+    if (media.paused || media.currentTime) {
+      if (media.paused) {
+        this.debug("no src url found, attempting to click or play: " + media.outerHTML);
+      } else {
+        this.debug("media already playing, waiting for full playback to finish: " + media.outerHTML);
+      }
 
       this.attemptMediaPlay(media).then(async (finished: Promise<any> | null) => {
         let check = true;
@@ -149,34 +155,43 @@ export class Autoplay extends BackgroundBehavior {
 
   async attemptMediaPlay(media) {
     // finished promise
-    let resolve;
+    let resolveFinished;
 
     const finished = new Promise((res) => {
-      resolve = res;
+      resolveFinished = res;
     });
 
     // started promise
-    let resolve2;
+    let resolveStarted;
 
     const started = new Promise((res) => {
-      resolve2 = res;
+      resolveStarted = res;
     });
 
     started.then(() => this.promises.push(finished));
 
-    media.addEventListener("loadstart", () => { this.debug("media event: loadstart"); resolve2(true); });
-    media.addEventListener("playing", () => { this.debug("media event: playing"); resolve2(true); });
+    // already started
+    if (!media.paused && media.currentTime > 0) {
+      resolveStarted();
+    }
+
+    media.addEventListener("loadstart", () => { this.debug("media event: loadstart"); resolveStarted(true); });
+    media.addEventListener("playing", () => { this.debug("media event: playing"); resolveStarted(true); });
 
     media.addEventListener("loadeddata", () => this.debug("media event: loadeddata"));
 
-    media.addEventListener("ended", () => { this.debug("media event: ended"); resolve(); });
-    media.addEventListener("pause", () => { this.debug("media event: pause"); resolve(); });
-    media.addEventListener("abort", () => { this.debug("media event: abort"); resolve(); });
-    media.addEventListener("error", () => { this.debug("media event: error"); resolve(); });
-    media.addEventListener("stalled", () => { this.debug("media event: stalled"); resolve(); });
-    media.addEventListener("suspend", () => { this.debug("media event: suspend"); resolve(); });
+    media.addEventListener("ended", () => { this.debug("media event: ended"); resolveFinished(); });
+    media.addEventListener("pause", () => { this.debug("media event: pause"); resolveFinished(); });
+    media.addEventListener("abort", () => { this.debug("media event: abort"); resolveFinished(); });
+    media.addEventListener("error", () => { this.debug("media event: error"); resolveFinished(); });
+    media.addEventListener("stalled", () => { this.debug("media event: stalled"); resolveFinished(); });
+    media.addEventListener("suspend", () => { this.debug("media event: suspend"); resolveFinished(); });
 
     media.muted = true;
+
+    if (!media.paused && media.currentTime > 0) {
+      return finished;
+    }
 
     const hasA = media.closest("a");
 
