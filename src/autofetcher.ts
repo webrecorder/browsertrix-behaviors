@@ -93,7 +93,7 @@ export class AutoFetcher extends BackgroundBehavior {
     return url && (url.startsWith("http:") || url.startsWith("https:"));
   }
 
-  queueUrl(url: string) {
+  queueUrl(url: string, immediate: boolean = false) {
     try {
       url = new URL(url, document.baseURI).href;
     } catch (e) {
@@ -110,10 +110,10 @@ export class AutoFetcher extends BackgroundBehavior {
 
     this.urlSet.add(url);
 
-    if (!this.running) {
-      this.waitQueue.push(url);
-    } else {
+    if (this.running || immediate) {
       this.doFetch(url);
+    } else {
+      this.waitQueue.push(url);
     }
 
     return true;

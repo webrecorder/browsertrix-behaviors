@@ -256,7 +256,7 @@ export class BehaviorManager {
 
   doAsyncFetch(url) {
     behaviorLog("Queueing Async Fetch Url: " + url);
-    return this.autofetch.queueUrl(url);
+    return this.autofetch.queueUrl(url, true);
   }
 
   isInTopFrame() {
