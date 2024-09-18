@@ -22,7 +22,7 @@ export class TwitterTimelineBehavior {
   static id = "Twitter"
 
   static isMatch() {
-    return !!window.location.href.match(/https:\/\/(www\.)?x\.com\//);
+    return !!window.location.href.match(/https:\/\/(www\.)?(x|twitter)\.com\//);
   }
 
   static init() {
