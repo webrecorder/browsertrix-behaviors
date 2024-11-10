@@ -285,7 +285,7 @@ export class AutoFetcher extends BackgroundBehavior {
     // check regular src in case of <noscript> only to avoid duplicate loading
     const src = elem.getAttribute("src");
 
-    if (src && elem.parentElement.tagName === "NOSCRIPT") {
+    if (src && (srcset || data_srcset || elem.parentElement.tagName === "NOSCRIPT")) {
       this.queueUrl(src);
     }
   }
