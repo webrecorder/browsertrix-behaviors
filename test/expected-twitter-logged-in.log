@@ -1,9 +1,23 @@
 {"msg":"Capturing thread: https://twitter.com/CaptureSample","state":{"tweets":0,"images":0,"videos":0,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369493177858551810","state":{"tweets":1,"images":0,"videos":0,"threads":1}}
 {"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/1","state":{"tweets":1,"images":1,"videos":0,"threads":1}}
 {"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/2","state":{"tweets":1,"images":2,"videos":0,"threads":1}}
 {"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/3","state":{"tweets":1,"images":3,"videos":0,"threads":1}}
 {"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/4","state":{"tweets":1,"images":4,"videos":0,"threads":1}}
-{"msg":"Waiting for media playback for https://twitter.com/CaptureSample/status/1369492279585501184 to finish","state":{"tweets":4,"images":4,"videos":1,"threads":1}}
-{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369487726710431750","state":{"tweets":7,"images":4,"videos":2,"threads":1}}
-{"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369486018714345477/photo/1","state":{"tweets":9,"images":5,"videos":2,"threads":1}}
-{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369487726710431750","state":{"tweets":15,"images":5,"videos":3,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369531770962550788","state":{"tweets":2,"images":4,"videos":0,"threads":1}}
+{"msg":"Loading Image: https://twitter.com/ayeitsmorrissey/status/1638887740283539456/photo/1","state":{"tweets":2,"images":5,"videos":0,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/ayeitsmorrissey/status/1638887740283539456","state":{"tweets":3,"images":5,"videos":0,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369485585514074114","state":{"tweets":4,"images":5,"videos":0,"threads":1}}
+{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369492279585501184","state":{"tweets":4,"images":5,"videos":1,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369492279585501184","state":{"tweets":5,"images":5,"videos":1,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369492281602887685","state":{"tweets":6,"images":5,"videos":1,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369490498256216068","state":{"tweets":7,"images":5,"videos":1,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369488031485292548","state":{"tweets":8,"images":5,"videos":1,"threads":1}}
+{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369487726710431750","state":{"tweets":8,"images":5,"videos":2,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369487726710431750","state":{"tweets":9,"images":5,"videos":2,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369487470824361985","state":{"tweets":10,"images":5,"videos":2,"threads":1}}
+{"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369486018714345477/photo/1","state":{"tweets":10,"images":6,"videos":2,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369486018714345477","state":{"tweets":11,"images":6,"videos":2,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/rubrikInc/status/1631087926569234433","state":{"tweets":12,"images":6,"videos":2,"threads":1}}
+{"msg":"Capturing Tweet: https://twitter.com/CaptureSample/status/1369485585514074114","state":{"tweets":13,"images":6,"videos":2,"threads":1}}
+{"msg":"done!","state":{"tweets":13,"images":6,"videos":2,"threads":1}}
