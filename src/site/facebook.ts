@@ -31,7 +31,9 @@ export class FacebookTimelineBehavior {
   static id = "Facebook";
 
   static isMatch() {
-    return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\//);
+    // disable for now
+    return false;
+    //return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\//);
   }
 
   static init() {
