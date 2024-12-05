@@ -58,13 +58,18 @@ export class AutoScroll extends Behavior {
       return false;
     }
 
+    // if page has iframes, do scroll
+    if (window.frames.length >= 2) {
+      return true;
+    }
+
     const lastScrollHeight = self.document.scrollingElement.scrollHeight;
     const numFetching = this.autoFetcher.numFetching;
 
     // scroll to almost end of page
     const scrollEnd = (document.scrollingElement.scrollHeight * 0.98) - self.innerHeight;
 
-    window.scrollTo({ top: scrollEnd, left: 0, behavior: "auto" });
+    window.scrollTo({ top: scrollEnd, left: 0, behavior: "smooth" });
 
     // wait for any updates
     await sleep(500);
