@@ -97,6 +97,10 @@ export class AutoClick extends BackgroundBehavior
       // getEventListeners not available, need to actually click
     }
 
+    if (elem.target) {
+      return;
+    }
+
     const anySelf = self as any;
 
     if (elem.href) {
