@@ -16,11 +16,6 @@ export class AutoClick extends BackgroundBehavior
     this._donePromise = new Promise<void>((resolve) => this._markDone = resolve);
   }
 
-  beforeUnload(event) {
-    event.preventDefault();
-    return false;
-  }
-
   nextSameOriginLink(origNoHash: string) : HTMLAnchorElement | null {
     try {
       const allLinks = document.querySelectorAll(this.selector);
@@ -54,8 +49,13 @@ export class AutoClick extends BackgroundBehavior
     url.hash = "";
     const origNoHash = url.href + "#";
 
+    const beforeUnload = (event) => {
+      event.preventDefault();
+      return false;
+    };
+
     // process all links (except hash links) which could result in attempted navigation
-    window.addEventListener("beforeunload", (e) => this.beforeUnload(e));
+    window.addEventListener("beforeunload", beforeUnload);
 
     // process external links on current origin
 
@@ -78,7 +78,7 @@ export class AutoClick extends BackgroundBehavior
       }
     }
 
-    window.removeEventListener("beforeunload", (e) => this.beforeUnload(e));
+    window.removeEventListener("beforeunload", beforeUnload);
 
     this._markDone();
   }
