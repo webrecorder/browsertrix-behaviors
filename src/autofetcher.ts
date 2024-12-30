@@ -169,8 +169,9 @@ export class AutoFetcher extends BackgroundBehavior {
 
         let success = false;
 
-        // todo: option to use cors or non-cors fetch
-        // success = await this.doFetchNonCors();
+        if ((self as any).__bx_fetch) {
+          success = await (self as any).__bx_fetch(url);
+        }
 
         if (!success) {
           await this.doFetchNonCors(url);
