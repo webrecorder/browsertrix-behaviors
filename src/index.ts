@@ -1,6 +1,7 @@
 import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
+import { AutoClick } from "./autoclick";
 import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors } from "./lib/utils";
 import { Behavior, BehaviorRunner } from "./lib/behavior";
 
@@ -15,14 +16,18 @@ interface BehaviorManagerOpts {
   autofetch?: boolean;
   autoplay?: boolean;
   autoscroll?: boolean;
+  autoclick?: boolean;
   log?: ((...message: string[]) => void) | string | false;
   siteSpecific?: boolean | object;
   timeout?: number;
   fetchHeaders?: object | null;
   startEarly?: boolean | null;
+  clickSelector?: string;
 }
 
-const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, siteSpecific: true};
+const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, autoclick: true, siteSpecific: true};
+
+const DEFAULT_SELECTOR = "a[href]";
 
 export class BehaviorManager {
   autofetch: AutoFetcher;
@@ -87,6 +92,11 @@ export class BehaviorManager {
     if (opts.autoplay) {
       behaviorLog("Using Autoplay");
       this.behaviors.push(new Autoplay(this.autofetch, opts.startEarly));
+    }
+
+    if (opts.autoclick) {
+      behaviorLog("Using AutoClick");
+      this.behaviors.push(new AutoClick(opts.clickSelector || DEFAULT_SELECTOR));
     }
 
     if (!this.isInTopFrame()) {
