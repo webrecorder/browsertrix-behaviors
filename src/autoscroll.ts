@@ -7,7 +7,7 @@ import { type AutoFetcher } from "./autofetcher";
 export class AutoScroll extends Behavior {
   autoFetcher: AutoFetcher;
   showMoreQuery: string;
-  state: { segments: number };
+  state: { segments: number } = { segments: 1};
   lastScrollPos: number;
   samePosCount: number;
 
@@ -19,10 +19,6 @@ export class AutoScroll extends Behavior {
     this.autoFetcher = autofetcher;
 
     this.showMoreQuery = "//*[contains(text(), 'show more') or contains(text(), 'Show more')]";
-
-    this.state = {
-      segments: 1
-    };
 
     this.lastScrollPos = -1;
     this.samePosCount = 0;
