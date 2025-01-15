@@ -29,7 +29,7 @@ export class AutoClick extends BackgroundBehavior
         if (!elem.isConnected) {
           continue;
         }
-        if (elem.checkVisibility && !elem.checkVisibility()) {
+        if (!elem.checkVisibility()) {
           continue;
         }
         if (this.seenElem.has(elem)) {
