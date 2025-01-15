@@ -16,17 +16,20 @@ export class AutoClick extends BackgroundBehavior
     this._donePromise = new Promise<void>((resolve) => this._markDone = resolve);
   }
 
-  nextSameOriginLink(origNoHash: string) : HTMLAnchorElement | null {
+  nextSameOriginLink() : HTMLAnchorElement | null {
     try {
       const allLinks = document.querySelectorAll(this.selector);
       for (const el of allLinks) {
         const elem = el as HTMLAnchorElement;
 
-        // skip URLs to same page OR outside current origin
-        if (!elem.href || !elem.href.startsWith(self.location.origin) || elem.href.startsWith(origNoHash)) {
+        // skip URLs to different origin as they won't be handled dynamically, most likely just regular navigation
+        if (elem.href && !elem.href.startsWith(self.location.origin)) {
           continue;
         }
         if (!elem.isConnected) {
+          continue;
+        }
+        if (elem.checkVisibility && !elem.checkVisibility()) {
           continue;
         }
         if (this.seenElem.has(elem)) {
@@ -45,10 +48,6 @@ export class AutoClick extends BackgroundBehavior
   async start() {
     const origHref = self.location.href;
     
-    const url = new URL(origHref);
-    url.hash = "";
-    const origNoHash = url.href + "#";
-
     const beforeUnload = (event) => {
       event.preventDefault();
       return false;
@@ -61,7 +60,7 @@ export class AutoClick extends BackgroundBehavior
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const elem = this.nextSameOriginLink(origNoHash);
+      const elem = this.nextSameOriginLink();
 
       if (!elem) {
         break;
@@ -70,24 +69,12 @@ export class AutoClick extends BackgroundBehavior
       await this.processElem(elem, origHref);
     }
 
-    // process hashlinks on same page
-    for (const el of document.querySelectorAll(this.selector)) {
-      const elem = el as HTMLAnchorElement;
-      if (!elem.href || elem.href.startsWith(origNoHash)) {
-        await this.processElem(elem, origHref);
-      }
-    }
-
     window.removeEventListener("beforeunload", beforeUnload);
 
     this._markDone();
   }
 
   async processElem(elem: HTMLAnchorElement, origHref: string) {
-    if (!elem.isConnected) {
-      return;
-    }
-
     // if successfully called getEventListeners and no click handler, we can skip
     try {
       if (!getEventListeners(elem).click) {

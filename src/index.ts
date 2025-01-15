@@ -27,7 +27,7 @@ interface BehaviorManagerOpts {
 
 const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, autoclick: true, siteSpecific: true};
 
-const DEFAULT_SELECTOR = "a[href]";
+const DEFAULT_SELECTOR = "a";
 
 export class BehaviorManager {
   autofetch: AutoFetcher;
