@@ -167,7 +167,7 @@ export class AutoFetcher extends BackgroundBehavior {
 
         this.numPending++;
 
-        if ((self as any).__bx_fetch) {
+        if (typeof((self as any).__bx_fetch) === "function") {
           await (self as any).__bx_fetch(url);
         } else {
           await this.doFetchNonCors(url);
