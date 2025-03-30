@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [22.x]
 
     steps:
     - uses: actions/checkout@v3
@@ -23,6 +23,9 @@ jobs:
 
     - name: install requirements
       run: yarn install
+
+    - name: build behaviors
+      run: yarn run build
 
     - uses: c-py/action-dotenv-to-setenv@v2
       with:

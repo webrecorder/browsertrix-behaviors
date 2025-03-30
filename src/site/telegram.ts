@@ -33,7 +33,7 @@ export class TelegramBehavior {
 
   async* run(ctx) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode, xpathString } = ctx.Lib;
-    let root = xpathNode(Q.telegramContainer);
+    const root = xpathNode(Q.telegramContainer);
 
     if (!root) {
       return;
@@ -48,7 +48,7 @@ export class TelegramBehavior {
 
       const linkUrl = xpathString(Q.linkExternal, child);
 
-      if (linkUrl && linkUrl.endsWith(".jpg") || linkUrl.endsWith(".png")) {
+      if (linkUrl?.endsWith(".jpg") || linkUrl.endsWith(".png")) {
         yield getState(ctx, "Loading External Image: " + linkUrl);
         const image = new Image();
         image.src = linkUrl;

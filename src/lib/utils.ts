@@ -11,7 +11,7 @@ export async function scrollAndClick(node, interval = 500, opts = scrollOpts) {
 
 export const waitUnit = 200;
 
-export function sleep(timeout) {
+export async function sleep(timeout) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 }
 
@@ -35,7 +35,7 @@ export async function waitUntilNode(path, root = document, old = null, timeout =
   return node;
 }
 
-export function awaitLoad() {
+export async function awaitLoad() {
   return new Promise((resolve) => {
     if (document.readyState === "complete") {
       resolve(null);
@@ -87,7 +87,7 @@ export function checkToJsonOverride() {
   needUnsetToJson = (!!(Object as any).toJSON || !!(Object.prototype as any).toJSON || !!(Array as any).toJSON || !!(Array.prototype as any).toJSON);
 }
 
-export function callBinding(binding, obj) : Promise<any> {
+export async function callBinding(binding, obj) : Promise<any> {
   try {
     if (needUnsetToJson) {
       unsetAllJson();
@@ -195,7 +195,7 @@ export class HistoryState {
     return window.location.href !== this.loc;
   }
 
-  goBack(backButtonQuery) {
+  async goBack(backButtonQuery) {
     if (!this.changed) {
       return Promise.resolve(true);
     }
@@ -224,7 +224,7 @@ export function xpathNode(path, root?) {
 
 export function* xpathNodes(path, root) {
   root = root || document;
-  let iter = document.evaluate(path, root, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);
+  const iter = document.evaluate(path, root, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);
   let result = null;
   while ((result = iter.iterateNext()) !== null) {
     yield result;
@@ -275,7 +275,7 @@ export async function* iterChildMatches(
 
 // ===========================================================================
 export function isInViewport(elem) {
-  var bounding = elem.getBoundingClientRect();
+  const bounding = elem.getBoundingClientRect();
   return (
     bounding.top >= 0 &&
     bounding.left >= 0 &&
