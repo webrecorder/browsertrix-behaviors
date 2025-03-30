@@ -2,7 +2,7 @@ import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
 import { AutoClick } from "./autoclick";
-import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors } from "./lib/utils";
+import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors, addLink, checkToJsonOverride } from "./lib/utils";
 import { Behavior, BehaviorRunner } from "./lib/behavior";
 
 import siteBehaviors from "./site";
@@ -25,9 +25,18 @@ interface BehaviorManagerOpts {
   clickSelector?: string;
 }
 
+type LinkOpts = {
+  selector: string;
+  extractName: string;
+  attrOnly?: boolean;
+};
+
 const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, autoclick: true, siteSpecific: true};
 
-const DEFAULT_SELECTOR = "a";
+const DEFAULT_CLICK_SELECTOR = "a";
+
+const DEFAULT_LINK_SELECTOR = "a[href]";
+const DEFAULT_LINK_EXTRACT = "href";
 
 export class BehaviorManager {
   autofetch: AutoFetcher;
@@ -39,6 +48,7 @@ export class BehaviorManager {
   started: boolean;
   timeout?: number;
   opts?: BehaviorManagerOpts;
+  linkOpts: LinkOpts;
 
   constructor() {
     this.behaviors = [];
@@ -49,6 +59,7 @@ export class BehaviorManager {
     this.mainBehavior = null;
     this.inited = false;
     this.started = false;
+    this.linkOpts = {selector: DEFAULT_LINK_SELECTOR, extractName: DEFAULT_LINK_EXTRACT};
     behaviorLog("Loaded behaviors for: " + self.location.href);
   }
 
@@ -96,7 +107,7 @@ export class BehaviorManager {
 
     if (opts.autoclick) {
       behaviorLog("Using AutoClick");
-      this.behaviors.push(new AutoClick(opts.clickSelector || DEFAULT_SELECTOR));
+      this.behaviors.push(new AutoClick(opts.clickSelector || DEFAULT_CLICK_SELECTOR));
     }
 
     if (!this.isInTopFrame()) {
@@ -271,6 +282,38 @@ export class BehaviorManager {
 
   isInTopFrame() {
     return self.window.top === self.window || window["__WB_replay_top"] === self.window;
+  }
+
+  async extractLinks(selector = DEFAULT_LINK_SELECTOR, extractName = "href", attrOnly = false) {
+    this.linkOpts = {selector, extractName, attrOnly};
+    checkToJsonOverride();
+    return await this.extractLinksActual();
+  }
+
+  async extractLinksActual() {
+    const {selector = DEFAULT_LINK_SELECTOR, extractName = DEFAULT_LINK_EXTRACT, attrOnly = false} = this.linkOpts;
+
+    const urls = new Set<string>();
+
+    document.querySelectorAll(selector).forEach((elem: any) => {
+      // first, try property, unless attrOnly is set
+      let value = !attrOnly ? elem[extractName] : null;
+      if (!value) {
+        value = elem.getAttribute(extractName);
+      }
+      // set if got a string
+      if (typeof(value) === "string") {
+        urls.add(value);
+      }
+    });
+
+    const promises = [];
+
+    for (const url of urls) {
+      promises.push(addLink(url));
+    }
+
+    await Promise.allSettled(promises);
   }
 }
 

@@ -45,30 +45,96 @@ export function awaitLoad() {
   });
 }
 
-function callBinding(binding, obj) {
+function unsetToJson(obj: any) {
+  if (obj.toJSON) {
+    try {
+      obj.__bx__toJSON = obj.toJSON;
+      delete obj.toJSON;
+    } catch (_) {
+      // ignore
+    }
+  }
+}
+
+function restoreToJson(obj: any) {
+  if (obj.__bx__toJSON) {
+    try {
+      obj.toJSON = obj.__bx__toJSON;
+      delete obj.__bx__toJSON;
+    } catch (_) {
+      // ignore
+    }
+  }
+}
+
+function unsetAllJson() {
+  unsetToJson((Object as any));
+  unsetToJson((Object.prototype as any));
+  unsetToJson((Array as any));
+  unsetToJson((Array.prototype as any));
+}
+
+function restoreAllJson() {
+  restoreToJson((Object as any));
+  restoreToJson((Object.prototype as any));
+  restoreToJson((Array as any));
+  restoreToJson((Array.prototype as any));
+}
+
+let needUnsetToJson = false;
+
+export function checkToJsonOverride() {
+  needUnsetToJson = (!!(Object as any).toJSON || !!(Object.prototype as any).toJSON || !!(Array as any).toJSON || !!(Array.prototype as any).toJSON);
+}
+
+export function callBinding(binding, obj) : Promise<any> {
   try {
-    binding(obj);
-  } catch (e) {
-    binding(JSON.stringify(obj));
+    if (needUnsetToJson) {
+      unsetAllJson();
+    }
+    return binding(obj);
+  } catch (_) {
+    return binding(JSON.stringify(obj));
+  } finally {
+    if (needUnsetToJson) {
+      restoreAllJson();
+    }
   }
 }
 
-export function behaviorLog(data, type = "debug") {
+export async function behaviorLog(data, type = "debug") {
   if (_logFunc) {
-    callBinding(_logFunc, { data, type });
+    await callBinding(_logFunc, { data, type });
   }
 }
 
-export function addLink(url) {
-  if (self["__bx_addLink"]) {
-    self["__bx_addLink"](url);
+export async function addLink(url) : Promise<void> {
+  if (typeof(self["__bx_addLink"]) === "function") {
+    return await callBinding(self["__bx_addLink"], url);
   }
+}
+
+export async function doExternalFetch(url) : Promise<boolean> {
+  if (typeof(self["__bx_fetch"]) === "function") {
+    return await callBinding(self["__bx_fetch"], url);
+  }
+
+  return false;
+}
+
+export async function addToExternalSet(url) : Promise<boolean> {
+  if (typeof(self["__bx_addSet"]) === "function") {
+    return await callBinding(self["__bx_addSet"], url);
+  }
+
+  // if set doesn't exist, just return true to avoid skipping
+  return true;
 }
 
 export async function openWindow(url) {
   if (self["__bx_open"]) {
     const p = new Promise((resolve) => self["__bx_openResolve"] = resolve);
-    callBinding(self["__bx_open"], { url });
+    await callBinding(self["__bx_open"], { url });
 
     let win = null;
 
@@ -231,7 +297,7 @@ export function scrollIntoView(element, opts = {
 }
 
 export function getState(ctx, msg, incrValue?) {
-  if (typeof ctx.state === undefined) {
+  if (typeof(ctx.state) === "undefined") {
     ctx.state = {};
   }
   if (incrValue) {

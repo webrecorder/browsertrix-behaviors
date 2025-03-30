@@ -1,5 +1,5 @@
 import { BackgroundBehavior } from "./lib/behavior";
-import { sleep } from "./lib/utils";
+import { addToExternalSet, sleep } from "./lib/utils";
 
 declare let getEventListeners: any;
 
@@ -88,11 +88,9 @@ export class AutoClick extends BackgroundBehavior
       return;
     }
 
-    const anySelf = self as any;
-
     if (elem.href) {
       // skip if already clicked this URL, tracked in external state
-      if (anySelf.__bx_addSet && !await anySelf.__bx_addSet(elem.href)) {
+      if (!await addToExternalSet(elem.href)) {
         return;
       }
 
