@@ -87,7 +87,7 @@ export function checkToJsonOverride() {
   needUnsetToJson = (!!(Object as any).toJSON || !!(Object.prototype as any).toJSON || !!(Array as any).toJSON || !!(Array.prototype as any).toJSON);
 }
 
-export function callBinding(binding, obj) {
+export function callBinding(binding, obj) : Promise<any> {
   try {
     if (needUnsetToJson) {
       unsetAllJson();
@@ -102,29 +102,29 @@ export function callBinding(binding, obj) {
   }
 }
 
-export function behaviorLog(data, type = "debug") {
+export async function behaviorLog(data, type = "debug") {
   if (_logFunc) {
-    callBinding(_logFunc, { data, type });
+    await callBinding(_logFunc, { data, type });
   }
 }
 
-export function addLink(url) : Promise<void> {
+export async function addLink(url) : Promise<void> {
   if (typeof(self["__bx_addLink"]) === "function") {
-    return callBinding(self["__bx_addLink"], url);
+    return await callBinding(self["__bx_addLink"], url);
   }
 }
 
-export function doExternalFetch(url) {
+export async function doExternalFetch(url) : Promise<boolean> {
   if (typeof(self["__bx_fetch"]) === "function") {
-    return callBinding(self["__bx_fetch"], url);
+    return await callBinding(self["__bx_fetch"], url);
   }
 
   return false;
 }
 
-export function addToExternalSet(url) {
+export async function addToExternalSet(url) : Promise<boolean> {
   if (typeof(self["__bx_addSet"]) === "function") {
-    return callBinding(self["__bx_addSet"], url);
+    return await callBinding(self["__bx_addSet"], url);
   }
 
   // if set doesn't exist, just return true to avoid skipping
@@ -134,7 +134,7 @@ export function addToExternalSet(url) {
 export async function openWindow(url) {
   if (self["__bx_open"]) {
     const p = new Promise((resolve) => self["__bx_openResolve"] = resolve);
-    callBinding(self["__bx_open"], { url });
+    await callBinding(self["__bx_open"], { url });
 
     let win = null;
 

@@ -90,7 +90,7 @@ export class AutoClick extends BackgroundBehavior
 
     if (elem.href) {
       // skip if already clicked this URL, tracked in external state
-      if (!addToExternalSet(elem.href)) {
+      if (!await addToExternalSet(elem.href)) {
         return;
       }
 
