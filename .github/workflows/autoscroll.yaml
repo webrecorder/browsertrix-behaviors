@@ -24,6 +24,9 @@ jobs:
     - name: install requirements
       run: yarn install
 
+    - name: build behaviors
+      run: yarn run build
+
     - uses: c-py/action-dotenv-to-setenv@v2
       with:
         env-file: test/test.env
