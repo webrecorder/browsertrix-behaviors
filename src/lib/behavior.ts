@@ -20,7 +20,7 @@ export class Behavior extends BackgroundBehavior {
   state: any;
   scrollOpts: {
     behavior: string, block: string, inline: string
-  }
+  };
 
   constructor() {
     super();

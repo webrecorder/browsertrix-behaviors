@@ -93,7 +93,7 @@ export function callBinding(binding, obj) : Promise<any> {
       unsetAllJson();
     }
     return binding(obj);
-  } catch (e) {
+  } catch (_) {
     return binding(JSON.stringify(obj));
   } finally {
     if (needUnsetToJson) {
@@ -297,7 +297,7 @@ export function scrollIntoView(element, opts = {
 }
 
 export function getState(ctx, msg, incrValue?) {
-  if (typeof ctx.state === undefined) {
+  if (typeof(ctx.state) === "undefined") {
     ctx.state = {};
   }
   if (incrValue) {

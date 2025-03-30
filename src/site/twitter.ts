@@ -19,7 +19,7 @@ export class TwitterTimelineBehavior {
   seenTweets: Set<any>;
   seenMediaTweets: Set<any>;
 
-  static id = "Twitter"
+  static id = "Twitter";
 
   static isMatch() {
     return !!window.location.href.match(/https:\/\/(www\.)?(x|twitter)\.com\//);

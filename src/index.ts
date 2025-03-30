@@ -280,13 +280,13 @@ export class BehaviorManager {
     return self.window.top === self.window || window["__WB_replay_top"] === self.window;
   }
 
-  async loadLinks(selector, extractName, attrOnly = false) {
+  async extractLinks(selector, extractName, attrOnly = false) {
     this.linkOpts = {selector, extractName, attrOnly};
     checkToJsonOverride();
-    return await this.loadLinksActual();
+    return await this.extractLinksActual();
   }
 
-  async loadLinksActual() {
+  async extractLinksActual() {
     const {selector, extractName, attrOnly = false} = this.linkOpts;
 
     const urls = new Set<string>();
