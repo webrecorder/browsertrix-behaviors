@@ -7,7 +7,7 @@
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
 
 import { BackgroundBehavior } from "./lib/behavior";
-import { sleep, xpathNodes } from "./lib/utils";
+import { doExternalFetch, sleep, xpathNodes } from "./lib/utils";
 
 const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy'], " +
   "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
@@ -167,9 +167,9 @@ export class AutoFetcher extends BackgroundBehavior {
 
         this.numPending++;
 
-        if (typeof((self as any).__bx_fetch) === "function") {
-          await (self as any).__bx_fetch(url);
-        } else {
+        let success = await doExternalFetch(url);
+
+        if (!success) {
           await this.doFetchNonCors(url);
         }
 

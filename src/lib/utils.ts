@@ -45,11 +45,60 @@ export function awaitLoad() {
   });
 }
 
-function callBinding(binding, obj) {
+function unsetToJson(obj: any) {
+  if (obj.toJSON) {
+    try {
+      obj.__bx__toJSON = obj.toJSON;
+      delete obj.toJSON;
+    } catch (_) {
+      // ignore
+    }
+  }
+}
+
+function restoreToJson(obj: any) {
+  if (obj.__bx__toJSON) {
+    try {
+      obj.toJSON = obj.__bx__toJSON;
+      delete obj.__bx__toJSON;
+    } catch (_) {
+      // ignore
+    }
+  }
+}
+
+function unsetAllJson() {
+  unsetToJson((Object as any));
+  unsetToJson((Object.prototype as any));
+  unsetToJson((Array as any));
+  unsetToJson((Array.prototype as any));
+}
+
+function restoreAllJson() {
+  restoreToJson((Object as any));
+  restoreToJson((Object.prototype as any));
+  restoreToJson((Array as any));
+  restoreToJson((Array.prototype as any));
+}
+
+let needUnsetToJson = false;
+
+export function checkToJsonOverride() {
+  needUnsetToJson = (!!(Object as any).toJSON || !!(Object.prototype as any).toJSON || !!(Array as any).toJSON || !!(Array.prototype as any).toJSON);
+}
+
+export function callBinding(binding, obj) {
   try {
-    binding(obj);
+    if (needUnsetToJson) {
+      unsetAllJson();
+    }
+    return binding(obj);
   } catch (e) {
-    binding(JSON.stringify(obj));
+    return binding(JSON.stringify(obj));
+  } finally {
+    if (needUnsetToJson) {
+      restoreAllJson();
+    }
   }
 }
 
@@ -59,10 +108,27 @@ export function behaviorLog(data, type = "debug") {
   }
 }
 
-export function addLink(url) {
-  if (self["__bx_addLink"]) {
-    self["__bx_addLink"](url);
+export function addLink(url) : Promise<void> {
+  if (typeof(self["__bx_addLink"]) === "function") {
+    return callBinding(self["__bx_addLink"], url);
   }
+}
+
+export function doExternalFetch(url) {
+  if (typeof(self["__bx_fetch"]) === "function") {
+    return callBinding(self["__bx_fetch"], url);
+  }
+
+  return false;
+}
+
+export function addToExternalSet(url) {
+  if (typeof(self["__bx_addSet"]) === "function") {
+    return callBinding(self["__bx_addSet"], url);
+  }
+
+  // if set doesn't exist, just return true to avoid skipping
+  return true;
 }
 
 export async function openWindow(url) {
