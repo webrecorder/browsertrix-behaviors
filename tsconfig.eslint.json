@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "extends": "./tsconfig.json",
+  "include": ["**/*.ts", "**/*.js", ".*.js", "**/*.cjs"],
+  "exclude": ["__generated__", "__mocks__", "dist"]
+}
