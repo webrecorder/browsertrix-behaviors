@@ -247,7 +247,7 @@ export class FacebookTimelineBehavior {
         break;
       }
 
-      let moreButton = xpathNode(Q.commentMoreComments, commentRootUL);
+      const moreButton = xpathNode(Q.commentMoreComments, commentRootUL);
       if (moreButton) {
         scrollIntoView(moreButton);
         moreButton.click();

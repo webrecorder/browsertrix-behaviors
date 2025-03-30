@@ -91,7 +91,7 @@ export class TwitterTimelineBehavior {
 
   async* infScroll(ctx) {
     const { scrollIntoView, RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    let root = xpathNode(Q.rootPath);
+    const root = xpathNode(Q.rootPath);
 
     if (!root) {
       return;
@@ -111,7 +111,7 @@ export class TwitterTimelineBehavior {
         anchorElem = xpathNode(Q.anchor, child);
       }
 
-      if (child && child.innerText) {
+      if (child?.innerText) {
         scrollIntoView(child);
       }
 

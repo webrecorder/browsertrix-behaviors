@@ -66,7 +66,7 @@ export class InstagramPostsBehavior {
 
   async* iterRow(ctx) {
     const { RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    let root = xpathNode(Q.rootPath);
+    const root = xpathNode(Q.rootPath);
 
     if (!root) {
       return;
@@ -95,9 +95,9 @@ export class InstagramPostsBehavior {
 
   async* viewStandalonePost(ctx, origLoc) {
     const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } = ctx.Lib;
-    let root = xpathNode(Q.rootPath);
+    const root = xpathNode(Q.rootPath);
 
-    if (!root || !root.firstElementChild) {
+    if (!root?.firstElementChild) {
       return;
     }
 
@@ -177,7 +177,7 @@ export class InstagramPostsBehavior {
       }
 
       if (child.nextElementSibling && child.nextElementSibling.tagName === "LI" && !child.nextElementSibling.nextElementSibling) {
-        let loadMore = xpathNode(Q.loadMore, child.nextElementSibling);
+        const loadMore = xpathNode(Q.loadMore, child.nextElementSibling);
         if (loadMore) {
           loadMore.click();
           ctx.state.comments++;
