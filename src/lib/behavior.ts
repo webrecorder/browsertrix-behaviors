@@ -1,4 +1,4 @@
-import { behaviorLog, getState } from "./utils";
+import { behaviorLog } from "./utils";
 import * as Lib from "./utils";
 
 // ===========================================================================
@@ -71,7 +71,7 @@ export class Behavior extends BackgroundBehavior {
     }
   }
 
-  getState(msg, incrValue?) {
+  getState(msg: string, incrValue?) {
     if (incrValue) {
       if (this.state[incrValue] === undefined) {
         this.state[incrValue] = 1;
@@ -172,9 +172,9 @@ export class BehaviorRunner extends BackgroundBehavior {
           await this.paused;
         }
       }
-      this.log(getState(this.ctx, "done!"));
+      this.log("done!");
     } catch (e) {
-      this.log(getState(this.ctx, e));
+      this.log(e.toString());
     }
   }
 
