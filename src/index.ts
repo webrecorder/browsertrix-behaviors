@@ -110,10 +110,6 @@ export class BehaviorManager {
       this.behaviors.push(new AutoClick(opts.clickSelector || DEFAULT_CLICK_SELECTOR));
     }
 
-    if (!this.isInTopFrame()) {
-      return;
-    }
-
     if (customBehaviors) {
       for (const behaviorClass of customBehaviors) {
         try {
@@ -169,13 +165,15 @@ export class BehaviorManager {
   }
 
   load(behaviorClass) {
-    if (typeof(behaviorClass) !== "function") {
-      behaviorLog(`Must pass a class object, got ${behaviorClass}`, "error");
+    if (typeof(behaviorClass.id) !== "string") {
+      behaviorLog("Behavior class must have a string string \"id\" property", "error");
       return;
     }
 
-    if (typeof(behaviorClass.id) !== "string") {
-      behaviorLog("Behavior class must have a string string \"id\" property", "error");
+    const name = behaviorClass.id;
+
+    if (typeof(behaviorClass) !== "function") {
+      behaviorLog(`Must pass a class object, got ${behaviorClass}`, "error");
       return;
     }
 
@@ -187,8 +185,14 @@ export class BehaviorManager {
       return;
     }
 
-    const name = behaviorClass.id;
-    behaviorLog(`Loading external class ${name}: ${behaviorClass}`, "debug");
+    if (!this.isInTopFrame()) {
+      if (!behaviorClass.runInIframe) {
+        behaviorLog(`Behavior class ${name}: not running in iframes (.runInIframe not set)`, "debug");
+        return;
+      }
+    }
+
+    behaviorLog(`Behavior class ${name}: loaded`, "debug");
     this.loadedBehaviors[name] = behaviorClass;
   }
 

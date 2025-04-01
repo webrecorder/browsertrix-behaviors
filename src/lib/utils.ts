@@ -35,12 +35,14 @@ export async function waitUntilNode(path, root = document, old = null, timeout =
   return node;
 }
 
-export async function awaitLoad() {
+export async function awaitLoad(iframe?: HTMLIFrameElement) {
+  const doc = iframe ? iframe.contentDocument : document;
+  const win = iframe ? iframe.contentWindow : window;
   return new Promise((resolve) => {
-    if (document.readyState === "complete") {
+    if (doc.readyState === "complete") {
       resolve(null);
     } else {
-      window.addEventListener("load", resolve);
+      win.addEventListener("load", resolve);
     }
   });
 }
@@ -129,6 +131,28 @@ export async function addToExternalSet(url) : Promise<boolean> {
 
   // if set doesn't exist, just return true to avoid skipping
   return true;
+}
+
+export async function waitForNetworkIdle(idleTime = 500, concurrency = 0) {
+  if (typeof(self["__bx_netIdle"]) === "function") {
+    return await callBinding(self["__bx_netIdle"], {idleTime, concurrency});
+  }
+}
+
+export async function initFlow(params) : Promise<number> {
+  if (typeof(self["__bx_initFlow"]) === "function") {
+    return await callBinding(self["__bx_initFlow"], params);
+  }
+
+  return -1;
+}
+
+export async function nextFlowStep(id: number) : Promise<any> {
+  if (typeof(self["__bx_nextFlowStep"]) === "function") {
+    return await callBinding(self["__bx_nextFlowStep"], id);
+  }
+
+  return {done: true, msg: ""};
 }
 
 export async function openWindow(url) {
@@ -296,7 +320,7 @@ export function scrollIntoView(element, opts = {
   element.scrollIntoView(opts);
 }
 
-export function getState(ctx, msg, incrValue?) {
+export function getState(ctx: any, msg: string, incrValue?: string) {
   if (typeof(ctx.state) === "undefined") {
     ctx.state = {};
   }
