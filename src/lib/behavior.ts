@@ -7,6 +7,10 @@ export class BackgroundBehavior {
     behaviorLog(msg, "debug");
   }
 
+  error(msg) {
+    behaviorLog(msg, "error");
+  }
+
   log(msg) {
     behaviorLog(msg, "info");
   }
@@ -43,14 +47,14 @@ export class Behavior extends BackgroundBehavior {
   async run() {
     try {
       for await (const step of this) {
-        this.log(step);
+        this.debug(step);
         if (this.paused) {
           await this.paused;
         }
       }
-      this.log(this.getState("done!"));
+      this.debug(this.getState("done!"));
     } catch (e) {
-      this.log(this.getState(e));
+      this.error(e.toString());
     }
   }
 
@@ -167,14 +171,20 @@ export class BehaviorRunner extends BackgroundBehavior {
   async run() {
     try {
       for await (const step of this.inst.run(this.ctx)) {
-        this.log(step);
+        let logStep;
+        if (typeof step === "string" || step instanceof String) {
+          logStep = {msg: step}
+        } else {
+          logStep = step;
+        }
+        this.log({...logStep, behavior: this.behaviorProps.id, siteSpecific: true});
         if (this.paused) {
           await this.paused;
         }
       }
-      this.log("done!");
+      this.log({msg: "done!", behavior: this.behaviorProps.id, siteSpecific: true});
     } catch (e) {
-      this.log(e.toString());
+      this.error({msg: e.toString(), behavior: this.behaviorProps.id, siteSpecific: true});
     }
   }
 
