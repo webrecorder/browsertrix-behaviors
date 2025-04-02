@@ -50,7 +50,7 @@ export class Behavior extends BackgroundBehavior {
       }
       this.log({msg: "done!", behavior: this.id, customBehavior: false});
     } catch (e) {
-      let state = this.getState(e.toString());
+      const state = this.getState(e.toString());
       this.log({...state, behavior: this.id, customBehavior: false});
     }
   }
