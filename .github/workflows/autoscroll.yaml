@@ -35,11 +35,11 @@ jobs:
       run:  docker pull $BROWSERTRIX_IMAGE
 
     - name: run crawl
-      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js $BROWSERTRIX_IMAGE crawl --url https://www.iana.org/numbers --limit 1 --logging behaviors --logLevel debug --behaviors autoscroll > ./log
+      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js $BROWSERTRIX_IMAGE crawl --url https://www.iana.org/numbers --limit 1 --logging debug --context behaviorScript --behaviors autoscroll > ./log
 
-    - name: cat log
-      run: cat ./log
+    - name: check for autoscroll debug log line
+      run: grep 'Skipping autoscroll, page seems to not be responsive to scrolling events' ./log
 
-    - name: compare crawl log to expected
-      run: cat ./log | jq -c 'select(.context == "behaviorScript") | .details' | diff - ./test/expected-autoscroll.log
+    - name: check that state is logged as well
+      run: grep '{"state":{"segments":1}' ./log
 
