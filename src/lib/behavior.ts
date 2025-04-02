@@ -43,15 +43,14 @@ export class Behavior extends BackgroundBehavior {
   async run() {
     try {
       for await (const step of this) {
-        this.log({msg: step, behavior: this.id, customBehavior: false});
+        this.log(step);
         if (this.paused) {
           await this.paused;
         }
       }
-      this.log({msg: "done!", behavior: this.id, customBehavior: false});
+      this.log(this.getState("done!"));
     } catch (e) {
-      const state = this.getState(e.toString());
-      this.log({...state, behavior: this.id, customBehavior: false});
+      this.log(this.getState(e));
     }
   }
 
