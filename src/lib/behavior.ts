@@ -7,6 +7,10 @@ export class BackgroundBehavior {
     behaviorLog(msg, "debug");
   }
 
+  error(msg) {
+    behaviorLog(msg, "error");
+  }
+
   log(msg) {
     behaviorLog(msg, "info");
   }
@@ -180,7 +184,7 @@ export class BehaviorRunner extends BackgroundBehavior {
       }
       this.log({msg: "done!", behavior: this.behaviorProps.id, siteSpecific: true});
     } catch (e) {
-      this.log({msg: "error", error: e.toString(), behavior: this.behaviorProps.id, siteSpecific: true});
+      this.error({msg: e.toString(), behavior: this.behaviorProps.id, siteSpecific: true});
     }
   }
 
