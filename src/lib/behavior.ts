@@ -43,14 +43,15 @@ export class Behavior extends BackgroundBehavior {
   async run() {
     try {
       for await (const step of this) {
-        this.log(step);
+        this.log({msg: step, behavior: this.id, customBehavior: false});
         if (this.paused) {
           await this.paused;
         }
       }
-      this.log(this.getState("done!"));
+      this.log({msg: "done!", behavior: this.id, customBehavior: false});
     } catch (e) {
-      this.log(this.getState(e));
+      let state = this.getState(e.toString());
+      this.log({...state, behavior: this.id, customBehavior: false});
     }
   }
 
@@ -167,14 +168,14 @@ export class BehaviorRunner extends BackgroundBehavior {
   async run() {
     try {
       for await (const step of this.inst.run(this.ctx)) {
-        this.log({message: step, behavior: this.behaviorProps.id, customBehavior: true});
+        this.log({msg: step, behavior: this.behaviorProps.id, customBehavior: true});
         if (this.paused) {
           await this.paused;
         }
       }
-      this.log({message: "done!", behavior: this.behaviorProps.id, customBehavior: true});
+      this.log({msg: "done!", behavior: this.behaviorProps.id, customBehavior: true});
     } catch (e) {
-      this.log({error: e.toString(), behavior: this.behaviorProps.id, customBehavior: true});
+      this.log({msg: e.toString(), behavior: this.behaviorProps.id, customBehavior: true});
     }
   }
 
