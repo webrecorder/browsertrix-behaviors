@@ -54,7 +54,7 @@ export class Behavior extends BackgroundBehavior {
       }
       this.debug(this.getState("done!"));
     } catch (e) {
-      this.debug(this.getState(e));
+      this.error(e.toString());
     }
   }
 
