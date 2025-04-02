@@ -167,14 +167,20 @@ export class BehaviorRunner extends BackgroundBehavior {
   async run() {
     try {
       for await (const step of this.inst.run(this.ctx)) {
-        this.log({msg: step, behavior: this.behaviorProps.id, siteSpecific: true});
+        let logStep;
+        if (typeof step === "string" || step instanceof String) {
+          logStep = {msg: step}
+        } else {
+          logStep = step;
+        }
+        this.log({...logStep, behavior: this.behaviorProps.id, siteSpecific: true});
         if (this.paused) {
           await this.paused;
         }
       }
       this.log({msg: "done!", behavior: this.behaviorProps.id, siteSpecific: true});
     } catch (e) {
-      this.log({msg: e.toString(), behavior: this.behaviorProps.id, siteSpecific: true});
+      this.log({msg: "error", error: e.toString(), behavior: this.behaviorProps.id, siteSpecific: true});
     }
   }
 
