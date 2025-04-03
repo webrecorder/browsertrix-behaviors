@@ -132,14 +132,14 @@ export class BehaviorManager {
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
-          behaviorLog("Using Site-Specific Behavior: " + name);
+          behaviorLog({msg: "Using Site-Specific Behavior: " + name, siteSpecific: true});
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
             (opts.siteSpecific[name] || {}) : {};
           try {
             this.mainBehavior = new BehaviorRunner(siteBehaviorClass, siteSpecificOpts);
           } catch (e) {
-            behaviorLog(e.toString(), "error");
+            behaviorLog({msg: e.toString(), siteSpecific: true}, "error");
           }
           siteMatch = true;
           break;
@@ -230,7 +230,8 @@ export class BehaviorManager {
     await awaitLoad();
 
     this.behaviors.forEach(x => {
-      behaviorLog("Starting behavior: " + x.constructor.id || "(Unnamed)");
+      const id = x.id || x.constructor.id || "(Unnamed)";
+      behaviorLog("Starting behavior: " + id, "debug");
       x.start();
     });
 
@@ -238,17 +239,17 @@ export class BehaviorManager {
 
     await sleep(500);
 
-    let allBehaviors = Promise.allSettled(this.behaviors.map(x => x.done()));
+    const allBehaviors = Promise.allSettled(this.behaviors.map(x => x.done()));
 
     if (this.timeout) {
-      behaviorLog(`Waiting for behaviors to finish or ${this.timeout}ms timeout`);
+      behaviorLog(`Waiting for behaviors to finish or ${this.timeout}ms timeout`, "debug");
       await Promise.race([allBehaviors, sleep(this.timeout)]);
     } else {
-      behaviorLog("Waiting for behaviors to finish");
+      behaviorLog("Waiting for behaviors to finish", "debug");
       await allBehaviors;
     }
 
-    behaviorLog("All Behaviors Done for " + self.location.href);
+    behaviorLog("All Behaviors Done for " + self.location.href, "debug");
 
     if (this.mainBehavior && this.mainBehaviorClass.cleanup) {
       this.mainBehavior.cleanup();
