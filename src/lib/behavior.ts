@@ -136,6 +136,10 @@ export class BehaviorRunner extends BackgroundBehavior {
   paused: any;
   _unpause: any;
 
+  get id() {
+    return (this.inst?.constructor as any).id;
+  }
+
   constructor(behavior: AbstractBehavior, mainOpts = {}) {
     super();
     this.behaviorProps = behavior;
