@@ -132,7 +132,7 @@ export class BehaviorManager {
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
-          behaviorLog({msg: "Using Site-Specific Behavior: " + name, siteSpecific: true});
+          behaviorLog("Using Site-Specific Behavior: " + name);
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
             (opts.siteSpecific[name] || {}) : {};
@@ -210,6 +210,7 @@ export class BehaviorManager {
   async awaitPageLoad() {
     this.selectMainBehavior();
     if (this.mainBehavior?.awaitPageLoad) {
+      behaviorLog("Waiting for custom page load via behavior");
       await this.mainBehavior.awaitPageLoad();
     }
   }

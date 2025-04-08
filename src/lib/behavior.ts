@@ -11,8 +11,8 @@ export class BackgroundBehavior {
     behaviorLog(msg, "error");
   }
 
-  log(msg) {
-    behaviorLog(msg, "info");
+  log(msg, type = "info") {
+    behaviorLog(msg, type);
   }
 }
 
@@ -155,13 +155,25 @@ export class BehaviorRunner extends BackgroundBehavior {
     let {state, opts} = behavior.init();
     state = state || {};
     opts = opts ? {...opts, ...mainOpts} : mainOpts;
-    const log = behaviorLog;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const log = async (data: any, type: string) => this.wrappedLog(data, type);
 
     this.ctx = { Lib, state, opts, log };
 
     this._running = null;
     this.paused = null;
     this._unpause = null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  wrappedLog(data: any, type = "info") {
+    let logData;
+    if (typeof data === "string" || data instanceof String) {
+      logData = {msg: data}
+    } else {
+      logData = data;
+    }
+    this.log({...logData, behavior: this.behaviorProps.id, siteSpecific: true}, type);
   }
 
   start() {
@@ -175,20 +187,16 @@ export class BehaviorRunner extends BackgroundBehavior {
   async run() {
     try {
       for await (const step of this.inst.run(this.ctx)) {
-        let logStep;
-        if (typeof step === "string" || step instanceof String) {
-          logStep = {msg: step}
-        } else {
-          logStep = step;
+        if (step) {
+          this.wrappedLog(step);
         }
-        this.log({...logStep, behavior: this.behaviorProps.id, siteSpecific: true});
         if (this.paused) {
           await this.paused;
         }
       }
-      this.log({msg: "done!", behavior: this.behaviorProps.id, siteSpecific: true});
+      this.debug({msg: "done!", behavior: this.behaviorProps.id});
     } catch (e) {
-      this.error({msg: e.toString(), behavior: this.behaviorProps.id, siteSpecific: true});
+      this.error({msg: e.toString(), behavior: this.behaviorProps.id});
     }
   }
 
