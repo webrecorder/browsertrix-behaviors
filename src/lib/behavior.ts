@@ -194,7 +194,7 @@ export class BehaviorRunner extends BackgroundBehavior {
           await this.paused;
         }
       }
-      this.log({msg: "done!", behavior: this.behaviorProps.id});
+      this.debug({msg: "done!", behavior: this.behaviorProps.id});
     } catch (e) {
       this.error({msg: e.toString(), behavior: this.behaviorProps.id});
     }
