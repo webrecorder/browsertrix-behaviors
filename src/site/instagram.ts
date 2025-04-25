@@ -4,8 +4,8 @@ const Q = {
   rootPath: "//main/div/div[2]/div",
   childMatchSelect: "string(.//a[starts-with(@href, '/')]/@href)",
   childMatch: "child::div[.//a[@href='$1']]",
-  firstPostInRow: "div[1]/a",
-  postCloseButton: "/html/body/div[last()]/div[1]/button[.//*[@aria-label]]",
+  firstPostInRow: "div[1]//a",
+  postCloseButton: "//div[last() - 2]//div[@role='button']",
   nextPost: "//button[.//*[local-name() = 'svg' and @aria-label='Next']]",
   postLoading: "//*[@aria-label='Loading...']",
   subpostNextOnlyChevron,
@@ -194,9 +194,9 @@ export class InstagramPostsBehavior {
 
   async* iterPosts(ctx, next) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    let count = 0;
+    //let count = 0;
 
-    while (next && ++count <= 3) {
+    while (next) {
       next.click();
       await sleep(waitUnit * 10);
 
