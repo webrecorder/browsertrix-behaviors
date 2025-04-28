@@ -1,23 +1,40 @@
+import { type Context } from "../behavior";
+import { Behavior } from "../behavior";
+
 const Q = {
-  rootPath: "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]//div[@style]",
+  rootPath:
+    "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]//div[@style]",
   anchor: ".//article",
-  childMatchSelect: "string(.//article//a[starts-with(@href, '/') and @aria-label]/@href)",
+  childMatchSelect:
+    "string(.//article//a[starts-with(@href, '/') and @aria-label]/@href)",
   childMatch: "child::div[.//a[@href='$1']]",
-  expand: ".//div[@role='button' and not(@aria-haspopup) and not(@data-testid)]",
+  expand:
+    ".//div[@role='button' and not(@aria-haspopup) and not(@data-testid)]",
   quote: ".//div[@role='blockquote' and @aria-haspopup='false']",
-  image: ".//a[@role='link' and starts-with(@href, '/') and contains(@href, '/photo/')]",
-  imageFirstNext: "//div[@aria-roledescription='carousel']/div[2]/div[1]//div[@role='button']",
-  imageNext: "//div[@aria-roledescription='carousel']/div[2]/div[2]//div[@role='button']",
+  image:
+    ".//a[@role='link' and starts-with(@href, '/') and contains(@href, '/photo/')]",
+  imageFirstNext:
+    "//div[@aria-roledescription='carousel']/div[2]/div[1]//div[@role='button']",
+  imageNext:
+    "//div[@aria-roledescription='carousel']/div[2]/div[2]//div[@role='button']",
   imageClose: "//div[@role='presentation']/div[@role='button' and @aria-label]",
   backButton: "//div[@data-testid='titleContainer']//div[@role='button']",
-  viewSensitive: ".//a[@href='/settings/content_you_see']/parent::div/parent::div/parent::div//div[@role='button']",
+  viewSensitive:
+    ".//a[@href='/settings/content_you_see']/parent::div/parent::div/parent::div//div[@role='button']",
   progress: ".//*[@role='progressbar']",
   promoted: ".//div[data-testid='placementTracking']",
 };
 
-export class TwitterTimelineBehavior {
-  seenTweets: Set<any>;
-  seenMediaTweets: Set<any>;
+type State = {
+  tweets: number;
+  images: number;
+  videos: number;
+  threads: number;
+};
+
+export class TwitterTimelineBehavior extends Behavior<State> {
+  seenTweets: Set<string>;
+  seenMediaTweets: Set<string>;
 
   static id = "Twitter";
 
@@ -30,22 +47,23 @@ export class TwitterTimelineBehavior {
       state: {
         tweets: 0,
         images: 0,
-        videos: 0
+        videos: 0,
       },
       opts: {
-        maxDepth: 0
-      }
+        maxDepth: 0,
+      },
     };
   }
 
   constructor() {
+    super();
     this.seenTweets = new Set();
     this.seenMediaTweets = new Set();
   }
 
-  showingProgressBar(ctx, root) {
+  showingProgressBar(ctx: Context<State>, root: Node) {
     const { xpathNode } = ctx.Lib;
-    const node = xpathNode(Q.progress, root);
+    const node = xpathNode(Q.progress, root) as Element | null;
     if (!node) {
       return false;
     }
@@ -53,7 +71,7 @@ export class TwitterTimelineBehavior {
     return node.clientHeight > 10;
   }
 
-  async waitForNext(ctx, child) {
+  async waitForNext(ctx: Context<State>, child: Element | null) {
     const { sleep, waitUnit } = ctx.Lib;
     if (!child) {
       return null;
@@ -72,26 +90,27 @@ export class TwitterTimelineBehavior {
     return child.nextElementSibling;
   }
 
-  async expandMore(ctx, child) {
+  async expandMore(ctx: Context<State>, child: Element | null) {
     const { sleep, waitUnit, xpathNode } = ctx.Lib;
-    const expandElem = xpathNode(Q.expand, child);
+    const expandElem = xpathNode(Q.expand, child) as HTMLElement | null;
     if (!expandElem) {
       return child;
     }
 
-    const prev = child.previousElementSibling;
+    const prev = child?.previousElementSibling;
     expandElem.click();
     await sleep(waitUnit);
-    while (this.showingProgressBar(ctx, prev.nextElementSibling)) {
+    while (this.showingProgressBar(ctx, prev?.nextElementSibling as Node)) {
       await sleep(waitUnit);
     }
-    child = prev.nextElementSibling;
+    child = prev?.nextElementSibling ?? null;
     return child;
   }
 
-  async* infScroll(ctx) {
-    const { scrollIntoView, RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    const root = xpathNode(Q.rootPath);
+  async *infScroll(ctx: Context<State>) {
+    const { scrollIntoView, RestoreState, sleep, waitUnit, xpathNode } =
+      ctx.Lib;
+    const root = xpathNode(Q.rootPath) as Element | null;
 
     if (!root) {
       return;
@@ -111,8 +130,8 @@ export class TwitterTimelineBehavior {
         anchorElem = xpathNode(Q.anchor, child);
       }
 
-      if (child?.innerText) {
-        scrollIntoView(child);
+      if ((child as HTMLElement).innerText) {
+        scrollIntoView(child!);
       }
 
       if (child && anchorElem) {
@@ -123,7 +142,10 @@ export class TwitterTimelineBehavior {
         yield anchorElem;
 
         if (restorer.matchValue) {
-          child = await restorer.restore(Q.rootPath, Q.childMatch);
+          child = (await restorer.restore(
+            Q.rootPath,
+            Q.childMatch,
+          )) as Element | null;
         }
       }
 
@@ -131,9 +153,12 @@ export class TwitterTimelineBehavior {
     }
   }
 
-  async* mediaPlaying(ctx, tweet) {
+  async *mediaPlaying(ctx: Context<State>, tweet: Node) {
     const { getState, sleep, xpathNode, xpathString } = ctx.Lib;
-    const media = xpathNode("(.//video | .//audio)", tweet);
+    const media = xpathNode(
+      "(.//video | .//audio)",
+      tweet,
+    ) as HTMLMediaElement | null;
     if (!media || media.paused) {
       return;
     }
@@ -141,14 +166,21 @@ export class TwitterTimelineBehavior {
     let mediaTweetUrl = null;
 
     try {
-      mediaTweetUrl = new URL(xpathString(Q.childMatchSelect, tweet.parentElement), window.location.origin).href;
+      mediaTweetUrl = new URL(
+        xpathString(Q.childMatchSelect, tweet.parentElement),
+        window.location.origin,
+      ).href;
     } catch (e) {
       console.warn(e);
     }
 
     // no need to wait for mp4s, should be loaded fully automatically
     if (media.src.startsWith("https://") && media.src.indexOf(".mp4") > 0) {
-      yield getState(ctx, `Loading video for ${mediaTweetUrl || "unknown"}`, "videos");
+      yield getState(
+        ctx,
+        `Loading video for ${mediaTweetUrl || "unknown"}`,
+        "videos",
+      );
       return;
     }
 
@@ -177,9 +209,9 @@ export class TwitterTimelineBehavior {
     await Promise.race([p, sleep(60000)]);
   }
 
-  async* clickImages(ctx, tweet) {
+  async *clickImages(ctx: Context<State>, tweet: HTMLElement) {
     const { getState, HistoryState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    const imagePopup = xpathNode(Q.image, tweet);
+    const imagePopup = xpathNode(Q.image, tweet) as HTMLElement | null;
 
     if (imagePopup) {
       const imageState = new HistoryState(() => imagePopup.click());
@@ -188,7 +220,7 @@ export class TwitterTimelineBehavior {
 
       await sleep(waitUnit * 5);
 
-      let nextImage = xpathNode(Q.imageFirstNext);
+      let nextImage = xpathNode(Q.imageFirstNext) as HTMLElement | null;
       let prevLocation = window.location.href;
 
       while (nextImage) {
@@ -204,14 +236,18 @@ export class TwitterTimelineBehavior {
         yield getState(ctx, "Loading Image: " + window.location.href, "images");
         await sleep(waitUnit * 5);
 
-        nextImage = xpathNode(Q.imageNext);
+        nextImage = xpathNode(Q.imageNext) as HTMLElement | null;
       }
 
       await imageState.goBack(Q.imageClose);
     }
   }
 
-  async* clickTweet(ctx, tweet, depth) {
+  async *clickTweet(
+    ctx: Context<State>,
+    tweet: HTMLElement,
+    depth: number,
+  ): AsyncGenerator<{ state: Context<State>["state"]; msg: string }> {
     const { getState, HistoryState, sleep, waitUnit } = ctx.Lib;
     const tweetState = new HistoryState(() => tweet.click());
 
@@ -235,7 +271,7 @@ export class TwitterTimelineBehavior {
     }
   }
 
-  async* iterTimeline(ctx, depth = 0) {
+  async *iterTimeline(ctx: Context<State>, depth = 0) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     if (this.seenTweets.has(window.location.href)) {
       return;
@@ -252,17 +288,20 @@ export class TwitterTimelineBehavior {
 
       await sleep(waitUnit * 2.5);
 
-      const viewButton = xpathNode(Q.viewSensitive, tweet);
+      const viewButton = xpathNode(
+        Q.viewSensitive,
+        tweet,
+      ) as HTMLElement | null;
       if (viewButton) {
         viewButton.click();
         await sleep(waitUnit * 2.5);
       }
 
       // process images
-      yield* this.clickImages(ctx, tweet);
+      yield* this.clickImages(ctx, tweet as HTMLElement);
 
       // process quoted tweet
-      const quoteTweet = xpathNode(Q.quote, tweet);
+      const quoteTweet = xpathNode(Q.quote, tweet) as HTMLElement | null;
 
       if (quoteTweet) {
         yield* this.clickTweet(ctx, quoteTweet, 1000);
@@ -272,14 +311,14 @@ export class TwitterTimelineBehavior {
       yield* this.mediaPlaying(ctx, tweet);
 
       // track location to see if click goes to new url
-      yield* this.clickTweet(ctx, tweet, depth);
+      yield* this.clickTweet(ctx, tweet as HTMLElement, depth);
 
       // wait before continuing
       await sleep(waitUnit * 5);
     }
   }
 
-  async* run(ctx) {
+  async *run(ctx: Context<State>) {
     yield* this.iterTimeline(ctx, 0);
   }
 }

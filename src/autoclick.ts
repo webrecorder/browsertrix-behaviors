@@ -3,8 +3,7 @@ import { addToExternalSet, sleep } from "./lib/utils";
 
 declare let getEventListeners: any;
 
-export class AutoClick extends BackgroundBehavior
-{
+export class AutoClick extends BackgroundBehavior {
   _donePromise: Promise<void>;
   _markDone: () => void;
   selector: string;
@@ -15,10 +14,12 @@ export class AutoClick extends BackgroundBehavior
   constructor(selector = "a") {
     super();
     this.selector = selector;
-    this._donePromise = new Promise<void>((resolve) => this._markDone = resolve);
+    this._donePromise = new Promise<void>(
+      (resolve) => (this._markDone = resolve),
+    );
   }
 
-  nextSameOriginLink() : HTMLAnchorElement | null {
+  nextSameOriginLink(): HTMLAnchorElement | null {
     try {
       const allLinks = document.querySelectorAll(this.selector);
       for (const el of allLinks) {
@@ -49,7 +50,7 @@ export class AutoClick extends BackgroundBehavior
 
   async start() {
     const origHref = self.location.href;
-    
+
     const beforeUnload = (event) => {
       event.preventDefault();
       return false;
@@ -92,7 +93,7 @@ export class AutoClick extends BackgroundBehavior
 
     if (elem.href) {
       // skip if already clicked this URL, tracked in external state
-      if (!await addToExternalSet(elem.href)) {
+      if (!(await addToExternalSet(elem.href))) {
         return;
       }
 
@@ -107,18 +108,23 @@ export class AutoClick extends BackgroundBehavior
 
     if (self.location.href != origHref) {
       await new Promise((resolve) => {
-        window.addEventListener("popstate", () => {
-          resolve(null);
-        }, { once: true });
+        window.addEventListener(
+          "popstate",
+          () => {
+            resolve(null);
+          },
+          { once: true },
+        );
 
         window.history.back();
       });
     }
-  } catch (e) {
+  }
+  catch(e) {
     this.debug(e.toString());
   }
 
-  done() {
+  async done() {
     return this._donePromise;
   }
 }

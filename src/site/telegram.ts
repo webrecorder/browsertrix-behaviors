@@ -1,7 +1,9 @@
 const Q = {
-  telegramContainer: "//main//section[@class='tgme_channel_history js-message_history']",
+  telegramContainer:
+    "//main//section[@class='tgme_channel_history js-message_history']",
   postId: "string(./div[@data-post]/@data-post)",
-  linkExternal: "string(.//a[@class='tgme_widget_message_link_preview' and @href]/@href)",
+  linkExternal:
+    "string(.//a[@class='tgme_widget_message_link_preview' and @href]/@href)",
 };
 
 export class TelegramBehavior {
@@ -13,7 +15,7 @@ export class TelegramBehavior {
 
   static init() {
     return {
-      state: { messages: 0 }
+      state: { messages: 0 },
     };
   }
 
@@ -31,8 +33,15 @@ export class TelegramBehavior {
     return child.previousElementSibling;
   }
 
-  async* run(ctx) {
-    const { getState, scrollIntoView, sleep, waitUnit, xpathNode, xpathString } = ctx.Lib;
+  async *run(ctx) {
+    const {
+      getState,
+      scrollIntoView,
+      sleep,
+      waitUnit,
+      xpathNode,
+      xpathString,
+    } = ctx.Lib;
     const root = xpathNode(Q.telegramContainer);
 
     if (!root) {

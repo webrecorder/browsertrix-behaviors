@@ -9,8 +9,10 @@ const tsConfig = (_env, argv) => {
   return {
     mode: argv.mode,
     plugins: [
-      new webpack.BannerPlugin(`behaviors.js is part of Webrecorder project. Copyright (C) 2021-${new Date().getFullYear()}, Webrecorder Software. Licensed under the Affero General Public License v3.`),
-      new webpack.ProgressPlugin()
+      new webpack.BannerPlugin(
+        `behaviors.js is part of Webrecorder project. Copyright (C) 2021-${new Date().getFullYear()}, Webrecorder Software. Licensed under the Affero General Public License v3.`,
+      ),
+      new webpack.ProgressPlugin(),
     ],
     entry: "./index.ts",
     module: {
@@ -36,7 +38,7 @@ const tsConfig = (_env, argv) => {
           extractComments: false,
         }),
       ],
-    }
+    },
   };
 };
 
