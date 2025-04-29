@@ -1,4 +1,4 @@
-import { Behavior, type Context } from "../behavior";
+import { type Context, type Behavior } from "../behaviorClass";
 
 const subpostNextOnlyChevron =
   "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
@@ -27,7 +27,7 @@ type State = {
   comments: number;
 };
 
-export class InstagramPostsBehavior extends Behavior<State> {
+export class InstagramPostsBehavior implements Behavior<State> {
   maxCommentsTime: number;
   postOnlyWindow: any;
 
@@ -51,7 +51,6 @@ export class InstagramPostsBehavior extends Behavior<State> {
   }
 
   constructor() {
-    super();
     this.maxCommentsTime = 10000;
     // extra window for first post, if allowed
     this.postOnlyWindow = null;
@@ -156,7 +155,7 @@ export class InstagramPostsBehavior extends Behavior<State> {
 
   async *iterSubposts(ctx: Context<State>) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    let next = xpathNode(Q.subpostNextOnlyChevron);
+    let next = xpathNode(Q.subpostNextOnlyChevron) as HTMLElement | null;
 
     let count = 1;
 
@@ -170,7 +169,7 @@ export class InstagramPostsBehavior extends Behavior<State> {
         "slides",
       );
 
-      next = xpathNode(Q.subpostPrevNextChevron);
+      next = xpathNode(Q.subpostPrevNextChevron) as HTMLElement | null;
     }
 
     await sleep(waitUnit * 5);

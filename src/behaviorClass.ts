@@ -33,9 +33,8 @@ export interface Context<State = {}> {
   log: (...args: unknown[]) => void;
 }
 
-declare abstract class Behavior<State = {}> {
+export abstract class Behavior<State = {}> {
   static readonly id: string;
-  constructor();
   abstract run(ctx: Context<Partial<State>>): AsyncGenerator;
   showingProgressBar?(ctx: Context<State>, root: Node): boolean;
   awaitPageLoad?(ctx: Context<State>): Promise<void>;

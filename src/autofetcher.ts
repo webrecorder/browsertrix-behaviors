@@ -96,7 +96,7 @@ export class AutoFetcher extends BackgroundBehavior {
   queueUrl(url: string, immediate = false) {
     try {
       url = new URL(url, document.baseURI).href;
-    } catch (e) {
+    } catch (_e) {
       return false;
     }
 
@@ -156,7 +156,7 @@ export class AutoFetcher extends BackgroundBehavior {
       } as {});
       abort.abort();
       this.debug(`Autofetch: started non-cors stream for ${url}`);
-    } catch (e) {
+    } catch (_e) {
       this.debug(`Autofetch: failed non-cors for ${url}`);
     }
   }
@@ -316,7 +316,7 @@ export class AutoFetcher extends BackgroundBehavior {
 
     try {
       rules = sheet.cssRules || sheet.rules;
-    } catch (e) {
+    } catch (_e) {
       this.debug("Can't access stylesheet");
       return;
     }

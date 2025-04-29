@@ -1,4 +1,4 @@
-import { type Context } from "../behavior";
+import { type Context } from "../behaviorClass";
 
 let _logFunc: (...args: unknown[]) => void | undefined = console.log;
 let _behaviorMgrClass = null;

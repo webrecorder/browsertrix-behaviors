@@ -1,4 +1,4 @@
-import { type Context } from "../behavior";
+import { type Context } from "../behaviorClass";
 import { behaviorLog } from "./utils";
 import * as Lib from "./utils";
 
@@ -29,7 +29,7 @@ export class Behavior<State extends Object = {}> extends BackgroundBehavior {
   _running: Promise<void> | null;
   paused: Promise<void> | null;
   _unpause: ((value: void | PromiseLike<void>) => void) | null;
-  state: Partial<State>;
+  state: Partial<State> & { "done!"?: number };
   scrollOpts: {
     behavior: string;
     block: string;
@@ -85,18 +85,21 @@ export class Behavior<State extends Object = {}> extends BackgroundBehavior {
     }
   }
 
-  getState(msg: string, incrValue?: KeysWithValsOfType<State, number>) {
+  getState(
+    msg: string,
+    incrValue?: KeysWithValsOfType<typeof this.state, number>,
+  ) {
     if (incrValue) {
       if (this.state[incrValue] === undefined) {
         (
           this.state as {
-            [K in KeysWithValsOfType<State, number>]: number;
+            [K in KeysWithValsOfType<typeof this.state, number>]: number;
           }
         )[incrValue] = 1;
       } else {
         (
           this.state as {
-            [K in KeysWithValsOfType<State, number>]: number;
+            [K in KeysWithValsOfType<typeof this.state, number>]: number;
           }
         )[incrValue]++;
       }

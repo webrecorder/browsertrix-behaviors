@@ -1,5 +1,4 @@
-import { type Context } from "../behavior";
-import { Behavior } from "../behavior";
+import { type Context, type Behavior } from "../behaviorClass";
 
 const Q = {
   rootPath:
@@ -32,7 +31,7 @@ type State = {
   threads: number;
 };
 
-export class TwitterTimelineBehavior extends Behavior<State> {
+export class TwitterTimelineBehavior implements Behavior<State> {
   seenTweets: Set<string>;
   seenMediaTweets: Set<string>;
 
@@ -56,7 +55,6 @@ export class TwitterTimelineBehavior extends Behavior<State> {
   }
 
   constructor() {
-    super();
     this.seenTweets = new Set();
     this.seenMediaTweets = new Set();
   }
