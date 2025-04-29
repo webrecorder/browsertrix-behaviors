@@ -1,3 +1,5 @@
+/** WIP rewrite of some of the WIP abstract behavior class & types from `behavior.ts` that allows for better autocomplete & typing */
+
 import {
   type waitUntil,
   type sleep,
@@ -9,13 +11,13 @@ import {
   type getState,
   type HistoryState,
   type waitUntilNode,
-} from "./lib/utils";
+} from "./utils";
 
 type Opts = {
   maxDepth: number;
 };
 
-export interface Context<State = {}> {
+export interface BehaviorContext<State = {}> {
   Lib: {
     xpathNode: typeof xpathNode;
     sleep: typeof sleep;
@@ -35,7 +37,8 @@ export interface Context<State = {}> {
 
 export abstract class Behavior<State = {}> {
   static readonly id: string;
-  abstract run(ctx: Context<Partial<State>>): AsyncGenerator;
-  showingProgressBar?(ctx: Context<State>, root: Node): boolean;
-  awaitPageLoad?(ctx: Context<State>): Promise<void>;
+  abstract run(ctx: BehaviorContext<Partial<State>>): AsyncGenerator;
+  showingProgressBar?(ctx: BehaviorContext<State>, root: Node): boolean;
+  awaitPageLoad?(ctx: BehaviorContext<State>): Promise<void>;
+  // TODO fill more of these in
 }

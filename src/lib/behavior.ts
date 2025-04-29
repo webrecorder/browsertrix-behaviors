@@ -1,4 +1,4 @@
-import { type Context } from "../behaviorClass";
+import { type BehaviorContext } from "./behaviorClass";
 import { behaviorLog } from "./utils";
 import * as Lib from "./utils";
 
@@ -51,14 +51,14 @@ export class Behavior<State extends Object = {}> extends BackgroundBehavior {
   }
 
   async done() {
-    return this._running ? this._running : Promise.resolve();
+    return this._running != null ? this._running : Promise.resolve();
   }
 
   async run() {
     try {
       for await (const step of this) {
         this.debug(step);
-        if (this.paused) {
+        if (this.paused != null) {
           await this.paused;
         }
       }
@@ -69,7 +69,7 @@ export class Behavior<State extends Object = {}> extends BackgroundBehavior {
   }
 
   pause() {
-    if (this.paused) {
+    if (this.paused != null) {
       return;
     }
     this.paused = new Promise((resolve) => {
@@ -150,7 +150,7 @@ type AbstractBehavior = (new () => AbstractBehaviorInst) &
 export class BehaviorRunner extends BackgroundBehavior {
   inst: AbstractBehaviorInst;
   behaviorProps: StaticAbstractBehavior;
-  ctx: Context;
+  ctx: BehaviorContext;
   _running: Promise<void> | undefined;
   paused: any;
   _unpause: any;
@@ -203,7 +203,7 @@ export class BehaviorRunner extends BackgroundBehavior {
   }
 
   async done() {
-    return this._running ? this._running : Promise.resolve();
+    return this._running != null ? this._running : Promise.resolve();
   }
 
   async run() {

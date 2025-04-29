@@ -1,4 +1,4 @@
-import { type Context, type Behavior } from "../behaviorClass";
+import { type BehaviorContext, type Behavior } from "../lib/behaviorClass";
 
 const subpostNextOnlyChevron =
   "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
@@ -63,7 +63,7 @@ export class InstagramPostsBehavior implements Behavior<State> {
     }
   }
 
-  async waitForNext(ctx: Context<State>, child: Element | null) {
+  async waitForNext(ctx: BehaviorContext<State>, child: Element | null) {
     if (!child) {
       return null;
     }
@@ -77,7 +77,7 @@ export class InstagramPostsBehavior implements Behavior<State> {
     return child.nextElementSibling;
   }
 
-  async *iterRow(ctx: Context<State>) {
+  async *iterRow(ctx: BehaviorContext<State>) {
     const { RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
     const root = xpathNode(Q.rootPath) as Element | null;
 
@@ -109,12 +109,15 @@ export class InstagramPostsBehavior implements Behavior<State> {
     }
   }
 
-  async *viewStandalonePost(ctx: Context<State>, origLoc: string | URL) {
+  async *viewStandalonePost(
+    ctx: BehaviorContext<State>,
+    origLoc: string | URL,
+  ) {
     const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } =
       ctx.Lib;
     const root = xpathNode(Q.rootPath) as Element | null;
 
-    if (!root?.firstElementChild) {
+    if (!root.firstElementChild) {
       return;
     }
 
@@ -153,7 +156,7 @@ export class InstagramPostsBehavior implements Behavior<State> {
     //}
   }
 
-  async *iterSubposts(ctx: Context<State>) {
+  async *iterSubposts(ctx: BehaviorContext<State>) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     let next = xpathNode(Q.subpostNextOnlyChevron) as HTMLElement | null;
 
@@ -175,7 +178,7 @@ export class InstagramPostsBehavior implements Behavior<State> {
     await sleep(waitUnit * 5);
   }
 
-  async iterComments(ctx: Context<State>) {
+  async iterComments(ctx: BehaviorContext<State>) {
     const { scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } = ctx.Lib;
     const root = xpathNode(Q.commentRoot) as Element | null;
 
@@ -201,10 +204,10 @@ export class InstagramPostsBehavior implements Behavior<State> {
       while (viewReplies) {
         const orig = viewReplies.textContent;
         viewReplies.click();
-        ctx.state!.comments!++;
+        ctx.state.comments++;
         await sleep(waitUnit * 2.5);
 
-        await waitUntil(() => orig !== viewReplies!.textContent, waitUnit);
+        await waitUntil(() => orig !== viewReplies.textContent, waitUnit);
 
         viewReplies = getViewRepliesButton(child);
       }
@@ -220,7 +223,7 @@ export class InstagramPostsBehavior implements Behavior<State> {
         ) as HTMLElement | null;
         if (loadMore) {
           loadMore.click();
-          ctx.state!.comments!++;
+          ctx.state.comments++;
           await sleep(waitUnit * 5);
         }
       }
@@ -232,7 +235,7 @@ export class InstagramPostsBehavior implements Behavior<State> {
     return commentsLoaded;
   }
 
-  async *iterPosts(ctx: Context<State>, next: HTMLElement | null) {
+  async *iterPosts(ctx: BehaviorContext<State>, next: HTMLElement | null) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     let count = 0;
 
@@ -260,7 +263,7 @@ export class InstagramPostsBehavior implements Behavior<State> {
     await sleep(waitUnit * 5);
   }
 
-  async *run(ctx: Context<State>) {
+  async *run(ctx: BehaviorContext<State>) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
     //const origLoc = window.location.href;
 
@@ -286,7 +289,7 @@ export class InstagramPostsBehavior implements Behavior<State> {
     }
   }
 
-  async awaitPageLoad(ctx: Context<State>) {
+  async awaitPageLoad(ctx: BehaviorContext<State>) {
     const { Lib, log } = ctx;
     const { waitUntilNode } = Lib;
 

@@ -11,7 +11,7 @@ import {
 import { type AutoFetcher } from "./autofetcher";
 
 // ===========================================================================
-export class AutoScroll extends Behavior<{ segments: number }> {
+export class AutoScroll extends Behavior {
   autoFetcher: AutoFetcher;
   showMoreQuery: string;
   state = { segments: 1 };

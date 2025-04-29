@@ -5,6 +5,7 @@
     "removeComments": true,
     "preserveConstEnums": true,
     // "strict": true,
+    // "strictNullChecks": true,
     "allowJs": true,
     "checkJs": true,
     "target": "es2022",

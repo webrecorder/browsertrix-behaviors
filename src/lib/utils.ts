@@ -1,4 +1,4 @@
-import { type Context } from "../behaviorClass";
+import { type BehaviorContext } from "./behaviorClass";
 
 let _logFunc: (...args: unknown[]) => void | undefined = console.log;
 let _behaviorMgrClass = null;
@@ -55,8 +55,8 @@ export async function waitUntilNode(
 }
 
 export async function awaitLoad(iframe?: HTMLIFrameElement) {
-  const doc = iframe ? iframe.contentDocument! : document;
-  const win = iframe ? iframe.contentWindow! : window;
+  const doc = iframe ? iframe.contentDocument : document;
+  const win = iframe ? iframe.contentWindow : window;
   return new Promise((resolve) => {
     if (doc.readyState === "complete") {
       resolve(null);
@@ -327,7 +327,7 @@ export async function* iterChildElem(
 
     if (!child.nextElementSibling) {
       await Promise.race([
-        waitUntil(() => !!child?.nextElementSibling, timeout),
+        waitUntil(() => !!child.nextElementSibling, timeout),
         sleep(totalTimeout),
       ]);
     }
@@ -394,7 +394,7 @@ export function scrollIntoView(
 }
 
 export function getState<
-  StateContext extends Context<{ [K in IncrValue]: number }>,
+  StateContext extends BehaviorContext<{ [K in IncrValue]: number }>,
   const IncrValue extends string,
 >(ctx: StateContext, msg: string, incrValue?: IncrValue) {
   if (typeof ctx.state === "undefined") {

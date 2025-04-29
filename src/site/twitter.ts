@@ -1,4 +1,4 @@
-import { type Context, type Behavior } from "../behaviorClass";
+import { type BehaviorContext, type Behavior } from "../lib/behaviorClass";
 
 const Q = {
   rootPath:
@@ -59,7 +59,7 @@ export class TwitterTimelineBehavior implements Behavior<State> {
     this.seenMediaTweets = new Set();
   }
 
-  showingProgressBar(ctx: Context<State>, root: Node) {
+  showingProgressBar(ctx: BehaviorContext<State>, root: Node) {
     const { xpathNode } = ctx.Lib;
     const node = xpathNode(Q.progress, root) as Element | null;
     if (!node) {
@@ -69,7 +69,7 @@ export class TwitterTimelineBehavior implements Behavior<State> {
     return node.clientHeight > 10;
   }
 
-  async waitForNext(ctx: Context<State>, child: Element | null) {
+  async waitForNext(ctx: BehaviorContext<State>, child: Element | null) {
     const { sleep, waitUnit } = ctx.Lib;
     if (!child) {
       return null;
@@ -88,24 +88,24 @@ export class TwitterTimelineBehavior implements Behavior<State> {
     return child.nextElementSibling;
   }
 
-  async expandMore(ctx: Context<State>, child: Element | null) {
+  async expandMore(ctx: BehaviorContext<State>, child: Element | null) {
     const { sleep, waitUnit, xpathNode } = ctx.Lib;
     const expandElem = xpathNode(Q.expand, child) as HTMLElement | null;
     if (!expandElem) {
       return child;
     }
 
-    const prev = child?.previousElementSibling;
+    const prev = child.previousElementSibling;
     expandElem.click();
     await sleep(waitUnit);
-    while (this.showingProgressBar(ctx, prev?.nextElementSibling as Node)) {
+    while (this.showingProgressBar(ctx, prev.nextElementSibling as Node)) {
       await sleep(waitUnit);
     }
-    child = prev?.nextElementSibling ?? null;
+    child = prev.nextElementSibling ?? null;
     return child;
   }
 
-  async *infScroll(ctx: Context<State>) {
+  async *infScroll(ctx: BehaviorContext<State>) {
     const { scrollIntoView, RestoreState, sleep, waitUnit, xpathNode } =
       ctx.Lib;
     const root = xpathNode(Q.rootPath) as Element | null;
@@ -129,7 +129,7 @@ export class TwitterTimelineBehavior implements Behavior<State> {
       }
 
       if ((child as HTMLElement).innerText) {
-        scrollIntoView(child!);
+        scrollIntoView(child);
       }
 
       if (child && anchorElem) {
@@ -151,7 +151,7 @@ export class TwitterTimelineBehavior implements Behavior<State> {
     }
   }
 
-  async *mediaPlaying(ctx: Context<State>, tweet: Node) {
+  async *mediaPlaying(ctx: BehaviorContext<State>, tweet: Node) {
     const { getState, sleep, xpathNode, xpathString } = ctx.Lib;
     const media = xpathNode(
       "(.//video | .//audio)",
@@ -207,7 +207,7 @@ export class TwitterTimelineBehavior implements Behavior<State> {
     await Promise.race([p, sleep(60000)]);
   }
 
-  async *clickImages(ctx: Context<State>, tweet: HTMLElement) {
+  async *clickImages(ctx: BehaviorContext<State>, tweet: HTMLElement) {
     const { getState, HistoryState, sleep, waitUnit, xpathNode } = ctx.Lib;
     const imagePopup = xpathNode(Q.image, tweet) as HTMLElement | null;
 
@@ -242,10 +242,10 @@ export class TwitterTimelineBehavior implements Behavior<State> {
   }
 
   async *clickTweet(
-    ctx: Context<State>,
+    ctx: BehaviorContext<State>,
     tweet: HTMLElement,
     depth: number,
-  ): AsyncGenerator<{ state: Context<State>["state"]; msg: string }> {
+  ): AsyncGenerator<{ state: BehaviorContext<State>["state"]; msg: string }> {
     const { getState, HistoryState, sleep, waitUnit } = ctx.Lib;
     const tweetState = new HistoryState(() => tweet.click());
 
@@ -269,7 +269,7 @@ export class TwitterTimelineBehavior implements Behavior<State> {
     }
   }
 
-  async *iterTimeline(ctx: Context<State>, depth = 0) {
+  async *iterTimeline(ctx: BehaviorContext<State>, depth = 0) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     if (this.seenTweets.has(window.location.href)) {
       return;
@@ -316,7 +316,7 @@ export class TwitterTimelineBehavior implements Behavior<State> {
     }
   }
 
-  async *run(ctx: Context<State>) {
+  async *run(ctx: BehaviorContext<State>) {
     yield* this.iterTimeline(ctx, 0);
   }
 }
