@@ -3,6 +3,30 @@ import Webpack from "webpack";
 import { fs } from "memfs";
 
 import webpackConfig from "../webpack.config.js";
+
+/**
+ * Validate a URL
+ * @param {URL} url
+ * @returns {boolean}
+ */
+const validateUrl = (url) => {
+  try {
+    return new URL(url);
+  } catch (_e) {
+    return false;
+  }
+};
+
+if (!process.argv[2]) {
+  console.error("Usage: yarn test '<url>'");
+  process.exit(1);
+}
+
+if (!validateUrl(process.argv[2])) {
+  console.error("Invalid URL (hint: include http:// or https://)");
+  process.exit(1);
+}
+
 const config = webpackConfig({}, { mode: "development" });
 
 const compiler = Webpack(config);
@@ -25,7 +49,7 @@ const _watching = compiler.watch({}, async (err, stats) => {
   );
   const behaviorScript = fs.readFileSync("dist/behaviors.js", "utf8");
 
-  await page.goto(process.argv[2]);
+  await page.goto(validateUrl(process.argv[2]));
 
   await page.evaluate(
     behaviorScript +

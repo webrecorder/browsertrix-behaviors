@@ -25,7 +25,8 @@
     "watch": "webpack watch --mode production",
     "watch-dev": "webpack watch --mode development",
     "lint": "eslint ./src/**/*.ts webpack.config.js",
-    "format": "prettier --write ./src/**/*.ts webpack.config.js"
+    "format": "prettier --write ./src/**/*.ts webpack.config.js",
+    "test": "node ./scripts/test-harness.mjs"
   },
   "description": "Browsertrix Behaviors",
   "files": [
