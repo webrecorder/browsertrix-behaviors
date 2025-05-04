@@ -107,5 +107,9 @@ module.exports = {
         "@typescript-eslint/no-var-requires": "off",
       },
     },
+    {
+      files: ["scripts/*.mjs"],
+      env: { node: true },
+    },
   ],
 };

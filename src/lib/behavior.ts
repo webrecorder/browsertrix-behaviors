@@ -1,29 +1,39 @@
+import { type BehaviorContext } from "./behaviorClass";
 import { behaviorLog } from "./utils";
 import * as Lib from "./utils";
 
+type KeysWithValsOfType<T, V> = keyof {
+  [P in keyof T as T[P] extends V ? P : never]: P;
+};
+
 // ===========================================================================
 export class BackgroundBehavior {
-  debug(msg) {
-    behaviorLog(msg, "debug");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  debug(msg: any) {
+    void behaviorLog(msg, "debug");
   }
 
-  error(msg) {
-    behaviorLog(msg, "error");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error(msg: any) {
+    void behaviorLog(msg, "error");
   }
 
-  log(msg, type = "info") {
-    behaviorLog(msg, type);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  log(msg: any, type = "info") {
+    void behaviorLog(msg, type);
   }
 }
 
 // ===========================================================================
-export class Behavior extends BackgroundBehavior {
-  _running: any;
-  paused: any;
-  _unpause: any;
-  state: any;
+export class Behavior<State extends Object = {}> extends BackgroundBehavior {
+  _running: Promise<void> | null;
+  paused: Promise<void> | null;
+  _unpause: ((value: void | PromiseLike<void>) => void) | null;
+  state: Partial<State> & { "done!"?: number };
   scrollOpts: {
-    behavior: string, block: string, inline: string
+    behavior: string;
+    block: string;
+    inline: string;
   };
 
   constructor() {
@@ -40,26 +50,26 @@ export class Behavior extends BackgroundBehavior {
     this._running = this.run();
   }
 
-  done() {
-    return this._running ? this._running : Promise.resolve();
+  async done() {
+    return this._running != null ? this._running : Promise.resolve();
   }
 
   async run() {
     try {
       for await (const step of this) {
         this.debug(step);
-        if (this.paused) {
+        if (this.paused != null) {
           await this.paused;
         }
       }
-      this.debug(this.getState("done!"));
+      this.debug(this.getState("done!", "done!"));
     } catch (e) {
       this.error(e.toString());
     }
   }
 
   pause() {
-    if (this.paused) {
+    if (this.paused != null) {
       return;
     }
     this.paused = new Promise((resolve) => {
@@ -75,21 +85,30 @@ export class Behavior extends BackgroundBehavior {
     }
   }
 
-  getState(msg: string, incrValue?) {
+  getState(
+    msg: string,
+    incrValue?: KeysWithValsOfType<typeof this.state, number>,
+  ) {
     if (incrValue) {
       if (this.state[incrValue] === undefined) {
-        this.state[incrValue] = 1;
+        (
+          this.state as {
+            [K in KeysWithValsOfType<typeof this.state, number>]: number;
+          }
+        )[incrValue] = 1;
       } else {
-        this.state[incrValue]++;
+        (
+          this.state as {
+            [K in KeysWithValsOfType<typeof this.state, number>]: number;
+          }
+        )[incrValue]++;
       }
     }
 
     return { state: this.state, msg };
   }
 
-  cleanup() {
-
-  }
+  cleanup() {}
 
   async awaitPageLoad() {
     // wait for initial page load here
@@ -100,12 +119,12 @@ export class Behavior extends BackgroundBehavior {
       self["__bx_behaviors"].load(this);
     } else {
       console.warn(
-        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`
+        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`,
       );
     }
   }
 
-  async*[Symbol.asyncIterator]() {
+  async *[Symbol.asyncIterator]() {
     yield;
   }
 }
@@ -125,25 +144,25 @@ interface StaticAbstractBehavior {
   init: () => any;
 }
 
-type AbstractBehavior =
-  (new () => AbstractBehaviorInst) & StaticAbstractBehavior;
+type AbstractBehavior = (new () => AbstractBehaviorInst) &
+  StaticAbstractBehavior;
 
 export class BehaviorRunner extends BackgroundBehavior {
   inst: AbstractBehaviorInst;
   behaviorProps: StaticAbstractBehavior;
-  ctx: any;
-  _running: any;
+  ctx: BehaviorContext;
+  _running: Promise<void> | undefined;
   paused: any;
   _unpause: any;
 
   get id() {
-    return (this.inst?.constructor as any).id;
+    return (this.inst.constructor as any).id;
   }
 
   constructor(behavior: AbstractBehavior, mainOpts = {}) {
     super();
     this.behaviorProps = behavior;
-    this.inst = new behavior;
+    this.inst = new behavior();
 
     if (
       typeof this.inst.run !== "function" ||
@@ -152,9 +171,9 @@ export class BehaviorRunner extends BackgroundBehavior {
       throw Error("Invalid behavior: missing `async run*` instance method");
     }
 
-    let {state, opts} = behavior.init();
+    let { state, opts } = behavior.init();
     state = state || {};
-    opts = opts ? {...opts, ...mainOpts} : mainOpts;
+    opts = opts ? { ...opts, ...mainOpts } : mainOpts;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const log = async (data: any, type: string) => this.wrappedLog(data, type);
 
@@ -169,19 +188,22 @@ export class BehaviorRunner extends BackgroundBehavior {
   wrappedLog(data: any, type = "info") {
     let logData;
     if (typeof data === "string" || data instanceof String) {
-      logData = {msg: data}
+      logData = { msg: data };
     } else {
       logData = data;
     }
-    this.log({...logData, behavior: this.behaviorProps.id, siteSpecific: true}, type);
+    this.log(
+      { ...logData, behavior: this.behaviorProps.id, siteSpecific: true },
+      type,
+    );
   }
 
   start() {
     this._running = this.run();
   }
 
-  done() {
-    return this._running ? this._running : Promise.resolve();
+  async done() {
+    return this._running != null ? this._running : Promise.resolve();
   }
 
   async run() {
@@ -194,9 +216,9 @@ export class BehaviorRunner extends BackgroundBehavior {
           await this.paused;
         }
       }
-      this.debug({msg: "done!", behavior: this.behaviorProps.id});
+      this.debug({ msg: "done!", behavior: this.behaviorProps.id });
     } catch (e) {
-      this.error({msg: e.toString(), behavior: this.behaviorProps.id});
+      this.error({ msg: e.toString(), behavior: this.behaviorProps.id });
     }
   }
 
@@ -217,9 +239,7 @@ export class BehaviorRunner extends BackgroundBehavior {
     }
   }
 
-  cleanup() {
-
-  }
+  cleanup() {}
 
   async awaitPageLoad() {
     if (this.inst.awaitPageLoad) {
@@ -232,7 +252,7 @@ export class BehaviorRunner extends BackgroundBehavior {
       self["__bx_behaviors"].load(this);
     } else {
       console.warn(
-        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`
+        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`,
       );
     }
   }
