@@ -91,7 +91,7 @@ export class Behavior extends BackgroundBehavior {
 
   }
 
-  async awaitPageLoad() {
+  async awaitPageLoad(_: any) {
     // wait for initial page load here
   }
 

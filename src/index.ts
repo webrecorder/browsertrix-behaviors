@@ -3,7 +3,9 @@ import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
 import { AutoClick } from "./autoclick";
 import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors, addLink, checkToJsonOverride } from "./lib/utils";
-import { Behavior, BehaviorRunner } from "./lib/behavior";
+import { type Behavior, BehaviorRunner } from "./lib/behavior";
+import * as Lib from "./lib/utils";
+
 
 import siteBehaviors from "./site";
 
@@ -208,10 +210,13 @@ export class BehaviorManager {
   }
 
   async awaitPageLoad() {
+    behaviorLog("Test");
     this.selectMainBehavior();
     if (this.mainBehavior?.awaitPageLoad) {
       behaviorLog("Waiting for custom page load via behavior");
-      await this.mainBehavior.awaitPageLoad();
+      await this.mainBehavior.awaitPageLoad({Lib});
+    } else {
+      behaviorLog("No custom wait behavior");
     }
   }
 

@@ -5,7 +5,9 @@ const Q = {
   viewMoreThread: ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]",
   profileVideoList: "//div[starts-with(@data-e2e, 'user-post-item-list')]",
   profileVideoItem: "div[contains(@class, 'DivItemContainerV2')]",
-  backButton: "button[contains(@class, 'StyledCloseIconContainer')]"
+  backButton: "button[contains(@class, 'StyledCloseIconContainer')]",
+
+  pageLoadWaitUntil: "//*[@role='dialog']"
 };
 
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
@@ -101,5 +103,12 @@ export class TikTokProfileBehavior {
       await sleep(500);
     }
     yield getState(ctx, "TikTok Profile Behavior Complete");
+  }
+
+  async awaitPageLoad(ctx: any) {
+    const { assertContentValid, waitUntilNode } = ctx.Lib;
+    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
+
+    assertContentValid(() => !!document.querySelector("*[aria-label='Messages']"), "not_logged_in");
   }
 }

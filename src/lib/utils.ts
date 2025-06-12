@@ -155,6 +155,16 @@ export async function nextFlowStep(id: number) : Promise<any> {
   return {done: true, msg: ""};
 }
 
+export function assertContentValid(assertFunc: () => boolean, reason = "invalid") {
+  if (typeof(self["__bx_contentCheckFailed"]) === "function") {
+    if (!assertFunc()) {
+      behaviorLog("Behavior content check failed: " + reason, "error");
+      callBinding(self["__bx_contentCheckFailed"], reason);
+    }
+  }
+}
+
+
 export async function openWindow(url) {
   if (self["__bx_open"]) {
     const p = new Promise((resolve) => self["__bx_openResolve"] = resolve);
