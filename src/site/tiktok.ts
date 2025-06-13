@@ -12,7 +12,16 @@ const Q = {
 
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
 
-export class TikTokVideoBehavior {
+export class TikTokSharedBehavior {
+  async awaitPageLoad(ctx: any) {
+    const { assertContentValid, waitUntilNode } = ctx.Lib;
+    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
+
+    assertContentValid(() => !!document.querySelector("*[aria-label='Messages']"), "not_logged_in");
+  }
+}
+
+export class TikTokVideoBehavior extends TikTokSharedBehavior {
   static id = "TikTokVideo";
 
   static init() {
@@ -63,7 +72,9 @@ export class TikTokVideoBehavior {
   }
 }
 
-export class TikTokProfileBehavior {
+
+
+export class TikTokProfileBehavior extends TikTokSharedBehavior {
   static id = "TikTokProfile";
 
   static isMatch() {
@@ -103,12 +114,5 @@ export class TikTokProfileBehavior {
       await sleep(500);
     }
     yield getState(ctx, "TikTok Profile Behavior Complete");
-  }
-
-  async awaitPageLoad(ctx: any) {
-    const { assertContentValid, waitUntilNode } = ctx.Lib;
-    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
-
-    assertContentValid(() => !!document.querySelector("*[aria-label='Messages']"), "not_logged_in");
   }
 }
