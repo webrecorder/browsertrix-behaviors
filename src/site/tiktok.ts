@@ -6,7 +6,6 @@ const Q = {
   profileVideoList: "//div[starts-with(@data-e2e, 'user-post-item-list')]",
   profileVideoItem: "div[contains(@class, 'DivItemContainerV2')]",
   backButton: "button[contains(@class, 'StyledCloseIconContainer')]",
-
   pageLoadWaitUntil: "//*[@role='dialog']"
 };
 

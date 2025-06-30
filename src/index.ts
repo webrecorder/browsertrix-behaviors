@@ -210,7 +210,6 @@ export class BehaviorManager {
   }
 
   async awaitPageLoad() {
-    behaviorLog("Test");
     this.selectMainBehavior();
     if (this.mainBehavior?.awaitPageLoad) {
       behaviorLog("Waiting for custom page load via behavior");
