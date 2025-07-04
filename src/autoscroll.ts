@@ -40,7 +40,7 @@ export class AutoScroll extends Behavior {
   hasScrollEL(obj) {
     try {
       return !!self["getEventListeners"](obj).scroll;
-    } catch (e) {
+    } catch (_) {
       // unknown, assume has listeners
       this.debug("getEventListeners() not available");
       return true;

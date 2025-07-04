@@ -282,4 +282,10 @@ export class TwitterTimelineBehavior {
   async* run(ctx) {
     yield* this.iterTimeline(ctx, 0);
   }
+
+  async awaitPageLoad(ctx: any) {
+    const { sleep, assertContentValid } = ctx.Lib;
+    await sleep(5);
+    assertContentValid(() => !document.documentElement.outerHTML.match(/Log In/i), "not_logged_in");
+  }
 }

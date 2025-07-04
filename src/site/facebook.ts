@@ -22,6 +22,7 @@ const Q = {
   isPhotoVideoPage: /^.*facebook\.com\/[^/]+\/(photos|videos)\/.+/,
   isPhotosPage: /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/,
   isVideosPage: /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/,
+  pageLoadWaitUntil: "//div[@role='main']"
 };
 
 export class FacebookTimelineBehavior {
@@ -31,9 +32,8 @@ export class FacebookTimelineBehavior {
   static id = "Facebook";
 
   static isMatch() {
-    // disable for now
-    return false;
-    //return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\//);
+    // match just for posts for now
+    return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\/.*\/posts\//);
   }
 
   static init() {
@@ -385,5 +385,16 @@ export class FacebookTimelineBehavior {
 
     ctx.state = { "posts": 0, "comments": 0, "videos": 0 };
     yield* this.iterPostFeeds(ctx);
+  }
+
+  async awaitPageLoad(ctx: any) {
+    const { Lib, log } = ctx;
+    const { assertContentValid, waitUntilNode } = Lib;
+
+    log("Waiting for Facebook to fully load", "info");
+
+    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
+
+    assertContentValid(() => !!document.querySelector("div[aria-label*='Account Controls' i]"), "not_logged_in");
   }
 }

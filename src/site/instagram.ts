@@ -251,10 +251,12 @@ export class InstagramPostsBehavior {
 
   async awaitPageLoad(ctx: any) {
     const { Lib, log } = ctx;
-    const { waitUntilNode } = Lib;
+    const { assertContentValid, waitUntilNode } = Lib;
 
-    log("Waiting for Instagram to fully load", "info");
+    log("Waiting for Instagram to fully load");
 
-    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 30000);
+    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
+
+    assertContentValid(() => !!document.querySelector("*[aria-label='New post']"), "not_logged_in");
   }
 }
