@@ -32,7 +32,8 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
 
   static isMatch() {
     const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@.+\/video\/\d+\/?.*/;
-    return !!window.location.href.match(pathRegex);
+    const loc = window["_WB_wombat_location"] || window.location;
+    return !!loc.href.match(pathRegex);
   }
 
   breadthComplete({ opts: { breadth } }, iter) {
@@ -78,7 +79,8 @@ export class TikTokProfileBehavior extends TikTokSharedBehavior {
 
   static isMatch() {
     const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@[a-zA-Z0-9]+(\/?$|\/\?.*)/;
-    return !!window.location.href.match(pathRegex);
+    const loc = window["_WB_wombat_location"] || window.location;
+    return !!loc.href.match(pathRegex);
   }
 
   static init() {

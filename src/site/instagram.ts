@@ -23,7 +23,8 @@ export class InstagramPostsBehavior {
   static id = "Instagram";
 
   static isMatch() {
-    return !!window.location.href.match(/https:\/\/(www\.)?instagram\.com\/\w[\w.-]+/);
+    const loc = window["_WB_wombat_location"] || window.location;
+    return !!loc.href.match(/https:\/\/(www\.)?instagram\.com\/\w[\w.-]+/);
   }
 
   static init() {

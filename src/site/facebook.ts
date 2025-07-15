@@ -33,7 +33,8 @@ export class FacebookTimelineBehavior {
 
   static isMatch() {
     // match just for posts for now
-    return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\/.*\/posts\//);
+    const loc = window["_WB_wombat_location"] || window.location;
+    return !!loc.href.match(/https:\/\/(www\.)?facebook\.com\/.*\/posts\//);
   }
 
   static init() {
