@@ -1,8 +1,6 @@
 import { BackgroundBehavior } from "./lib/behavior";
 import { addToExternalSet, sleep } from "./lib/utils";
 
-declare let getEventListeners: any;
-
 export class AutoClick extends BackgroundBehavior
 {
   _donePromise: Promise<void>;
@@ -77,15 +75,6 @@ export class AutoClick extends BackgroundBehavior
   }
 
   async processElem(elem: HTMLAnchorElement, origHref: string) {
-    // if successfully called getEventListeners and no click handler, we can skip
-    try {
-      if (!getEventListeners(elem).click) {
-        return;
-      }
-    } catch (_e) {
-      // getEventListeners not available, need to actually click
-    }
-
     if (elem.target) {
       return;
     }
