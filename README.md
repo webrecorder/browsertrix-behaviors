@@ -96,8 +96,12 @@ If both `siteSpecific` and `autoscroll` is specified, only one behavior is run. 
 
 Currently, the available site-specific behaviors are available for:
 
-- Twitter
+- Facebook
 - Instagram
+- Telegram
+- TikTok
+- Twitter
+- YouTube
 
 Additional site-specific behaviors can be added to the [site](./src/site) directory.
 
