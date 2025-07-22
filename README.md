@@ -101,7 +101,6 @@ Currently, the available site-specific behaviors are available for:
 - Telegram
 - TikTok
 - Twitter
-- YouTube
 
 Additional site-specific behaviors can be added to the [site](./src/site) directory.
 
