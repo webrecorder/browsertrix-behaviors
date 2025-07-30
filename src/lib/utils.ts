@@ -1,3 +1,5 @@
+import { type AutoFetcher } from "../autofetcher";
+
 let _logFunc = console.log;
 let _behaviorMgrClass = null;
 
@@ -343,4 +345,15 @@ export function getState(ctx: any, msg: string, incrValue?: string) {
   }
 
   return { state: ctx.state, msg };
+}
+
+// ===========================================================================
+let autofetcher : AutoFetcher | null = null;
+
+export function setAutoFetcher(newFetcher: AutoFetcher) {
+  autofetcher = newFetcher;
+}
+
+export function currentlyFetching() {
+  return autofetcher ? autofetcher.numFetching : 0;
 }

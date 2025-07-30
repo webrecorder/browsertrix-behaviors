@@ -16,103 +16,9 @@ export class BackgroundBehavior {
   }
 }
 
-// ===========================================================================
-export class Behavior extends BackgroundBehavior {
-  _running: any;
-  paused: any;
-  _unpause: any;
-  state: any;
-  scrollOpts: {
-    behavior: string, block: string, inline: string
-  };
-
-  constructor() {
-    super();
-    this._running = null;
-    this.paused = null;
-    this._unpause = null;
-    this.state = {};
-
-    this.scrollOpts = { behavior: "smooth", block: "center", inline: "center" };
-  }
-
-  start() {
-    this._running = this.run();
-  }
-
-  done() {
-    return this._running ? this._running : Promise.resolve();
-  }
-
-  async run() {
-    try {
-      for await (const step of this) {
-        this.debug(step);
-        if (this.paused) {
-          await this.paused;
-        }
-      }
-      this.debug(this.getState("done!"));
-    } catch (e) {
-      this.error(e.toString());
-    }
-  }
-
-  pause() {
-    if (this.paused) {
-      return;
-    }
-    this.paused = new Promise((resolve) => {
-      this._unpause = resolve;
-    });
-  }
-
-  unpause() {
-    if (this._unpause) {
-      this._unpause();
-      this.paused = null;
-      this._unpause = null;
-    }
-  }
-
-  getState(msg: string, incrValue?) {
-    if (incrValue) {
-      if (this.state[incrValue] === undefined) {
-        this.state[incrValue] = 1;
-      } else {
-        this.state[incrValue]++;
-      }
-    }
-
-    return { state: this.state, msg };
-  }
-
-  cleanup() {
-
-  }
-
-  async awaitPageLoad(_: any) {
-    // wait for initial page load here
-  }
-
-  static load() {
-    if (self["__bx_behaviors"]) {
-      self["__bx_behaviors"].load(this);
-    } else {
-      console.warn(
-        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`
-      );
-    }
-  }
-
-  async*[Symbol.asyncIterator]() {
-    yield;
-  }
-}
-
 // WIP: BehaviorRunner class allows for arbitrary behaviors outside of the
 // library to be run through the BehaviorManager
-
+// ===========================================================================
 abstract class AbstractBehaviorInst {
   abstract run: (ctx: any) => AsyncIterable<any>;
 
@@ -128,6 +34,8 @@ interface StaticAbstractBehavior {
 type AbstractBehavior =
   (new () => AbstractBehaviorInst) & StaticAbstractBehavior;
 
+
+// ===========================================================================
 export class BehaviorRunner extends BackgroundBehavior {
   inst: AbstractBehaviorInst;
   behaviorProps: StaticAbstractBehavior;

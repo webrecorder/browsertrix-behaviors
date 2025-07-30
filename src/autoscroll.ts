@@ -1,11 +1,9 @@
-import { Behavior } from "./lib/behavior";
-import { sleep, waitUnit, xpathNode, isInViewport, waitUntil, behaviorLog, addLink } from "./lib/utils";
-import { type AutoFetcher } from "./autofetcher";
+import { sleep, waitUnit, xpathNode, isInViewport, waitUntil, behaviorLog, addLink, currentlyFetching } from "./lib/utils";
+//import { type AutoFetcher } from "./autofetcher";
 
 
 // ===========================================================================
-export class AutoScroll extends Behavior {
-  autoFetcher: AutoFetcher;
+export class AutoScroll {
   showMoreQuery: string;
   state: { segments: number } = { segments: 1};
   lastScrollPos: number;
@@ -13,10 +11,8 @@ export class AutoScroll extends Behavior {
 
   origPath: string;
 
-  constructor(autofetcher: AutoFetcher) {
-    super();
-
-    this.autoFetcher = autofetcher;
+  constructor() {
+    //super();
 
     this.showMoreQuery = "//*[contains(text(), 'show more') or contains(text(), 'Show more')]";
 
@@ -27,6 +23,20 @@ export class AutoScroll extends Behavior {
   }
 
   static id = "Autoscroll";
+
+  static init() {
+    return {
+      state: {}
+    };
+  }
+
+  static isMatch() {
+    return true;
+  }
+
+  async awaitPageLoad(_: any) {
+    return;
+  }
 
   currScrollPos() {
     return Math.round(self.scrollY + self.innerHeight);
@@ -42,7 +52,7 @@ export class AutoScroll extends Behavior {
       return !!self["getEventListeners"](obj).scroll;
     } catch (_) {
       // unknown, assume has listeners
-      this.debug("getEventListeners() not available");
+      void behaviorLog("getEventListeners() not available", "debug");
       return true;
     }
   }
@@ -60,7 +70,7 @@ export class AutoScroll extends Behavior {
     }
 
     const lastScrollHeight = self.document.scrollingElement.scrollHeight;
-    const numFetching = this.autoFetcher.numFetching;
+    const numFetching = currentlyFetching();
 
     // scroll to almost end of page
     const scrollEnd = (document.scrollingElement.scrollHeight * 0.98) - self.innerHeight;
@@ -72,7 +82,7 @@ export class AutoScroll extends Behavior {
 
     // scroll height changed, should scroll
     if (lastScrollHeight !== self.document.scrollingElement.scrollHeight ||
-      numFetching < this.autoFetcher.numFetching) {
+      numFetching < currentlyFetching()) {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
       return true;
     }
@@ -92,21 +102,24 @@ export class AutoScroll extends Behavior {
     return true;
   }
 
-  async*[Symbol.asyncIterator]() {
+  async* run(ctx) {
+    const { getState } = ctx.Lib;
+
     if (this.shouldScrollUp()) {
-      yield* this.scrollUp();
+      yield* this.scrollUp(ctx);
       return;
     }
 
     if (await this.shouldScroll()) {
-      yield* this.scrollDown();
+      yield* this.scrollDown(ctx);
       return;
     }
 
-    yield this.getState("Skipping autoscroll, page seems to not be responsive to scrolling events");
+    yield getState(ctx, "Skipping autoscroll, page seems to not be responsive to scrolling events");
   }
 
-  async* scrollDown() {
+  async* scrollDown(ctx) {
+    const { getState } = ctx.Lib;
     const scrollInc = Math.min(self.document.scrollingElement.clientHeight * 0.10, 30);
     const interval = 75;
     let elapsedWait = 0;
@@ -119,9 +132,9 @@ export class AutoScroll extends Behavior {
 
     while (this.canScrollMore()) {
       if (document.location.pathname !== this.origPath) {
-        behaviorLog("Location Changed, stopping scroll: " +
+        void behaviorLog("Location Changed, stopping scroll: " +
           `${document.location.pathname} != ${this.origPath}`, "info");
-        addLink(document.location.href);
+        void addLink(document.location.href);
         return;
       }
 
@@ -137,7 +150,7 @@ export class AutoScroll extends Behavior {
       }
 
       if (showMoreElem && isInViewport(showMoreElem)) {
-        yield this.getState("Clicking 'Show More', awaiting more content");
+        yield getState(ctx, "Clicking 'Show More', awaiting more content");
         showMoreElem["click"]();
 
         await sleep(waitUnit);
@@ -154,21 +167,20 @@ export class AutoScroll extends Behavior {
         showMoreElem = null;
       }
 
-      // eslint-disable-next-line
       self.scrollBy(scrollOpts as ScrollToOptions);
 
       await sleep(interval);
 
       if (this.state.segments === 1) {
         // only print this the first time
-        yield this.getState(`Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
+        yield getState(ctx, `Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
         elapsedWait = 2.0;
 
       } else {
         const waitSecs = elapsedWait / (this.state.segments - 1);
         // only add extra wait if actually changed height
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
-        this.debug(`Waiting up to ${waitSecs} seconds for more scroll segments`);
+        void behaviorLog(`Waiting up to ${waitSecs} seconds for more scroll segments`, "debug");
 
         const startTime = Date.now();
 
@@ -194,7 +206,8 @@ export class AutoScroll extends Behavior {
     }
   }
 
-  async* scrollUp() {
+  async* scrollUp(ctx) {
+    const { getState } = ctx.Lib;
     const scrollInc = Math.min(self.document.scrollingElement.clientHeight * 0.10, 30);
     const interval = 75;
 
@@ -210,14 +223,13 @@ export class AutoScroll extends Behavior {
         lastScrollHeight = scrollHeight;
       }
 
-      // eslint-disable-next-line
       self.scrollBy(scrollOpts as ScrollToOptions);
 
       await sleep(interval);
 
       if (this.state.segments === 1) {
         // only print this the first time
-        yield this.getState(`Scrolling up by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
+        yield getState(ctx, `Scrolling up by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`);
       } else {
         // only add extra wait if actually changed height
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled

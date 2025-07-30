@@ -1,3 +1,5 @@
+import { AutoScroll } from "../autoscroll";
+
 const subpostNextOnlyChevron = "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
 
 const Q = {
@@ -16,7 +18,7 @@ const Q = {
   pageLoadWaitUntil: "//main"
 };
 
-export class InstagramPostsBehavior {
+export class InstagramFeedBehavior {
   maxCommentsTime: number;
   postOnlyWindow: any;
 
@@ -250,13 +252,23 @@ export class InstagramPostsBehavior {
   }
 
   async awaitPageLoad(ctx: any) {
-    const { Lib, log } = ctx;
-    const { assertContentValid, waitUntilNode } = Lib;
-
-    log("Waiting for Instagram to fully load");
-
-    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
-
-    assertContentValid(() => !!document.querySelector("*[aria-label='New post']"), "not_logged_in");
+    await awaitInstagramLoad(ctx);
   }
+}
+
+export class InstagramPostBehavior extends AutoScroll {
+  async awaitPageLoad(ctx: any) {
+    await awaitInstagramLoad(ctx);
+  }
+}
+
+async function awaitInstagramLoad(ctx: any) {
+  const { Lib, log } = ctx;
+  const { assertContentValid, waitUntilNode } = Lib;
+
+  log("Waiting for Instagram to fully load");
+
+  await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
+
+  assertContentValid(() => !!document.querySelector("*[aria-label='New post']"), "not_logged_in");
 }
