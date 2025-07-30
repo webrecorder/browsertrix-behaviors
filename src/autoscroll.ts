@@ -12,6 +12,7 @@ export class AutoScroll extends Behavior {
   samePosCount: number;
 
   origPath: string;
+  lastMsg = "";
 
   constructor(autofetcher: AutoFetcher) {
     super();
@@ -35,6 +36,14 @@ export class AutoScroll extends Behavior {
   canScrollMore() {
     const scrollElem = self.document.scrollingElement || self.document.body;
     return this.currScrollPos() < Math.max(scrollElem.clientHeight, scrollElem.scrollHeight);
+  }
+
+  debug(msg: string) {
+    if (this.lastMsg === msg) {
+      return;
+    }
+    super.debug(msg);
+    this.lastMsg = msg;
   }
 
   hasScrollEL(obj) {
