@@ -25,7 +25,7 @@ export class InstagramFeedBehavior {
   static id = "Instagram";
 
   static isMatch() {
-    return !!window.location.href.match(/https:\/\/(www\.)?instagram\.com\/\w[\w.-]+/);
+    return !!window.location.href.match(/https:\/\/(www\.)?instagram\.com\//);
   }
 
   static init() {
@@ -206,14 +206,7 @@ export class InstagramFeedBehavior {
 
       await fetch(window.location.href);
 
-      yield* this.iterSubposts(ctx);
-
-      yield getState(ctx, "Loaded Comments", "comments");
-
-      await Promise.race([
-        this.iterComments(ctx),
-        sleep(this.maxCommentsTime)
-      ]);
+      yield* this.handleSinglePost(ctx);
 
       next = xpathNode(Q.nextPost);
 
@@ -225,7 +218,25 @@ export class InstagramFeedBehavior {
     await sleep(waitUnit * 5);
   }
 
+  async* handleSinglePost(ctx) {
+    const { getState, sleep } = ctx.Lib;
+
+    yield* this.iterSubposts(ctx);
+
+    yield getState(ctx, "Loaded Comments", "comments");
+
+    await Promise.race([
+      this.iterComments(ctx),
+      sleep(this.maxCommentsTime)
+    ]);
+  }
+
   async* run(ctx) {
+    if (window.location.pathname.startsWith("/p/")) {
+      yield* this.handleSinglePost(ctx);
+      return;
+    }
+
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
     //const origLoc = window.location.href;
 
