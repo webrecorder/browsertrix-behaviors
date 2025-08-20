@@ -52,7 +52,7 @@ export class AutoScroll {
     if (this.lastMsg === msg) {
       return;
     }
-    super.debug(msg);
+    void behaviorLog(msg, "debug");
     this.lastMsg = msg;
   }
 
