@@ -37,5 +37,9 @@
   ],
   "dependencies": {
     "query-selector-shadow-dom": "^1.0.1"
+  },
+  "optionalDependencies": {
+    "memfs": "^4.17.0",
+    "puppeteer": "^24.7.2"
   }
 }
