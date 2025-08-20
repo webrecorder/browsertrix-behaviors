@@ -26,7 +26,8 @@
     "lint": "eslint --fix index.ts ./src/**/*.ts webpack.config.js",
     "lint:check": "eslint index.ts ./src/**/*.ts webpack.config.js",
     "format": "prettier --write . webpack.config.js",
-    "format:check": "prettier --check . webpack.config.js"
+    "format:check": "prettier --check . webpack.config.js",
+    "test": "node ./scripts/test-harness.mjs"
   },
   "description": "Browsertrix Behaviors",
   "files": [
