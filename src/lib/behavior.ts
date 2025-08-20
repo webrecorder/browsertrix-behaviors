@@ -23,7 +23,9 @@ export class Behavior extends BackgroundBehavior {
   _unpause: any;
   state: any;
   scrollOpts: {
-    behavior: string, block: string, inline: string
+    behavior: string;
+    block: string;
+    inline: string;
   };
 
   constructor() {
@@ -87,11 +89,9 @@ export class Behavior extends BackgroundBehavior {
     return { state: this.state, msg };
   }
 
-  cleanup() {
+  cleanup() {}
 
-  }
-
-  async awaitPageLoad(_: any) {
+  async awaitPageLoad() {
     // wait for initial page load here
   }
 
@@ -100,12 +100,12 @@ export class Behavior extends BackgroundBehavior {
       self["__bx_behaviors"].load(this);
     } else {
       console.warn(
-        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`
+        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`,
       );
     }
   }
 
-  async*[Symbol.asyncIterator]() {
+  async *[Symbol.asyncIterator]() {
     yield;
   }
 }
@@ -113,37 +113,43 @@ export class Behavior extends BackgroundBehavior {
 // WIP: BehaviorRunner class allows for arbitrary behaviors outside of the
 // library to be run through the BehaviorManager
 
-abstract class AbstractBehaviorInst {
+export abstract class AbstractBehavior {
+  static id: String;
+  static isMatch: () => boolean;
+  static init: () => any;
+
   abstract run: (ctx: any) => AsyncIterable<any>;
 
   abstract awaitPageLoad?: (ctx: any) => Promise<void>;
 }
 
-interface StaticAbstractBehavior {
-  id: String;
-  isMatch: () => boolean;
-  init: () => any;
-}
+type StaticProps<T> = {
+  [K in keyof T]: T[K];
+};
 
-type AbstractBehavior =
-  (new () => AbstractBehaviorInst) & StaticAbstractBehavior;
+type StaticBehaviorProps = StaticProps<typeof AbstractBehavior>;
+
+// Non-abstract constructor type
+type ConcreteBehaviorConstructor = StaticBehaviorProps & {
+  new (): AbstractBehavior;
+};
 
 export class BehaviorRunner extends BackgroundBehavior {
-  inst: AbstractBehaviorInst;
-  behaviorProps: StaticAbstractBehavior;
+  inst: AbstractBehavior;
+  behaviorProps: ConcreteBehaviorConstructor;
   ctx: any;
   _running: any;
   paused: any;
   _unpause: any;
 
   get id() {
-    return (this.inst?.constructor as any).id;
+    return (this.inst.constructor as ConcreteBehaviorConstructor).id;
   }
 
-  constructor(behavior: AbstractBehavior, mainOpts = {}) {
+  constructor(behavior: ConcreteBehaviorConstructor, mainOpts = {}) {
     super();
     this.behaviorProps = behavior;
-    this.inst = new behavior;
+    this.inst = new behavior();
 
     if (
       typeof this.inst.run !== "function" ||
@@ -152,9 +158,9 @@ export class BehaviorRunner extends BackgroundBehavior {
       throw Error("Invalid behavior: missing `async run*` instance method");
     }
 
-    let {state, opts} = behavior.init();
+    let { state, opts } = behavior.init();
     state = state || {};
-    opts = opts ? {...opts, ...mainOpts} : mainOpts;
+    opts = opts ? { ...opts, ...mainOpts } : mainOpts;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const log = async (data: any, type: string) => this.wrappedLog(data, type);
 
@@ -169,11 +175,14 @@ export class BehaviorRunner extends BackgroundBehavior {
   wrappedLog(data: any, type = "info") {
     let logData;
     if (typeof data === "string" || data instanceof String) {
-      logData = {msg: data}
+      logData = { msg: data };
     } else {
       logData = data;
     }
-    this.log({...logData, behavior: this.behaviorProps.id, siteSpecific: true}, type);
+    this.log(
+      { ...logData, behavior: this.behaviorProps.id, siteSpecific: true },
+      type,
+    );
   }
 
   start() {
@@ -194,9 +203,9 @@ export class BehaviorRunner extends BackgroundBehavior {
           await this.paused;
         }
       }
-      this.debug({msg: "done!", behavior: this.behaviorProps.id});
+      this.debug({ msg: "done!", behavior: this.behaviorProps.id });
     } catch (e) {
-      this.error({msg: e.toString(), behavior: this.behaviorProps.id});
+      this.error({ msg: e.toString(), behavior: this.behaviorProps.id });
     }
   }
 
@@ -217,9 +226,7 @@ export class BehaviorRunner extends BackgroundBehavior {
     }
   }
 
-  cleanup() {
-
-  }
+  cleanup() {}
 
   async awaitPageLoad() {
     if (this.inst.awaitPageLoad) {
@@ -232,7 +239,7 @@ export class BehaviorRunner extends BackgroundBehavior {
       self["__bx_behaviors"].load(this);
     } else {
       console.warn(
-        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`
+        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`,
       );
     }
   }

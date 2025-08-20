@@ -3,7 +3,7 @@ import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
 import { AutoClick } from "./autoclick";
 import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors, addLink, checkToJsonOverride } from "./lib/utils";
-import { type Behavior, BehaviorRunner } from "./lib/behavior";
+import { BehaviorRunner } from "./lib/behavior";
 import * as Lib from "./lib/utils";
 
 
@@ -44,7 +44,7 @@ export class BehaviorManager {
   autofetch: AutoFetcher;
   behaviors: any[];
   loadedBehaviors: any;
-  mainBehavior: Behavior | BehaviorRunner | null;
+  mainBehavior: BehaviorRunner | null;
   mainBehaviorClass: any;
   inited: boolean;
   started: boolean;
@@ -152,7 +152,7 @@ export class BehaviorManager {
     if (!siteMatch && opts.autoscroll) {
       behaviorLog("Using Autoscroll");
       this.mainBehaviorClass = AutoScroll;
-      this.mainBehavior = new AutoScroll(this.autofetch);
+      this.mainBehavior = new BehaviorRunner(AutoScroll, {});
     }
 
     if (this.mainBehavior) {
@@ -213,7 +213,7 @@ export class BehaviorManager {
     this.selectMainBehavior();
     if (this.mainBehavior?.awaitPageLoad) {
       behaviorLog("Waiting for custom page load via behavior");
-      await this.mainBehavior.awaitPageLoad({Lib});
+      await this.mainBehavior.awaitPageLoad();
     } else {
       behaviorLog("No custom wait behavior");
     }
