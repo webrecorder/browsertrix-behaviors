@@ -1,9 +1,21 @@
-let _logFunc = console.log;
-let _behaviorMgrClass = null;
+import { type BehaviorManager } from "..";
+import { type Context } from "./behavior";
 
-const scrollOpts = { behavior: "smooth", block: "center", inline: "center" };
+let _logFunc: ((...data: any[]) => void) | null = console.log;
+// @ts-expect-error TODO: what is this, and why is it declared twice, once here and once as a function?
+let _behaviorMgrClass: (cls: typeof BehaviorManager) => void | null = null;
 
-export async function scrollAndClick(node, interval = 500, opts = scrollOpts) {
+const scrollOpts: ScrollIntoViewOptions = {
+  behavior: "smooth",
+  block: "center",
+  inline: "center",
+};
+
+export async function scrollAndClick(
+  node: HTMLElement,
+  interval = 500,
+  opts: ScrollIntoViewOptions = scrollOpts,
+) {
   node.scrollIntoView(opts);
   await sleep(interval);
   node.click();
@@ -11,23 +23,23 @@ export async function scrollAndClick(node, interval = 500, opts = scrollOpts) {
 
 export const waitUnit = 200;
 
-export async function sleep(timeout) {
+export async function sleep(timeout: number) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 }
 
-export async function waitUntil(pred, interval = waitUnit) {
+export async function waitUntil(pred: () => boolean, interval = waitUnit) {
   while (!pred()) {
     await sleep(interval);
   }
 }
 
 export async function waitUntilNode(
-  path,
-  root = document,
-  old = null,
+  path: string,
+  root: Node = document,
+  old: Node | null = null,
   timeout = 1000,
   interval = waitUnit,
-) {
+): Promise<Node | null> {
   let node = null;
   let stop = false;
   const waitP = waitUntil(() => {
@@ -48,10 +60,10 @@ export async function awaitLoad(iframe?: HTMLIFrameElement) {
   const doc = iframe ? iframe.contentDocument : document;
   const win = iframe ? iframe.contentWindow : window;
   return new Promise((resolve) => {
-    if (doc.readyState === "complete") {
+    if (doc?.readyState === "complete") {
       resolve(null);
     } else {
-      win.addEventListener("load", resolve);
+      win?.addEventListener("load", resolve);
     }
   });
 }
@@ -102,7 +114,10 @@ export function checkToJsonOverride() {
     !!(Array.prototype as any).toJSON;
 }
 
-export async function callBinding(binding, obj): Promise<any> {
+export async function callBinding(
+  binding: (obj: any) => any,
+  obj: any,
+): Promise<any> {
   try {
     if (needUnsetToJson) {
       unsetAllJson();
@@ -117,19 +132,19 @@ export async function callBinding(binding, obj): Promise<any> {
   }
 }
 
-export async function behaviorLog(data, type = "debug") {
+export async function behaviorLog(data: unknown, type = "debug") {
   if (_logFunc) {
     await callBinding(_logFunc, { data, type });
   }
 }
 
-export async function addLink(url): Promise<void> {
+export async function addLink(url: string): Promise<void> {
   if (typeof self["__bx_addLink"] === "function") {
     return await callBinding(self["__bx_addLink"], url);
   }
 }
 
-export async function doExternalFetch(url): Promise<boolean> {
+export async function doExternalFetch(url: string): Promise<boolean> {
   if (typeof self["__bx_fetch"] === "function") {
     return await callBinding(self["__bx_fetch"], url);
   }
@@ -137,7 +152,7 @@ export async function doExternalFetch(url): Promise<boolean> {
   return false;
 }
 
-export async function addToExternalSet(url): Promise<boolean> {
+export async function addToExternalSet(url: string): Promise<boolean> {
   if (typeof self["__bx_addSet"] === "function") {
     return await callBinding(self["__bx_addSet"], url);
   }
@@ -152,7 +167,7 @@ export async function waitForNetworkIdle(idleTime = 500, concurrency = 0) {
   }
 }
 
-export async function initFlow(params): Promise<number> {
+export async function initFlow(params: any): Promise<number> {
   if (typeof self["__bx_initFlow"] === "function") {
     return await callBinding(self["__bx_initFlow"], params);
   }
@@ -180,7 +195,9 @@ export function assertContentValid(
   }
 }
 
-export async function openWindow(url) {
+export async function openWindow(
+  url: string | URL,
+): Promise<WindowProxy | null> {
   if (self["__bx_open"]) {
     const p = new Promise((resolve) => (self["__bx_openResolve"] = resolve));
     await callBinding(self["__bx_open"], { url });
@@ -190,7 +207,7 @@ export async function openWindow(url) {
     try {
       win = await p;
       if (win) {
-        return win;
+        return win as WindowProxy;
       }
     } catch (e) {
       console.warn(e);
@@ -202,26 +219,29 @@ export async function openWindow(url) {
   return window.open(url);
 }
 
-export function _setLogFunc(func) {
+export function _setLogFunc(func: (message: string, level: string) => void) {
   _logFunc = func;
 }
 
-export function _setBehaviorManager(cls) {
+// @ts-expect-error TODO: why is this declared over the `_behaviorMgrClass` declared earlier?
+export function _behaviorMgrClass(cls: typeof BehaviorManager) {
+  // @ts-expect-error TODO: `_behaviorMgrClass` is a function, is this trying to overwrite it?
   _behaviorMgrClass = cls;
 }
 
-export function installBehaviors(obj) {
+export function installBehaviors(obj: any) {
+  // @ts-expect-error TODO: fix types here
   obj.__bx_behaviors = new _behaviorMgrClass();
 }
 
 // ===========================================================================
 export class RestoreState {
   matchValue: string;
-  constructor(childMatchSelect, child) {
+  constructor(childMatchSelect: string, child: Node) {
     this.matchValue = xpathString(childMatchSelect, child);
   }
 
-  async restore(rootPath, childMatch) {
+  async restore(rootPath: string, childMatch: string) {
     let root = null;
 
     while (((root = xpathNode(rootPath)), !root)) {
@@ -235,7 +255,7 @@ export class RestoreState {
 // ===========================================================================
 export class HistoryState {
   loc: string;
-  constructor(op) {
+  constructor(op: () => void) {
     this.loc = window.location.href;
     op();
   }
@@ -244,7 +264,7 @@ export class HistoryState {
     return window.location.href !== this.loc;
   }
 
-  async goBack(backButtonQuery) {
+  async goBack(backButtonQuery: string) {
     if (!this.changed) {
       return Promise.resolve(true);
     }
@@ -261,7 +281,7 @@ export class HistoryState {
       );
 
       if (backButton) {
-        backButton["click"]();
+        (backButton as HTMLElement)["click"]();
       } else {
         window.history.back();
       }
@@ -270,7 +290,7 @@ export class HistoryState {
 }
 
 // ===========================================================================
-export function xpathNode(path, root?) {
+export function xpathNode(path: string, root?: Node | null) {
   root = root || document;
   return document.evaluate(
     path,
@@ -280,7 +300,7 @@ export function xpathNode(path, root?) {
   ).singleNodeValue;
 }
 
-export function* xpathNodes(path, root) {
+export function* xpathNodes(path: string, root?: Node | null) {
   root = root || document;
   const iter = document.evaluate(
     path,
@@ -294,13 +314,17 @@ export function* xpathNodes(path, root) {
   }
 }
 
-export function xpathString(path, root) {
+export function xpathString(path: string, root?: Node | null) {
   root = root || document;
   return document.evaluate(path, root, null, XPathResult.STRING_TYPE)
     .stringValue;
 }
 
-export async function* iterChildElem(root, timeout, totalTimeout) {
+export async function* iterChildElem(
+  root: Element,
+  timeout: number,
+  totalTimeout: number,
+) {
   let child = root.firstElementChild;
 
   while (child) {
@@ -308,7 +332,7 @@ export async function* iterChildElem(root, timeout, totalTimeout) {
 
     if (!child.nextElementSibling) {
       await Promise.race([
-        waitUntil(() => !!child.nextElementSibling, timeout),
+        waitUntil(() => !!child?.nextElementSibling, timeout),
         sleep(totalTimeout),
       ]);
     }
@@ -318,13 +342,14 @@ export async function* iterChildElem(root, timeout, totalTimeout) {
 }
 
 export async function* iterChildMatches(
-  path,
-  root,
+  path: string,
+  root: Node | null,
   interval = waitUnit,
   timeout = 5000,
 ) {
   let node = xpathNode(`.//${path}`, root);
-  const getMatch = (node) => xpathNode(`./following-sibling::${path}`, node);
+  const getMatch = (node: Node | null) =>
+    xpathNode(`./following-sibling::${path}`, node);
   while (node) {
     yield node;
     let next = getMatch(node);
@@ -335,7 +360,7 @@ export async function* iterChildMatches(
     await Promise.race([
       waitUntil(() => {
         next = getMatch(node);
-        return next;
+        return !!next;
       }, interval),
       sleep(timeout),
     ]);
@@ -344,7 +369,7 @@ export async function* iterChildMatches(
 }
 
 // ===========================================================================
-export function isInViewport(elem) {
+export function isInViewport(elem: Element) {
   const bounding = elem.getBoundingClientRect();
   return (
     bounding.top >= 0 &&
@@ -356,15 +381,15 @@ export function isInViewport(elem) {
   );
 }
 
-export function scrollToOffset(element, offset = 0) {
+export function scrollToOffset(element: Element, offset = 0) {
   const elPosition = element.getBoundingClientRect().top;
   const topPosition = elPosition + window.pageYOffset - offset;
   window.scrollTo({ top: topPosition, behavior: "smooth" });
 }
 
 export function scrollIntoView(
-  element,
-  opts = {
+  element: Element,
+  opts: ScrollIntoViewOptions = {
     behavior: "smooth",
     block: "center",
     inline: "center",
@@ -373,15 +398,23 @@ export function scrollIntoView(
   element.scrollIntoView(opts);
 }
 
-export function getState(ctx: any, msg: string, incrValue?: string) {
+export type NumberKeys<T> = {
+  [K in keyof T]: NonNullable<T[K]> extends number ? K : never;
+}[keyof T];
+
+export function getState<
+  State extends NonNullable<unknown>,
+  Opts,
+  IncrKey extends NumberKeys<State>,
+>(ctx: Context<State, Opts>, msg: string, incrValue?: IncrKey) {
   if (typeof ctx.state === "undefined") {
-    ctx.state = {};
+    (ctx.state as Partial<State>) = {};
   }
   if (incrValue) {
     if (ctx.state[incrValue] === undefined) {
-      ctx.state[incrValue] = 1;
+      (ctx.state[incrValue] as number) = 1;
     } else {
-      ctx.state[incrValue]++;
+      (ctx.state[incrValue] as number)++;
     }
   }
 

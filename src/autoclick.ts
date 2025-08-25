@@ -3,7 +3,7 @@ import { addToExternalSet, sleep } from "./lib/utils";
 
 export class AutoClick extends BackgroundBehavior {
   _donePromise: Promise<void>;
-  _markDone: () => void;
+  _markDone!: () => void;
   selector: string;
   seenElem = new WeakSet<HTMLElement>();
 
@@ -40,7 +40,7 @@ export class AutoClick extends BackgroundBehavior {
         return elem;
       }
     } catch (e) {
-      this.debug(e.toString());
+      this.debug((e as Error).toString());
     }
 
     return null;
@@ -49,7 +49,7 @@ export class AutoClick extends BackgroundBehavior {
   async start() {
     const origHref = self.location.href;
 
-    const beforeUnload = (event) => {
+    const beforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       return false;
     };
@@ -59,7 +59,7 @@ export class AutoClick extends BackgroundBehavior {
 
     // process external links on current origin
 
-    // eslint-disable-next-line no-constant-condition
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, no-constant-condition
     while (true) {
       const elem = this.nextSameOriginLink();
 
@@ -109,11 +109,12 @@ export class AutoClick extends BackgroundBehavior {
       });
     }
   }
+  // @ts-expect-error TODO: this looks like a typo, there's no associated `try` block for this `catch` block, so it ends up being a method
   catch(e) {
     this.debug(e.toString());
   }
 
-  done() {
+  async done() {
     return this._donePromise;
   }
 }

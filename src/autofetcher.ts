@@ -25,21 +25,25 @@ const MAX_CONCURRENT = 6;
 
 // ===========================================================================
 export class AutoFetcher extends BackgroundBehavior {
-  urlSet: Set<string> = new Set();
+  urlSet = new Set<string>();
   pendingQueue: string[] = [];
   waitQueue: string[] = [];
-  mutationObserver: MutationObserver;
-  numPending: number = 0;
-  numDone: number = 0;
-  headers: object;
+  mutationObserver?: MutationObserver;
+  numPending = 0;
+  numDone = 0;
+  headers: Record<string, string>;
   _donePromise: Promise<null>;
-  _markDone: (value: any) => void;
+  _markDone!: (value: PromiseLike<null> | null) => void;
   active: boolean;
   running = false;
 
   static id = "Autofetcher";
 
-  constructor(active = false, headers = null, startEarly = false) {
+  constructor(
+    active = false,
+    headers: Record<string, string> | null = null,
+    startEarly = false,
+  ) {
     super();
 
     this.headers = headers || {};
@@ -63,16 +67,16 @@ export class AutoFetcher extends BackgroundBehavior {
 
     this.initObserver();
 
-    this.run();
+    void this.run();
 
-    sleep(500).then(() => {
+    void sleep(500).then(() => {
       if (!this.pendingQueue.length && !this.numPending) {
         this._markDone(null);
       }
     });
   }
 
-  done() {
+  async done() {
     return this._donePromise;
   }
 
@@ -80,7 +84,7 @@ export class AutoFetcher extends BackgroundBehavior {
     this.running = true;
 
     for (const url of this.waitQueue) {
-      this.doFetch(url);
+      void this.doFetch(url);
     }
     this.waitQueue = [];
 
@@ -93,10 +97,10 @@ export class AutoFetcher extends BackgroundBehavior {
     return url && (url.startsWith("http:") || url.startsWith("https:"));
   }
 
-  queueUrl(url: string, immediate: boolean = false) {
+  queueUrl(url: string, immediate = false) {
     try {
       url = new URL(url, document.baseURI).href;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
 
@@ -111,7 +115,7 @@ export class AutoFetcher extends BackgroundBehavior {
     this.urlSet.add(url);
 
     if (this.running || immediate) {
-      this.doFetch(url);
+      void this.doFetch(url);
     } else {
       this.waitQueue.push(url);
     }
@@ -128,10 +132,13 @@ export class AutoFetcher extends BackgroundBehavior {
       });
       this.debug(`Autofetch: started ${url}`);
 
-      const reader = resp.body.getReader();
+      const reader = resp.body!.getReader();
 
       let res = null;
-      while ((res = await reader.read()) && !res.done);
+
+      do {
+        res = await reader.read();
+      } while (!res.done);
 
       this.debug(`Autofetch: finished ${url}`);
 
@@ -156,7 +163,7 @@ export class AutoFetcher extends BackgroundBehavior {
       } as {});
       abort.abort();
       this.debug(`Autofetch: started non-cors stream for ${url}`);
-    } catch (e) {
+    } catch (_) {
       this.debug(`Autofetch: failed non-cors for ${url}`);
     }
   }
@@ -165,11 +172,11 @@ export class AutoFetcher extends BackgroundBehavior {
     this.pendingQueue.push(url);
     if (this.numPending <= MAX_CONCURRENT) {
       while (this.pendingQueue.length > 0) {
-        const url = this.pendingQueue.shift();
+        const url = this.pendingQueue.shift()!;
 
         this.numPending++;
 
-        let success = await doExternalFetch(url);
+        const success = await doExternalFetch(url);
 
         if (!success) {
           await this.doFetchNonCors(url);
@@ -203,38 +210,41 @@ export class AutoFetcher extends BackgroundBehavior {
     });
   }
 
-  processChangedNode(target) {
+  processChangedNode(target: Node) {
     switch (target.nodeType) {
       case Node.ATTRIBUTE_NODE:
         if (target.nodeName === "srcset") {
-          this.extractSrcSetAttr(target.nodeValue);
+          this.extractSrcSetAttr(target.nodeValue!);
         }
         if (target.nodeName === "loading" && target.nodeValue === "lazy") {
-          const elem = target.parentNode;
-          if (elem.tagName === "IMG") {
+          const elem = target.parentNode as Element | null;
+          if (elem?.tagName === "IMG") {
             elem.setAttribute("loading", "eager");
           }
         }
         break;
 
       case Node.TEXT_NODE:
-        if (target.parentNode && target.parentNode.tagName === "STYLE") {
-          this.extractStyleText(target.nodeValue);
+        if (
+          target.parentNode &&
+          (target.parentNode as Element).tagName === "STYLE"
+        ) {
+          this.extractStyleText(target.nodeValue!);
         }
         break;
 
       case Node.ELEMENT_NODE:
-        if (target.sheet) {
-          this.extractStyleSheet(target.sheet);
+        if ("sheet" in target) {
+          this.extractStyleSheet((target as HTMLStyleElement).sheet!);
         }
-        this.extractSrcSrcSet(target);
-        setTimeout(() => this.extractSrcSrcSetAll(target), 1000);
+        this.extractSrcSrcSet(target as HTMLElement);
+        setTimeout(() => this.extractSrcSrcSetAll(target as HTMLElement), 1000);
         setTimeout(() => this.extractDataAttributes(target), 1000);
         break;
     }
   }
 
-  observeChange(changes) {
+  observeChange(changes: MutationRecord[]) {
     for (const change of changes) {
       this.processChangedNode(change.target);
 
@@ -246,7 +256,7 @@ export class AutoFetcher extends BackgroundBehavior {
     }
   }
 
-  extractSrcSrcSetAll(root) {
+  extractSrcSrcSetAll(root: Document | HTMLElement) {
     const elems = querySelectorAllDeep(SRC_SET_SELECTOR, root);
 
     for (const elem of elems) {
@@ -254,7 +264,7 @@ export class AutoFetcher extends BackgroundBehavior {
     }
   }
 
-  extractSrcSrcSet(elem) {
+  extractSrcSrcSet(elem: HTMLElement | null) {
     if (!elem || elem.nodeType !== Node.ELEMENT_NODE) {
       console.warn("No elem to extract from");
       return;
@@ -288,13 +298,13 @@ export class AutoFetcher extends BackgroundBehavior {
 
     if (
       src &&
-      (srcset || data_srcset || elem.parentElement.tagName === "NOSCRIPT")
+      (srcset || data_srcset || elem.parentElement?.tagName === "NOSCRIPT")
     ) {
       this.queueUrl(src);
     }
   }
 
-  extractSrcSetAttr(srcset) {
+  extractSrcSetAttr(srcset: string) {
     for (const v of srcset.split(SRCSET_REGEX)) {
       if (v) {
         const parts = v.trim().split(" ");
@@ -303,7 +313,7 @@ export class AutoFetcher extends BackgroundBehavior {
     }
   }
 
-  extractStyleSheets(root?) {
+  extractStyleSheets(root?: Document | null) {
     root = root || document;
 
     for (const sheet of root.styleSheets) {
@@ -311,12 +321,13 @@ export class AutoFetcher extends BackgroundBehavior {
     }
   }
 
-  extractStyleSheet(sheet) {
+  extractStyleSheet(sheet: CSSStyleSheet) {
     let rules;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       rules = sheet.cssRules || sheet.rules;
-    } catch (e) {
+    } catch (_) {
       this.debug("Can't access stylesheet");
       return;
     }
@@ -328,8 +339,8 @@ export class AutoFetcher extends BackgroundBehavior {
     }
   }
 
-  extractStyleText(text) {
-    const urlExtractor = (m, n1, n2, n3) => {
+  extractStyleText(text: string) {
+    const urlExtractor = (_m: unknown, n1: string, n2: string, n3: string) => {
       this.queueUrl(n2);
       return n1 + n2 + n3;
     };
@@ -337,13 +348,14 @@ export class AutoFetcher extends BackgroundBehavior {
     text.replace(STYLE_REGEX, urlExtractor).replace(IMPORT_REGEX, urlExtractor);
   }
 
-  extractDataAttributes(root) {
+  extractDataAttributes(root: Node | null) {
     const QUERY =
       "//@*[starts-with(name(), 'data-') and " +
       "(starts-with(., 'http') or starts-with(., '/') or starts-with(., './') or starts-with(., '../'))]";
 
     for (const attr of xpathNodes(QUERY, root)) {
-      this.queueUrl(attr.value);
+      // @ts-expect-error TODO not sure what type `attr` should have here
+      this.queueUrl(attr.value as string);
     }
   }
 }

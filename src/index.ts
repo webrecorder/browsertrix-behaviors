@@ -58,7 +58,7 @@ export class BehaviorManager {
   autofetch: AutoFetcher;
   behaviors: any[];
   loadedBehaviors: any;
-  mainBehavior: Behavior | BehaviorRunner | null;
+  mainBehavior: Behavior | BehaviorRunner<unknown, unknown, unknown> | null;
   mainBehaviorClass: any;
   inited: boolean;
   started: boolean;

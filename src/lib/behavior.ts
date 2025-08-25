@@ -3,22 +3,22 @@ import * as Lib from "./utils";
 
 // ===========================================================================
 export class BackgroundBehavior {
-  debug(msg) {
-    behaviorLog(msg, "debug");
+  debug(msg: unknown) {
+    void behaviorLog(msg, "debug");
   }
 
-  error(msg) {
-    behaviorLog(msg, "error");
+  error(msg: unknown) {
+    void behaviorLog(msg, "error");
   }
 
-  log(msg, type = "info") {
-    behaviorLog(msg, type);
+  log(msg: unknown, type = "info") {
+    void behaviorLog(msg, type);
   }
 }
 
 // ===========================================================================
 export class Behavior extends BackgroundBehavior {
-  _running: any;
+  _running: Promise<void> | null;
   paused: any;
   _unpause: any;
   state: any;
@@ -42,7 +42,7 @@ export class Behavior extends BackgroundBehavior {
     this._running = this.run();
   }
 
-  done() {
+  async done() {
     return this._running ? this._running : Promise.resolve();
   }
 
@@ -56,7 +56,7 @@ export class Behavior extends BackgroundBehavior {
       }
       this.debug(this.getState("done!"));
     } catch (e) {
-      this.error(e.toString());
+      this.error((e as Error).toString());
     }
   }
 
@@ -77,7 +77,7 @@ export class Behavior extends BackgroundBehavior {
     }
   }
 
-  getState(msg: string, incrValue?) {
+  getState(msg: string, incrValue?: string) {
     if (incrValue) {
       if (this.state[incrValue] === undefined) {
         this.state[incrValue] = 1;
@@ -113,34 +113,48 @@ export class Behavior extends BackgroundBehavior {
 // WIP: BehaviorRunner class allows for arbitrary behaviors outside of the
 // library to be run through the BehaviorManager
 
-abstract class AbstractBehaviorInst {
-  abstract run: (ctx: any) => AsyncIterable<any>;
+export type Context<State, Opts> = {
+  Lib: typeof Lib;
+  state: State;
+  opts: Opts;
+  log: (data: any, type?: string) => Promise<void>;
+};
 
-  abstract awaitPageLoad?: (ctx: any) => Promise<void>;
+abstract class AbstractBehaviorInst<State, Opts, RunResult> {
+  abstract run: (ctx: Context<State, Opts>) => AsyncIterable<RunResult | void>;
+
+  abstract awaitPageLoad?: (ctx: Context<State, Opts>) => Promise<void>;
 }
 
 interface StaticAbstractBehavior {
-  id: String;
+  id: string;
   isMatch: () => boolean;
   init: () => any;
 }
 
-type AbstractBehavior = (new () => AbstractBehaviorInst) &
+type AbstractBehavior<State, Opts, RunResult> = (new () => AbstractBehaviorInst<
+  State,
+  Opts,
+  RunResult
+>) &
   StaticAbstractBehavior;
 
-export class BehaviorRunner extends BackgroundBehavior {
-  inst: AbstractBehaviorInst;
+export class BehaviorRunner<State, Opts, RunResult> extends BackgroundBehavior {
+  inst: AbstractBehaviorInst<State, Opts, RunResult>;
   behaviorProps: StaticAbstractBehavior;
-  ctx: any;
-  _running: any;
+  ctx: Context<State, Opts>;
+  _running: Promise<void> | null;
   paused: any;
-  _unpause: any;
+  _unpause: ((value?: unknown) => void) | null;
 
   get id() {
-    return (this.inst?.constructor as any).id;
+    return (this.inst.constructor as any).id;
   }
 
-  constructor(behavior: AbstractBehavior, mainOpts = {}) {
+  constructor(
+    behavior: AbstractBehavior<State, Opts, RunResult>,
+    mainOpts = {},
+  ) {
     super();
     this.behaviorProps = behavior;
     this.inst = new behavior();
@@ -183,7 +197,7 @@ export class BehaviorRunner extends BackgroundBehavior {
     this._running = this.run();
   }
 
-  done() {
+  async done() {
     return this._running ? this._running : Promise.resolve();
   }
 
@@ -199,7 +213,10 @@ export class BehaviorRunner extends BackgroundBehavior {
       }
       this.debug({ msg: "done!", behavior: this.behaviorProps.id });
     } catch (e) {
-      this.error({ msg: e.toString(), behavior: this.behaviorProps.id });
+      this.error({
+        msg: (e as Error).toString(),
+        behavior: this.behaviorProps.id,
+      });
     }
   }
 
