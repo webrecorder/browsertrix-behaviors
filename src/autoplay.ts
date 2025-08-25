@@ -54,16 +54,19 @@ export class Autoplay extends BackgroundBehavior {
       for (const [, elem] of querySelectorAllDeep(
         "video, audio, picture",
       ).entries()) {
-        if (!elem["__bx_autoplay_found"]) {
+        interface AutoplayElement extends HTMLMediaElement {
+          __bx_autoplay_found?: boolean;
+        }
+        if (!(elem as AutoplayElement)["__bx_autoplay_found"]) {
           if (!this.running) {
             if (this.processFetchableUrl(elem as HTMLMediaElement)) {
-              elem["__bx_autoplay_found"] = true;
+              (elem as AutoplayElement)["__bx_autoplay_found"] = true;
             }
             continue;
           }
 
           await this.loadMedia(elem as HTMLMediaElement);
-          elem["__bx_autoplay_found"] = true;
+          (elem as AutoplayElement)["__bx_autoplay_found"] = true;
         }
       }
 
@@ -140,46 +143,45 @@ export class Autoplay extends BackgroundBehavior {
         );
       }
 
-      void this.attemptMediaPlay(media).then(
-        async (finished: Promise<void> | undefined) => {
-          let check = true;
+      void this.attemptMediaPlay(media).then(async (finished) => {
+        let check = true;
 
-          if (finished) {
-            void finished.then(() => (check = false));
-          }
+        if (finished) {
+          // @ts-expect-error TODO: not sure what this is supposed to be, I believe `finished` is a boolean here?
+          void finished.then(() => (check = false));
+        }
 
-          while (check) {
-            if (this.processFetchableUrl(media)) {
-              check = false;
-            }
-            this.debug(
-              "Waiting for fixed URL or media to finish: " + media.currentSrc,
-            );
-            await sleep(1000);
+        while (check) {
+          if (this.processFetchableUrl(media)) {
+            check = false;
           }
-        },
-      );
+          this.debug(
+            "Waiting for fixed URL or media to finish: " + media.currentSrc,
+          );
+          await sleep(1000);
+        }
+      });
     } else if (media.currentSrc) {
       this.debug("media playing from non-URL source: " + media.currentSrc);
     }
   }
 
-  async attemptMediaPlay(media) {
+  async attemptMediaPlay(media: HTMLMediaElement) {
     // finished promise
-    let resolveFinished;
+    let resolveFinished: (value?: boolean) => void;
 
-    const finished = new Promise((res) => {
+    const finished = new Promise<boolean | undefined>((res) => {
       resolveFinished = res;
     });
 
     // started promise
-    let resolveStarted;
+    let resolveStarted!: (value?: boolean) => void;
 
-    const started = new Promise((res) => {
+    const started = new Promise<boolean | undefined>((res) => {
       resolveStarted = res;
     });
 
-    started.then(() => this.promises.push(finished));
+    void started.then(() => this.promises.push(finished));
 
     // already started
     if (!media.paused && media.currentTime > 0) {
@@ -242,7 +244,7 @@ export class Autoplay extends BackgroundBehavior {
       }
     }
 
-    media.play();
+    void media.play();
 
     if (await Promise.race([started, sleep(1000)])) {
       this.debug("play started after media.play()");

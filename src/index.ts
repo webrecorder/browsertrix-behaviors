@@ -12,7 +12,7 @@ import {
   addLink,
   checkToJsonOverride,
 } from "./lib/utils";
-import { type Behavior, BehaviorRunner } from "./lib/behavior";
+import { AbstractBehavior, type Behavior, BehaviorRunner } from "./lib/behavior";
 import * as Lib from "./lib/utils";
 
 import siteBehaviors from "./site";
@@ -27,10 +27,10 @@ interface BehaviorManagerOpts {
   autoplay?: boolean;
   autoscroll?: boolean;
   autoclick?: boolean;
-  log?: ((...message: string[]) => void) | string | false;
-  siteSpecific?: boolean | object;
+  log?: ((...message: string[]) => void) | keyof typeof self | false;
+  siteSpecific?: boolean | Record<string, unknown>;
   timeout?: number;
-  fetchHeaders?: object | null;
+  fetchHeaders?: Record<string, string> | null;
   startEarly?: boolean | null;
   clickSelector?: string;
 }
@@ -54,12 +54,14 @@ const DEFAULT_CLICK_SELECTOR = "a";
 const DEFAULT_LINK_SELECTOR = "a[href]";
 const DEFAULT_LINK_EXTRACT = "href";
 
+type TODOBehaviorClass = AbstractBehavior<unknown, unknown, unknown>;
+
 export class BehaviorManager {
-  autofetch: AutoFetcher;
-  behaviors: any[];
-  loadedBehaviors: any;
+  autofetch?: AutoFetcher;
+  behaviors: TODOBehaviorClass[] | null;
+  loadedBehaviors: TODOBehaviorClass;
   mainBehavior: Behavior | BehaviorRunner<unknown, unknown, unknown> | null;
-  mainBehaviorClass: any;
+  mainBehaviorClass: TODOBehaviorClass;
   inited: boolean;
   started: boolean;
   timeout?: number;
@@ -79,13 +81,13 @@ export class BehaviorManager {
       selector: DEFAULT_LINK_SELECTOR,
       extractName: DEFAULT_LINK_EXTRACT,
     };
-    behaviorLog("Loaded behaviors for: " + self.location.href);
+    void behaviorLog("Loaded behaviors for: " + self.location.href);
   }
 
   init(
     opts: BehaviorManagerOpts = DEFAULT_OPTS,
     restart = false,
-    customBehaviors: any[] = null,
+    customBehaviors: TODOBehaviorClass[] | null = null,
   ) {
     if (this.inited && !restart) {
       return;
@@ -94,6 +96,7 @@ export class BehaviorManager {
     this.inited = true;
     this.opts = opts;
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!self.window) {
       return;
     }
@@ -119,22 +122,22 @@ export class BehaviorManager {
     this.autofetch = new AutoFetcher(
       !!opts.autofetch,
       opts.fetchHeaders,
-      opts.startEarly,
+      !!opts.startEarly,
     );
 
     if (opts.autofetch) {
-      behaviorLog("Using AutoFetcher");
-      this.behaviors.push(this.autofetch);
+      void behaviorLog("Using AutoFetcher");
+      this.behaviors!.push(this.autofetch);
     }
 
     if (opts.autoplay) {
-      behaviorLog("Using Autoplay");
-      this.behaviors.push(new Autoplay(this.autofetch, opts.startEarly));
+      void behaviorLog("Using Autoplay");
+      this.behaviors!.push(new Autoplay(this.autofetch, !!opts.startEarly));
     }
 
     if (opts.autoclick) {
-      behaviorLog("Using AutoClick");
-      this.behaviors.push(
+      void behaviorLog("Using AutoClick");
+      this.behaviors!.push(
         new AutoClick(opts.clickSelector || DEFAULT_CLICK_SELECTOR),
       );
     }
@@ -144,7 +147,9 @@ export class BehaviorManager {
         try {
           this.load(behaviorClass);
         } catch (e) {
-          behaviorLog(`Failed to load custom behavior: ${e} ${behaviorClass}`);
+          void behaviorLog(
+            `Failed to load custom behavior: ${e} ${behaviorClass}`,
+          );
         }
       }
     }
@@ -157,11 +162,11 @@ export class BehaviorManager {
     const opts = this.opts;
     let siteMatch = false;
 
-    if (opts.siteSpecific) {
+    if (opts?.siteSpecific) {
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if (siteBehaviorClass.isMatch()) {
-          behaviorLog("Using Site-Specific Behavior: " + name);
+          void behaviorLog("Using Site-Specific Behavior: " + name);
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts =
             typeof opts.siteSpecific === "object"
@@ -173,7 +178,10 @@ export class BehaviorManager {
               siteSpecificOpts,
             );
           } catch (e) {
-            behaviorLog({ msg: e.toString(), siteSpecific: true }, "error");
+            void behaviorLog(
+              { msg: (e as Error).toString(), siteSpecific: true },
+              "error",
+            );
           }
           siteMatch = true;
           break;

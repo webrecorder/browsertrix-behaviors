@@ -132,12 +132,9 @@ interface StaticAbstractBehavior {
   init: () => any;
 }
 
-type AbstractBehavior<State, Opts, RunResult> = (new () => AbstractBehaviorInst<
-  State,
-  Opts,
-  RunResult
->) &
-  StaticAbstractBehavior;
+export type AbstractBehavior<State, Opts, RunResult> =
+  (new () => AbstractBehaviorInst<State, Opts, RunResult>) &
+    StaticAbstractBehavior;
 
 export class BehaviorRunner<State, Opts, RunResult> extends BackgroundBehavior {
   inst: AbstractBehaviorInst<State, Opts, RunResult>;
