@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
   schedule:
-    - cron: '10 16 * * *'
+    - cron: "10 16 * * *"
 
 jobs:
   autoscroll_test:
@@ -15,28 +15,27 @@ jobs:
         node-version: [22.x]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name: install requirements
-      run: yarn install
+      - name: install requirements
+        run: yarn install
 
-    - name: build behaviors
-      run: yarn run build
+      - name: build behaviors
+        run: yarn run build
 
-    - uses: c-py/action-dotenv-to-setenv@v2
-      with:
-        env-file: test/test.env
+      - uses: c-py/action-dotenv-to-setenv@v2
+        with:
+          env-file: test/test.env
 
-    - name: get browsertrix image
-      run:  docker pull $BROWSERTRIX_IMAGE
+      - name: get browsertrix image
+        run: docker pull $BROWSERTRIX_IMAGE
 
-    - name: run crawl
-      run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/crawls:/crawls $BROWSERTRIX_IMAGE crawl --url https://oembed.link/https://www.youtube.com/watch?v=aT-Up5Y4uRI --limit 1 --generateCDX --collection test
+      - name: run crawl
+        run: docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/crawls:/crawls $BROWSERTRIX_IMAGE crawl --url https://oembed.link/https://www.youtube.com/watch?v=aT-Up5Y4uRI --limit 1 --generateCDX --collection test
 
-    - name: check mp4 capture
-      run: grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj
-
+      - name: check mp4 capture
+        run: grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj

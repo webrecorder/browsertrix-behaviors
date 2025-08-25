@@ -11,16 +11,16 @@ jobs:
         node-version: [22.x]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: install requirements
-      run: yarn install
-    - name: run linter
-      run: yarn run eslint index.ts src/**/*.ts
-    - name: Bulid
-      run: yarn build
-  
-       
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install Requirements
+        run: yarn install
+      - name: Lint
+        run: yarn lint:check
+      - name: Check Formatting
+        run: yarn format:check
+      - name: Build
+        run: yarn build

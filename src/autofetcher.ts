@@ -9,7 +9,8 @@ import { querySelectorAllDeep } from "query-selector-shadow-dom";
 import { BackgroundBehavior } from "./lib/behavior";
 import { doExternalFetch, sleep, xpathNodes } from "./lib/utils";
 
-const SRC_SET_SELECTOR = "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy'], " +
+const SRC_SET_SELECTOR =
+  "img[srcset], img[data-srcset], img[data-src], noscript > img[src], img[loading='lazy'], " +
   "video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], " +
   "picture > source[srcset], picture > source[data-srcset], picture > source[data-src], " +
   "video > source[srcset], video > source[data-srcset], video > source[data-src], " +
@@ -21,7 +22,6 @@ const STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
 const IMPORT_REGEX = /(@import\s*[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
 
 const MAX_CONCURRENT = 6;
-
 
 // ===========================================================================
 export class AutoFetcher extends BackgroundBehavior {
@@ -44,7 +44,7 @@ export class AutoFetcher extends BackgroundBehavior {
 
     this.headers = headers || {};
 
-    this._donePromise = new Promise((resolve) => this._markDone = resolve);
+    this._donePromise = new Promise((resolve) => (this._markDone = resolve));
 
     this.active = active;
     if (this.active && startEarly) {
@@ -122,7 +122,10 @@ export class AutoFetcher extends BackgroundBehavior {
   // fetch with default CORS mode, read entire stream
   async doFetchStream(url: string) {
     try {
-      const resp = await fetch(url, { "credentials": "include", "referrerPolicy": "origin-when-cross-origin" });
+      const resp = await fetch(url, {
+        credentials: "include",
+        referrerPolicy: "origin-when-cross-origin",
+      });
       this.debug(`Autofetch: started ${url}`);
 
       const reader = resp.body.getReader();
@@ -133,7 +136,6 @@ export class AutoFetcher extends BackgroundBehavior {
       this.debug(`Autofetch: finished ${url}`);
 
       return true;
-
     } catch (e) {
       this.debug(e);
 
@@ -146,11 +148,11 @@ export class AutoFetcher extends BackgroundBehavior {
     try {
       const abort = new AbortController();
       await fetch(url, {
-        "mode": "no-cors",
-        "credentials": "include",
-        "referrerPolicy": "origin-when-cross-origin",
-        "headers": this.headers,
-        abort
+        mode: "no-cors",
+        credentials: "include",
+        referrerPolicy: "origin-when-cross-origin",
+        headers: this.headers,
+        abort,
       } as {});
       abort.abort();
       this.debug(`Autofetch: started non-cors stream for ${url}`);
@@ -186,7 +188,9 @@ export class AutoFetcher extends BackgroundBehavior {
     if (this.mutationObserver) {
       return;
     }
-    this.mutationObserver = new MutationObserver((changes) => this.observeChange(changes));
+    this.mutationObserver = new MutationObserver((changes) =>
+      this.observeChange(changes),
+    );
 
     this.mutationObserver.observe(document.documentElement, {
       characterData: false,
@@ -195,7 +199,7 @@ export class AutoFetcher extends BackgroundBehavior {
       attributeOldValue: true,
       subtree: true,
       childList: true,
-      attributeFilter: ["srcset", "loading"]
+      attributeFilter: ["srcset", "loading"],
     });
   }
 
@@ -282,7 +286,10 @@ export class AutoFetcher extends BackgroundBehavior {
     // check regular src in case of <noscript> only to avoid duplicate loading
     const src = elem.getAttribute("src");
 
-    if (src && (srcset || data_srcset || elem.parentElement.tagName === "NOSCRIPT")) {
+    if (
+      src &&
+      (srcset || data_srcset || elem.parentElement.tagName === "NOSCRIPT")
+    ) {
       this.queueUrl(src);
     }
   }
@@ -331,12 +338,12 @@ export class AutoFetcher extends BackgroundBehavior {
   }
 
   extractDataAttributes(root) {
-    const QUERY = "//@*[starts-with(name(), 'data-') and " +
-    "(starts-with(., 'http') or starts-with(., '/') or starts-with(., './') or starts-with(., '../'))]";
-    
+    const QUERY =
+      "//@*[starts-with(name(), 'data-') and " +
+      "(starts-with(., 'http') or starts-with(., '/') or starts-with(., './') or starts-with(., '../'))]";
+
     for (const attr of xpathNodes(QUERY, root)) {
       this.queueUrl(attr.value);
     }
   }
 }
-

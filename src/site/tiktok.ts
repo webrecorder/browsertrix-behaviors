@@ -2,11 +2,12 @@ const Q = {
   commentList: "//div[contains(@class, 'CommentListContainer')]",
   commentItem: "div[contains(@class, 'CommentItemContainer')]",
   viewMoreReplies: ".//p[contains(@class, 'ReplyActionText')]",
-  viewMoreThread: ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]",
+  viewMoreThread:
+    ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]",
   profileVideoList: "//div[starts-with(@data-e2e, 'user-post-item-list')]",
   profileVideoItem: "div[contains(@class, 'DivItemContainerV2')]",
   backButton: "button[contains(@class, 'StyledCloseIconContainer')]",
-  pageLoadWaitUntil: "//*[@role='dialog']"
+  pageLoadWaitUntil: "//*[@role='dialog']",
 };
 
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
@@ -16,7 +17,10 @@ export class TikTokSharedBehavior {
     const { assertContentValid, waitUntilNode } = ctx.Lib;
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 
-    assertContentValid(() => !!document.querySelector("*[aria-label='Messages']"), "not_logged_in");
+    assertContentValid(
+      () => !!document.querySelector("*[aria-label='Messages']"),
+      "not_logged_in",
+    );
   }
 }
 
@@ -26,7 +30,7 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
   static init() {
     return {
       state: { comments: 0 },
-      opts: { breadth: BREADTH_ALL }
+      opts: { breadth: BREADTH_ALL },
     };
   }
 
@@ -39,7 +43,7 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
     return breadth !== BREADTH_ALL && breadth <= iter;
   }
 
-  async* crawlThread(ctx, parentNode, prev = null, iter = 0) {
+  async *crawlThread(ctx, parentNode, prev = null, iter = 0) {
     const { waitUntilNode, scrollAndClick, getState } = ctx.Lib;
     const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
     if (!next || this.breadthComplete(ctx, iter)) return;
@@ -48,7 +52,7 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
     yield* this.crawlThread(ctx, parentNode, next, iter + 1);
   }
 
-  async* expandThread(ctx, item) {
+  async *expandThread(ctx, item) {
     const { xpathNode, scrollAndClick, getState } = ctx.Lib;
     const viewMore = xpathNode(Q.viewMoreReplies, item);
     if (!viewMore) return;
@@ -57,7 +61,7 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
     yield* this.crawlThread(ctx, item, null, 1);
   }
 
-  async* run(ctx) {
+  async *run(ctx) {
     const { xpathNode, iterChildMatches, scrollIntoView, getState } = ctx.Lib;
     const commentList = xpathNode(Q.commentList);
     const commentItems = iterChildMatches(Q.commentItem, commentList);
@@ -71,24 +75,23 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
   }
 }
 
-
-
 export class TikTokProfileBehavior extends TikTokSharedBehavior {
   static id = "TikTokProfile";
 
   static isMatch() {
-    const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@[a-zA-Z0-9]+(\/?$|\/\?.*)/;
+    const pathRegex =
+      /https:\/\/(www\.)?tiktok\.com\/@[a-zA-Z0-9]+(\/?$|\/\?.*)/;
     return !!window.location.href.match(pathRegex);
   }
 
   static init() {
     return {
       state: { videos: 0, comments: 0 },
-      opts: { breadth: BREADTH_ALL }
+      opts: { breadth: BREADTH_ALL },
     };
   }
 
-  async* openVideo(ctx, item) {
+  async *openVideo(ctx, item) {
     const { HistoryState, xpathNode, sleep } = ctx.Lib;
     const link = xpathNode(".//a", item);
     if (!link) return;
@@ -102,10 +105,14 @@ export class TikTokProfileBehavior extends TikTokSharedBehavior {
     }
   }
 
-  async* run(ctx) {
-    const { xpathNode, iterChildMatches, scrollIntoView, getState, sleep } = ctx.Lib;
+  async *run(ctx) {
+    const { xpathNode, iterChildMatches, scrollIntoView, getState, sleep } =
+      ctx.Lib;
     const profileVideoList = xpathNode(Q.profileVideoList);
-    const profileVideos = iterChildMatches(Q.profileVideoItem, profileVideoList);
+    const profileVideos = iterChildMatches(
+      Q.profileVideoItem,
+      profileVideoList,
+    );
     for await (const item of profileVideos) {
       scrollIntoView(item);
       yield getState(ctx, "View video", "videos");

@@ -12,11 +12,11 @@ Applications (SPAs).
 We're going to write a TikTok video behavior that scrolls through and expands
 each comment thread.
 
-## 🏗  Scaffolding
+## 🏗 Scaffolding
 
 To create a new behavior, we first create a new file in the `src/site/`
-directory. We'll give it an id and a static init function for managing 
-our state and options. We'll also add an `async* run` function which 
+directory. We'll give it an id and a static init function for managing
+our state and options. We'll also add an `async* run` function which
 we will define later. This is the main function of our behavior.
 
 We'll name our file `tiktok.js` and add the basic elements needed to define
@@ -27,17 +27,16 @@ our behavior:
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
 
 export class TikTokVideo {
-	static id = "TikTokVideo";
-	
+  static id = "TikTokVideo";
+
   static init() {
     return {
       state: { comments: 0 },
-      opts: { breadth: BREADTH_ALL }
+      opts: { breadth: BREADTH_ALL },
     };
   }
-	
-  async* run(ctx) {
-	}
+
+  async *run(ctx) {}
 }
 ```
 
@@ -73,7 +72,7 @@ class TikTokVideoBehavior extends Behavior {
 ```
 
 Note that the `isMatch` method is `static`, meaning it is defined on the class
-itself. When this function returns true, our code in the `async run` 
+itself. When this function returns true, our code in the `async run`
 method will run.
 
 ### Finding each comment thread
@@ -98,7 +97,7 @@ Let's define a constant to reference these queries:
 ```javascript
 const Q = {
   commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
-}
+};
 ```
 
 In order to find an element via XPath, we import a function from the
@@ -109,7 +108,7 @@ Next, we expand the `async* run` method like so:
 ```javascript
 class TikTokVideoBehavior {
   // ...
-  async* run(ctx) {
+  async *run(ctx) {
     const { xpathNode } = ctx.Lib;
     const commentList = xpathNode(Q.commentListContainer);
     console.log("[LOG] List Container", commentList);
@@ -120,25 +119,25 @@ class TikTokVideoBehavior {
 
 For now we're just logging out the result returned by the query.
 
-## 🏳  Checkpoint: Testing our code so far
+## 🏳 Checkpoint: Testing our code so far
 
 Let's test the pieces we've built so far in the browser. At this point your
 `src/site/tiktok.js` module should look something like this:
 
 ```javascript
 const Q = {
-  commentListContainer: "//div[contains(@class, 'CommentListContainer')]"
+  commentListContainer: "//div[contains(@class, 'CommentListContainer')]",
 };
 
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
 
 export class TikTokVideoBehavior {
   static id = "TikTokVideo";
-	
+
   static init() {
     return {
       state: { comments: 0 },
-      opts: { breadth: BREADTH_ALL }
+      opts: { breadth: BREADTH_ALL },
     };
   }
 
@@ -147,7 +146,7 @@ export class TikTokVideoBehavior {
     return window.location.href.match(pathRegex);
   }
 
-  async* run(ctx) {
+  async *run(ctx) {
     const { xpathNode } = ctx.Lib;
     const commentList = xpathNode(Q.commentListContainer);
     console.log("[LOG] List Container", commentList);
@@ -178,9 +177,7 @@ Chrome for example by following these steps:
 
 [tiktok-video]: https://www.tiktok.com/@webbstyles/video/7143026261693123882
 
->
 > _**TODO:** Record video outlining this process_
->
 
 1. Open the Developer Tools
 1. Click the `Sources` tab
@@ -188,7 +185,7 @@ Chrome for example by following these steps:
 1. Click the `+ New Snippet` button
 1. Build the development output via `yarn run build-dev`
 1. Copy the output from `dist/behaviors.js`
-    - Running `cat dist/behaviors.js | pbcopy` on Linux/MacOS will copy the contents to your clipboard.
+   - Running `cat dist/behaviors.js | pbcopy` on Linux/MacOS will copy the contents to your clipboard.
 1. Paste the contents in the new Snippet
 1. At the bottom of the window click the "Play" button or press `Ctrl/Cmd+Enter`
 
@@ -201,7 +198,7 @@ self.__bx_behaviors.run({
   autofetch: false,
   autoplay: false,
   autoscroll: false,
-  siteSpecific: true
+  siteSpecific: true,
 });
 ```
 
@@ -257,8 +254,8 @@ We can now generate this list and iterate through it using an async `for` loop:
 ```javascript
 export class TikTokVideoBehavior extends Behavior {
   // ...
-  async* run(ctx) {
-		const { xpathNode, iterChildMatches } = ctx.Lib;
+  async *run(ctx) {
+    const { xpathNode, iterChildMatches } = ctx.Lib;
     const commentList = xpathNode(Q.commentListContainer);
     const commentItems = iterChildMatches(Q.commentItemContainer, commentList);
     for await (const item of commentItems) {
@@ -273,14 +270,14 @@ export class TikTokVideoBehavior extends Behavior {
 
 Now that we're iterating through each comment, we can call the `scrollIntoView`
 method to scroll through them. This method takes the item we matched from `iterChildMatches`.
-This function is also provided to us by the `ctx.Lib` and we include it like we did 
-previous functions: 
+This function is also provided to us by the `ctx.Lib` and we include it like we did
+previous functions:
 
 ```javascript
 export class TikTokVideoBehavior {
   // ...
-  async* run(ctx) {
-		const { xpathNode, iterChildMatches, scrollIntoView } = ctx.Lib;
+  async *run(ctx) {
+    const { xpathNode, iterChildMatches, scrollIntoView } = ctx.Lib;
     const commentList = xpathNode(Q.commentListContainer);
     const commentItems = iterChildMatches(Q.commentItemContainer, commentList);
     for await (const item of commentItems) {
@@ -324,14 +321,14 @@ extension can now pause and resume the scrolling behavior.
 Since we're able to identify each comment, we can now look for specific parts of
 the element like buttons that perform actions on the page. Let's define a new
 method called `expandThread`. This method will take `ctx` which manages our state
-and a comment item and look for the `View more replies` button, which we identify 
+and a comment item and look for the `View more replies` button, which we identify
 with the following query:
 
 ```javascript
 const Q = {
   // ...
   viewMoreReplies: ".//p[contains(@class, 'ReplyActionText')]",
-}
+};
 ```
 
 Next for our `expandThread Method`:
@@ -339,7 +336,7 @@ Next for our `expandThread Method`:
 ```javascript
 export class TikTokVideoBehavior extends Behavior {
   // ...
-  async* expandThread(ctx, item) {
+  async *expandThread(ctx, item) {
     const { xpathNode, getState } = ctx.Lib;
     const viewMore = xpathNode(Q.viewMoreReplies, item);
     if (!viewMore) return;
@@ -366,8 +363,8 @@ mark our progress:
 ```javascript
 export class TikTokVideoBehavior {
   // ...
-  async* expandThread(item) {
-		const { xpathNode, scrollAndClick, getState } = ctx.Lib;
+  async *expandThread(item) {
+    const { xpathNode, scrollAndClick, getState } = ctx.Lib;
     const viewMore = xpathNode(Q.viewMoreReplies, item);
     if (!viewMore) return;
     await scrollAndClick(viewMore, 500);
@@ -382,7 +379,7 @@ Finally, let's add our new method to the `run` method:
 ```javascript
 export class TikTokVideoBehavior extends Behavior {
   // ...
-  async* run(ctx) {
+  async *run(ctx) {
     const { xpathNode, iterChildMatches, scrollIntoView, getState } = ctx.Lib;
     const commentList = xpathNode(Q.commentListContainer);
     const commentItems = iterChildMatches(Q.commentItemContainer, commentList);
@@ -400,7 +397,7 @@ Note that we use the `yield*` keyword in order to yield each result of the
 `expandThread` method one at a time. This maintains our fine-grained control
 over pausing and resuming the behavior.
 
-## 🏳  Checkpoint: Testing our behavior in ArchiveWeb.page
+## 🏳 Checkpoint: Testing our behavior in ArchiveWeb.page
 
 > Content pending...
 
@@ -444,7 +441,7 @@ Let's add the last query we'll need to crawl comment threads, which targets the
 ```javascript
 const Q = {
   // ...
-  viewMoreThread: ".//p[starts-with(@data-e2e, 'view-more')]"
+  viewMoreThread: ".//p[starts-with(@data-e2e, 'view-more')]",
 };
 ```
 
@@ -454,7 +451,7 @@ the `waitUntilNode` function:
 ```javascript
 export class TikTokVideoBehavior extends Behavior {
   // ...
-  async* crawlThread(ctx, parentNode, prev = null) {
+  async *crawlThread(ctx, parentNode, prev = null) {
     const { waitUntilNode, scrollAndClick, getState } = ctx.Lib;
     const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
     if (!next) return;
@@ -472,7 +469,7 @@ Let's complete our new method like so:
 ```javascript
 export class TikTokVideoBehavior extends Behavior {
   // ...
-  async* crawlThread(ctx, parentNode, prev = null) {
+  async *crawlThread(ctx, parentNode, prev = null) {
     const { waitUntilNode, scrollAndClick, getState } = ctx.Lib;
     const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
     if (!next) return;
@@ -497,7 +494,8 @@ elegant solution lies within our XPath query:
 ```javascript
 const Q = {
   // ...
-  viewMoreThread: ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]"
+  viewMoreThread:
+    ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]",
 };
 ```
 
@@ -511,7 +509,7 @@ finished expanding the first round of replies:
 ```javascript
 export class TikTokVideoBehavior {
   // ...
-  async* expandThread(ctx, item) {
+  async *expandThread(ctx, item) {
     const { xpathNode, scrollAndClick, getState } = ctx.Lib;
     const viewMore = xpathNode(Q.viewMoreReplies, item);
     if (!viewMore) return;
@@ -541,6 +539,7 @@ may want to see every reply, but for videos with a large number of comments it's
 often more practical to only see a limited amount of top replies.
 
 We'll define the `breadth` option one of two types:
+
 - a number representing how many times we want to click the "more replies" button
 - a symbol that tells the behavior to look through every reply
 
@@ -563,14 +562,14 @@ export class TikTokVideoBehavior {
   static init() {
     return {
       state: { comments: 0 },
-      opts: { breadth: BREADTH_ALL }
+      opts: { breadth: BREADTH_ALL },
     };
   }
   // ...
 }
 ```
 
-As we can see, our behavior expects all options to be passed as an object containing 
+As we can see, our behavior expects all options to be passed as an object containing
 an `opts` key. This key then stores another object that has the `breadth` key
 
 Let's define a `breadthComplete` method that checks whether a number exceeds the
@@ -594,7 +593,7 @@ threads at all in our `run` method:
 ```javascript
 export class TikTokVideoBehavior extends Behavior {
   // ...
-  async* run(ctx) {
+  async *run(ctx) {
     const { xpathNode, iterChildMatches, scrollIntoView, getState } = ctx.Lib;
     const commentList = xpathNode(Q.commentListContainer);
     const commentItems = iterChildMatches(Q.commentItemContainer, commentList);
@@ -616,7 +615,7 @@ Next, we'll modify our `crawlThread` method:
 ```javascript
 export class TikTokVideoBehavior {
   // ...
-  async* crawlThread(parentNode, prev = null, iter = 0) {
+  async *crawlThread(parentNode, prev = null, iter = 0) {
     const { waitUntilNode, scrollAndClick, getState } = ctx.Lib;
     const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
     if (!next || this.breadthComplete(iter)) return;
@@ -640,7 +639,7 @@ is `1`:
 ```javascript
 export class TikTokVideoBehavior {
   // ...
-  async* expandThread(item) {
+  async *expandThread(item) {
     const { xpathNode, scrollAndClick, getState } = ctx.Lib;
     const viewMore = xpathNode(Q.viewMoreReplies, item);
     if (!viewMore) return;
@@ -662,10 +661,11 @@ const Q = {
   commentList: "//div[contains(@class, 'CommentListContainer')]",
   commentItem: "div[contains(@class, 'CommentItemContainer')]",
   viewMoreReplies: ".//p[contains(@class, 'ReplyActionText')]",
-  viewMoreThread: ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]",
+  viewMoreThread:
+    ".//p[starts-with(@data-e2e, 'view-more') and string-length(text()) > 0]",
   profileVideoList: "//div[starts-with(@data-e2e, 'user-post-item-list')]",
   profileVideoItem: "div[contains(@class, 'DivItemContainerV2')]",
-  backButton: "button[contains(@class, 'StyledCloseIconContainer')]"
+  backButton: "button[contains(@class, 'StyledCloseIconContainer')]",
 };
 
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
@@ -676,7 +676,7 @@ export class TikTokVideoBehavior {
   static init() {
     return {
       state: { comments: 0 },
-      opts: { breadth: BREADTH_ALL }
+      opts: { breadth: BREADTH_ALL },
     };
   }
 
@@ -689,7 +689,7 @@ export class TikTokVideoBehavior {
     return breadth !== BREADTH_ALL && breadth <= iter;
   }
 
-  async* crawlThread(ctx, parentNode, prev = null, iter = 0) {
+  async *crawlThread(ctx, parentNode, prev = null, iter = 0) {
     const { waitUntilNode, scrollAndClick, getState } = ctx.Lib;
     const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
     if (!next || this.breadthComplete(ctx, iter)) return;
@@ -698,7 +698,7 @@ export class TikTokVideoBehavior {
     yield* this.crawlThread(ctx, parentNode, next, iter + 1);
   }
 
-  async* expandThread(ctx, item) {
+  async *expandThread(ctx, item) {
     const { xpathNode, scrollAndClick, getState } = ctx.Lib;
     const viewMore = xpathNode(Q.viewMoreReplies, item);
     if (!viewMore) return;
@@ -707,7 +707,7 @@ export class TikTokVideoBehavior {
     yield* this.crawlThread(ctx, item, null, 1);
   }
 
-  async* run(ctx) {
+  async *run(ctx) {
     const { xpathNode, iterChildMatches, scrollIntoView, getState } = ctx.Lib;
     const commentList = xpathNode(Q.commentList);
     const commentItems = iterChildMatches(Q.commentItem, commentList);
@@ -725,18 +725,19 @@ export class TikTokProfileBehavior {
   static id = "TikTokProfile";
 
   static isMatch() {
-    const pathRegex = /https:\/\/(www\.)?tiktok\.com\/@[a-zA-Z0-9]+(\/?$|\/\?.*)/;
+    const pathRegex =
+      /https:\/\/(www\.)?tiktok\.com\/@[a-zA-Z0-9]+(\/?$|\/\?.*)/;
     return !!window.location.href.match(pathRegex);
   }
 
   static init() {
     return {
       state: { videos: 0, comments: 0 },
-      opts: { breadth: BREADTH_ALL }
+      opts: { breadth: BREADTH_ALL },
     };
   }
 
-  async* openVideo(ctx, item) {
+  async *openVideo(ctx, item) {
     const { HistoryState, xpathNode, sleep } = ctx.Lib;
     const link = xpathNode(".//a", item);
     if (!link) return;
@@ -750,10 +751,14 @@ export class TikTokProfileBehavior {
     }
   }
 
-  async* run(ctx) {
-    const { xpathNode, iterChildMatches, scrollIntoView, getState, sleep } = ctx.Lib;
+  async *run(ctx) {
+    const { xpathNode, iterChildMatches, scrollIntoView, getState, sleep } =
+      ctx.Lib;
     const profileVideoList = xpathNode(Q.profileVideoList);
-    const profileVideos = iterChildMatches(Q.profileVideoItem, profileVideoList);
+    const profileVideos = iterChildMatches(
+      Q.profileVideoItem,
+      profileVideoList,
+    );
     for await (const item of profileVideos) {
       scrollIntoView(item);
       yield getState(ctx, "View video", "videos");
@@ -776,8 +781,8 @@ self.__bx_behaviors.run({
   autoplay: false,
   autoscroll: false,
   siteSpecific: {
-    TikTokVideo: { breadth: 3 }
-  }
+    TikTokVideo: { breadth: 3 },
+  },
 });
 ```
 
