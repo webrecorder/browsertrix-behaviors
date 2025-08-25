@@ -3,8 +3,7 @@ name: Behavior Bug
 about: Let us know when a behavior isn't working as expected.
 title: Behavior Bug
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
 **URL**
@@ -17,6 +16,7 @@ Note: The expected functionality can be found on [Behaviors Overview](https://ar
 If the status of one of the test is failing, that may be related and a similar issue.
 
 **What tool do you see this issue in?**
+
 - [ ] ArchiveWeb.page Extension
 - [ ] ArchiveWeb.page App
 - [ ] Browsertrix Crawler

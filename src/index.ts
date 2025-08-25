@@ -2,10 +2,18 @@ import { AutoFetcher } from "./autofetcher";
 import { Autoplay } from "./autoplay";
 import { AutoScroll } from "./autoscroll";
 import { AutoClick } from "./autoclick";
-import { awaitLoad, sleep, behaviorLog, _setLogFunc, _setBehaviorManager, installBehaviors, addLink, checkToJsonOverride } from "./lib/utils";
+import {
+  awaitLoad,
+  sleep,
+  behaviorLog,
+  _setLogFunc,
+  _setBehaviorManager,
+  installBehaviors,
+  addLink,
+  checkToJsonOverride,
+} from "./lib/utils";
 import { type Behavior, BehaviorRunner } from "./lib/behavior";
 import * as Lib from "./lib/utils";
-
 
 import siteBehaviors from "./site";
 
@@ -33,7 +41,13 @@ type LinkOpts = {
   attrOnly?: boolean;
 };
 
-const DEFAULT_OPTS: BehaviorManagerOpts = {autofetch: true, autoplay: true, autoscroll: true, autoclick: true, siteSpecific: true};
+const DEFAULT_OPTS: BehaviorManagerOpts = {
+  autofetch: true,
+  autoplay: true,
+  autoscroll: true,
+  autoclick: true,
+  siteSpecific: true,
+};
 
 const DEFAULT_CLICK_SELECTOR = "a";
 
@@ -61,11 +75,18 @@ export class BehaviorManager {
     this.mainBehavior = null;
     this.inited = false;
     this.started = false;
-    this.linkOpts = {selector: DEFAULT_LINK_SELECTOR, extractName: DEFAULT_LINK_EXTRACT};
+    this.linkOpts = {
+      selector: DEFAULT_LINK_SELECTOR,
+      extractName: DEFAULT_LINK_EXTRACT,
+    };
     behaviorLog("Loaded behaviors for: " + self.location.href);
   }
 
-  init(opts: BehaviorManagerOpts = DEFAULT_OPTS, restart = false, customBehaviors: any[] = null) {
+  init(
+    opts: BehaviorManagerOpts = DEFAULT_OPTS,
+    restart = false,
+    customBehaviors: any[] = null,
+  ) {
     if (this.inited && !restart) {
       return;
     }
@@ -83,11 +104,11 @@ export class BehaviorManager {
     if (opts.log !== undefined) {
       let logger = opts.log;
       // if string, look up as global
-      if (typeof (logger) === "string") {
+      if (typeof logger === "string") {
         logger = self[logger];
       }
       // if function, set to it
-      if (typeof (logger) === "function") {
+      if (typeof logger === "function") {
         _setLogFunc(logger);
         // if false, disable logging
       } else if (logger === false) {
@@ -95,7 +116,11 @@ export class BehaviorManager {
       }
     }
 
-    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders, opts.startEarly);
+    this.autofetch = new AutoFetcher(
+      !!opts.autofetch,
+      opts.fetchHeaders,
+      opts.startEarly,
+    );
 
     if (opts.autofetch) {
       behaviorLog("Using AutoFetcher");
@@ -109,7 +134,9 @@ export class BehaviorManager {
 
     if (opts.autoclick) {
       behaviorLog("Using AutoClick");
-      this.behaviors.push(new AutoClick(opts.clickSelector || DEFAULT_CLICK_SELECTOR));
+      this.behaviors.push(
+        new AutoClick(opts.clickSelector || DEFAULT_CLICK_SELECTOR),
+      );
     }
 
     if (customBehaviors) {
@@ -136,12 +163,17 @@ export class BehaviorManager {
         if (siteBehaviorClass.isMatch()) {
           behaviorLog("Using Site-Specific Behavior: " + name);
           this.mainBehaviorClass = siteBehaviorClass;
-          const siteSpecificOpts = typeof opts.siteSpecific === "object" ?
-            (opts.siteSpecific[name] || {}) : {};
+          const siteSpecificOpts =
+            typeof opts.siteSpecific === "object"
+              ? opts.siteSpecific[name] || {}
+              : {};
           try {
-            this.mainBehavior = new BehaviorRunner(siteBehaviorClass, siteSpecificOpts);
+            this.mainBehavior = new BehaviorRunner(
+              siteBehaviorClass,
+              siteSpecificOpts,
+            );
           } catch (e) {
-            behaviorLog({msg: e.toString(), siteSpecific: true}, "error");
+            behaviorLog({ msg: e.toString(), siteSpecific: true }, "error");
           }
           siteMatch = true;
           break;
@@ -167,29 +199,38 @@ export class BehaviorManager {
   }
 
   load(behaviorClass) {
-    if (typeof(behaviorClass.id) !== "string") {
-      behaviorLog("Behavior class must have a string string \"id\" property", "error");
+    if (typeof behaviorClass.id !== "string") {
+      behaviorLog(
+        'Behavior class must have a string string "id" property',
+        "error",
+      );
       return;
     }
 
     const name = behaviorClass.id;
 
-    if (typeof(behaviorClass) !== "function") {
+    if (typeof behaviorClass !== "function") {
       behaviorLog(`Must pass a class object, got ${behaviorClass}`, "error");
       return;
     }
 
     if (
-      typeof(behaviorClass.isMatch) !== "function" ||
-      typeof(behaviorClass.init) !== "function"
+      typeof behaviorClass.isMatch !== "function" ||
+      typeof behaviorClass.init !== "function"
     ) {
-      behaviorLog("Behavior class must have an is `isMatch()` and `init()` static methods", "error");
+      behaviorLog(
+        "Behavior class must have an is `isMatch()` and `init()` static methods",
+        "error",
+      );
       return;
     }
 
     if (!this.isInTopFrame()) {
       if (!behaviorClass.runInIframe) {
-        behaviorLog(`Behavior class ${name}: not running in iframes (.runInIframe not set)`, "debug");
+        behaviorLog(
+          `Behavior class ${name}: not running in iframes (.runInIframe not set)`,
+          "debug",
+        );
         return;
       }
     }
@@ -213,7 +254,7 @@ export class BehaviorManager {
     this.selectMainBehavior();
     if (this.mainBehavior?.awaitPageLoad) {
       behaviorLog("Waiting for custom page load via behavior");
-      await this.mainBehavior.awaitPageLoad({Lib});
+      await this.mainBehavior.awaitPageLoad({ Lib });
     } else {
       behaviorLog("No custom wait behavior");
     }
@@ -234,7 +275,7 @@ export class BehaviorManager {
 
     await awaitLoad();
 
-    this.behaviors.forEach(x => {
+    this.behaviors.forEach((x) => {
       const id = x.id || x.constructor.id || "(Unnamed)";
       behaviorLog("Starting behavior: " + id, "debug");
       x.start();
@@ -244,10 +285,15 @@ export class BehaviorManager {
 
     await sleep(500);
 
-    const allBehaviors = Promise.allSettled(this.behaviors.map(x => x.done()));
+    const allBehaviors = Promise.allSettled(
+      this.behaviors.map((x) => x.done()),
+    );
 
     if (this.timeout) {
-      behaviorLog(`Waiting for behaviors to finish or ${this.timeout}ms timeout`, "debug");
+      behaviorLog(
+        `Waiting for behaviors to finish or ${this.timeout}ms timeout`,
+        "debug",
+      );
       await Promise.race([allBehaviors, sleep(this.timeout)]);
     } else {
       behaviorLog("Waiting for behaviors to finish", "debug");
@@ -262,7 +308,7 @@ export class BehaviorManager {
   }
 
   async runOne(name, behaviorOpts = {}) {
-    const siteBehaviorClass = siteBehaviors.find(b => b.name === name);
+    const siteBehaviorClass = siteBehaviors.find((b) => b.name === name);
     if (typeof siteBehaviorClass === "undefined") {
       console.error(`No behavior of name ${name} found`);
       return;
@@ -277,12 +323,12 @@ export class BehaviorManager {
 
   pause() {
     behaviorLog("Pausing Main Behavior" + this.mainBehaviorClass.name);
-    this.behaviors.forEach(x => x.pause());
+    this.behaviors.forEach((x) => x.pause());
   }
 
   unpause() {
     // behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
-    this.behaviors.forEach(x => x.unpause());
+    this.behaviors.forEach((x) => x.unpause());
   }
 
   doAsyncFetch(url) {
@@ -291,17 +337,28 @@ export class BehaviorManager {
   }
 
   isInTopFrame() {
-    return self.window.top === self.window || window["__WB_replay_top"] === self.window;
+    return (
+      self.window.top === self.window ||
+      window["__WB_replay_top"] === self.window
+    );
   }
 
-  async extractLinks(selector = DEFAULT_LINK_SELECTOR, extractName = "href", attrOnly = false) {
-    this.linkOpts = {selector, extractName, attrOnly};
+  async extractLinks(
+    selector = DEFAULT_LINK_SELECTOR,
+    extractName = "href",
+    attrOnly = false,
+  ) {
+    this.linkOpts = { selector, extractName, attrOnly };
     checkToJsonOverride();
     return await this.extractLinksActual();
   }
 
   async extractLinksActual() {
-    const {selector = DEFAULT_LINK_SELECTOR, extractName = DEFAULT_LINK_EXTRACT, attrOnly = false} = this.linkOpts;
+    const {
+      selector = DEFAULT_LINK_SELECTOR,
+      extractName = DEFAULT_LINK_EXTRACT,
+      attrOnly = false,
+    } = this.linkOpts;
 
     const urls = new Set<string>();
 
@@ -312,7 +369,7 @@ export class BehaviorManager {
         value = elem.getAttribute(extractName);
       }
       // set if got a string
-      if (typeof(value) === "string") {
+      if (typeof value === "string") {
         urls.add(value);
       }
     });
@@ -326,7 +383,6 @@ export class BehaviorManager {
     await Promise.allSettled(promises);
   }
 }
-
 
 _setBehaviorManager(BehaviorManager);
 

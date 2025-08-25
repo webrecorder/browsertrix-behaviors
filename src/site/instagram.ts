@@ -1,4 +1,5 @@
-const subpostNextOnlyChevron = "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
+const subpostNextOnlyChevron =
+  "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
 
 const Q = {
   rootPath: "//main/div/div[2]/div",
@@ -10,10 +11,11 @@ const Q = {
   postLoading: "//*[@aria-label='Loading...']",
   subpostNextOnlyChevron,
   subpostPrevNextChevron: subpostNextOnlyChevron + "[2]",
-  commentRoot: "//article[@role='presentation']/div[1]/div[2]//ul/div[last()]/div/div",
+  commentRoot:
+    "//article[@role='presentation']/div[1]/div[2]//ul/div[last()]/div/div",
   viewReplies: "ul/li//button[span[not(count(*)) and contains(text(), '(')]]",
   loadMore: "//button[span[@aria-label]]",
-  pageLoadWaitUntil: "//main"
+  pageLoadWaitUntil: "//main",
 };
 
 export class InstagramPostsBehavior {
@@ -33,7 +35,7 @@ export class InstagramPostsBehavior {
         slides: 0,
         rows: 0,
         comments: 0,
-      }
+      },
     };
   }
 
@@ -64,7 +66,7 @@ export class InstagramPostsBehavior {
     return child.nextElementSibling;
   }
 
-  async* iterRow(ctx) {
+  async *iterRow(ctx) {
     const { RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
     const root = xpathNode(Q.rootPath);
 
@@ -93,17 +95,24 @@ export class InstagramPostsBehavior {
     }
   }
 
-  async* viewStandalonePost(ctx, origLoc) {
-    const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } = ctx.Lib;
+  async *viewStandalonePost(ctx, origLoc) {
+    const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } =
+      ctx.Lib;
     const root = xpathNode(Q.rootPath);
 
     if (!root?.firstElementChild) {
       return;
     }
 
-    const firstPostHref = xpathString(Q.childMatchSelect, root.firstElementChild);
+    const firstPostHref = xpathString(
+      Q.childMatchSelect,
+      root.firstElementChild,
+    );
 
-    yield getState(ctx, "Loading single post view for first post: " + firstPostHref);
+    yield getState(
+      ctx,
+      "Loading single post view for first post: " + firstPostHref,
+    );
 
     window.history.replaceState({}, "", firstPostHref);
     window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
@@ -113,14 +122,20 @@ export class InstagramPostsBehavior {
 
     await sleep(waitUnit * 5);
 
-    await waitUntil(() => (root2 = xpathNode(Q.rootPath)) !== root && root2, waitUnit * 5);
+    await waitUntil(
+      () => (root2 = xpathNode(Q.rootPath)) !== root && root2,
+      waitUnit * 5,
+    );
 
     await sleep(waitUnit * 5);
 
     window.history.replaceState({}, "", origLoc);
     window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
 
-    await waitUntil(() => (root3 = xpathNode(Q.rootPath)) !== root2 && root3, waitUnit * 5);
+    await waitUntil(
+      () => (root3 = xpathNode(Q.rootPath)) !== root2 && root3,
+      waitUnit * 5,
+    );
     //}
   }
 
@@ -134,7 +149,11 @@ export class InstagramPostsBehavior {
       next.click();
       await sleep(waitUnit * 5);
 
-      yield getState(ctx, `Loading Slide ${++count} for ${window.location.href}`, "slides");
+      yield getState(
+        ctx,
+        `Loading Slide ${++count} for ${window.location.href}`,
+        "slides",
+      );
 
       next = xpathNode(Q.subpostPrevNextChevron);
     }
@@ -176,7 +195,11 @@ export class InstagramPostsBehavior {
         viewReplies = getViewRepliesButton(child);
       }
 
-      if (child.nextElementSibling && child.nextElementSibling.tagName === "LI" && !child.nextElementSibling.nextElementSibling) {
+      if (
+        child.nextElementSibling &&
+        child.nextElementSibling.tagName === "LI" &&
+        !child.nextElementSibling.nextElementSibling
+      ) {
         const loadMore = xpathNode(Q.loadMore, child.nextElementSibling);
         if (loadMore) {
           loadMore.click();
@@ -192,7 +215,7 @@ export class InstagramPostsBehavior {
     return commentsLoaded;
   }
 
-  async* iterPosts(ctx, next) {
+  async *iterPosts(ctx, next) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     //let count = 0;
 
@@ -216,20 +239,17 @@ export class InstagramPostsBehavior {
     await sleep(waitUnit * 5);
   }
 
-  async* handleSinglePost(ctx) {
+  async *handleSinglePost(ctx) {
     const { getState, sleep } = ctx.Lib;
 
     yield* this.iterSubposts(ctx);
 
     yield getState(ctx, "Loaded Comments", "comments");
 
-    await Promise.race([
-      this.iterComments(ctx),
-      sleep(this.maxCommentsTime)
-    ]);
+    await Promise.race([this.iterComments(ctx), sleep(this.maxCommentsTime)]);
   }
 
-  async* run(ctx) {
+  async *run(ctx) {
     if (window.location.pathname.startsWith("/p/")) {
       yield* this.handleSinglePost(ctx);
       return;
@@ -268,6 +288,9 @@ export class InstagramPostsBehavior {
 
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 
-    assertContentValid(() => !!document.querySelector("*[aria-label='New post']"), "not_logged_in");
+    assertContentValid(
+      () => !!document.querySelector("*[aria-label='New post']"),
+      "not_logged_in",
+    );
   }
 }

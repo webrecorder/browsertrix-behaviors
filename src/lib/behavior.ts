@@ -23,7 +23,9 @@ export class Behavior extends BackgroundBehavior {
   _unpause: any;
   state: any;
   scrollOpts: {
-    behavior: string, block: string, inline: string
+    behavior: string;
+    block: string;
+    inline: string;
   };
 
   constructor() {
@@ -87,9 +89,7 @@ export class Behavior extends BackgroundBehavior {
     return { state: this.state, msg };
   }
 
-  cleanup() {
-
-  }
+  cleanup() {}
 
   async awaitPageLoad(_: any) {
     // wait for initial page load here
@@ -100,12 +100,12 @@ export class Behavior extends BackgroundBehavior {
       self["__bx_behaviors"].load(this);
     } else {
       console.warn(
-        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`
+        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`,
       );
     }
   }
 
-  async*[Symbol.asyncIterator]() {
+  async *[Symbol.asyncIterator]() {
     yield;
   }
 }
@@ -125,8 +125,8 @@ interface StaticAbstractBehavior {
   init: () => any;
 }
 
-type AbstractBehavior =
-  (new () => AbstractBehaviorInst) & StaticAbstractBehavior;
+type AbstractBehavior = (new () => AbstractBehaviorInst) &
+  StaticAbstractBehavior;
 
 export class BehaviorRunner extends BackgroundBehavior {
   inst: AbstractBehaviorInst;
@@ -143,7 +143,7 @@ export class BehaviorRunner extends BackgroundBehavior {
   constructor(behavior: AbstractBehavior, mainOpts = {}) {
     super();
     this.behaviorProps = behavior;
-    this.inst = new behavior;
+    this.inst = new behavior();
 
     if (
       typeof this.inst.run !== "function" ||
@@ -152,9 +152,9 @@ export class BehaviorRunner extends BackgroundBehavior {
       throw Error("Invalid behavior: missing `async run*` instance method");
     }
 
-    let {state, opts} = behavior.init();
+    let { state, opts } = behavior.init();
     state = state || {};
-    opts = opts ? {...opts, ...mainOpts} : mainOpts;
+    opts = opts ? { ...opts, ...mainOpts } : mainOpts;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const log = async (data: any, type: string) => this.wrappedLog(data, type);
 
@@ -169,11 +169,14 @@ export class BehaviorRunner extends BackgroundBehavior {
   wrappedLog(data: any, type = "info") {
     let logData;
     if (typeof data === "string" || data instanceof String) {
-      logData = {msg: data}
+      logData = { msg: data };
     } else {
       logData = data;
     }
-    this.log({...logData, behavior: this.behaviorProps.id, siteSpecific: true}, type);
+    this.log(
+      { ...logData, behavior: this.behaviorProps.id, siteSpecific: true },
+      type,
+    );
   }
 
   start() {
@@ -194,9 +197,9 @@ export class BehaviorRunner extends BackgroundBehavior {
           await this.paused;
         }
       }
-      this.debug({msg: "done!", behavior: this.behaviorProps.id});
+      this.debug({ msg: "done!", behavior: this.behaviorProps.id });
     } catch (e) {
-      this.error({msg: e.toString(), behavior: this.behaviorProps.id});
+      this.error({ msg: e.toString(), behavior: this.behaviorProps.id });
     }
   }
 
@@ -217,9 +220,7 @@ export class BehaviorRunner extends BackgroundBehavior {
     }
   }
 
-  cleanup() {
-
-  }
+  cleanup() {}
 
   async awaitPageLoad() {
     if (this.inst.awaitPageLoad) {
@@ -232,7 +233,7 @@ export class BehaviorRunner extends BackgroundBehavior {
       self["__bx_behaviors"].load(this);
     } else {
       console.warn(
-        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`
+        `Could not load ${this.name} behavior: window.__bx_behaviors is not initialized`,
       );
     }
   }

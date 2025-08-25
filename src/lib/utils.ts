@@ -21,7 +21,13 @@ export async function waitUntil(pred, interval = waitUnit) {
   }
 }
 
-export async function waitUntilNode(path, root = document, old = null, timeout = 1000, interval = waitUnit) {
+export async function waitUntilNode(
+  path,
+  root = document,
+  old = null,
+  timeout = 1000,
+  interval = waitUnit,
+) {
   let node = null;
   let stop = false;
   const waitP = waitUntil(() => {
@@ -29,7 +35,10 @@ export async function waitUntilNode(path, root = document, old = null, timeout =
     return stop || (node !== old && node !== null);
   }, interval);
   const timeoutP = new Promise((r) =>
-    setTimeout(() => { stop = true; r("TIMEOUT"); }, timeout)
+    setTimeout(() => {
+      stop = true;
+      r("TIMEOUT");
+    }, timeout),
   );
   await Promise.race([waitP, timeoutP]);
   return node;
@@ -70,26 +79,30 @@ function restoreToJson(obj: any) {
 }
 
 function unsetAllJson() {
-  unsetToJson((Object as any));
-  unsetToJson((Object.prototype as any));
-  unsetToJson((Array as any));
-  unsetToJson((Array.prototype as any));
+  unsetToJson(Object as any);
+  unsetToJson(Object.prototype as any);
+  unsetToJson(Array as any);
+  unsetToJson(Array.prototype as any);
 }
 
 function restoreAllJson() {
-  restoreToJson((Object as any));
-  restoreToJson((Object.prototype as any));
-  restoreToJson((Array as any));
-  restoreToJson((Array.prototype as any));
+  restoreToJson(Object as any);
+  restoreToJson(Object.prototype as any);
+  restoreToJson(Array as any);
+  restoreToJson(Array.prototype as any);
 }
 
 let needUnsetToJson = false;
 
 export function checkToJsonOverride() {
-  needUnsetToJson = (!!(Object as any).toJSON || !!(Object.prototype as any).toJSON || !!(Array as any).toJSON || !!(Array.prototype as any).toJSON);
+  needUnsetToJson =
+    !!(Object as any).toJSON ||
+    !!(Object.prototype as any).toJSON ||
+    !!(Array as any).toJSON ||
+    !!(Array.prototype as any).toJSON;
 }
 
-export async function callBinding(binding, obj) : Promise<any> {
+export async function callBinding(binding, obj): Promise<any> {
   try {
     if (needUnsetToJson) {
       unsetAllJson();
@@ -110,22 +123,22 @@ export async function behaviorLog(data, type = "debug") {
   }
 }
 
-export async function addLink(url) : Promise<void> {
-  if (typeof(self["__bx_addLink"]) === "function") {
+export async function addLink(url): Promise<void> {
+  if (typeof self["__bx_addLink"] === "function") {
     return await callBinding(self["__bx_addLink"], url);
   }
 }
 
-export async function doExternalFetch(url) : Promise<boolean> {
-  if (typeof(self["__bx_fetch"]) === "function") {
+export async function doExternalFetch(url): Promise<boolean> {
+  if (typeof self["__bx_fetch"] === "function") {
     return await callBinding(self["__bx_fetch"], url);
   }
 
   return false;
 }
 
-export async function addToExternalSet(url) : Promise<boolean> {
-  if (typeof(self["__bx_addSet"]) === "function") {
+export async function addToExternalSet(url): Promise<boolean> {
+  if (typeof self["__bx_addSet"] === "function") {
     return await callBinding(self["__bx_addSet"], url);
   }
 
@@ -134,29 +147,32 @@ export async function addToExternalSet(url) : Promise<boolean> {
 }
 
 export async function waitForNetworkIdle(idleTime = 500, concurrency = 0) {
-  if (typeof(self["__bx_netIdle"]) === "function") {
-    return await callBinding(self["__bx_netIdle"], {idleTime, concurrency});
+  if (typeof self["__bx_netIdle"] === "function") {
+    return await callBinding(self["__bx_netIdle"], { idleTime, concurrency });
   }
 }
 
-export async function initFlow(params) : Promise<number> {
-  if (typeof(self["__bx_initFlow"]) === "function") {
+export async function initFlow(params): Promise<number> {
+  if (typeof self["__bx_initFlow"] === "function") {
     return await callBinding(self["__bx_initFlow"], params);
   }
 
   return -1;
 }
 
-export async function nextFlowStep(id: number) : Promise<any> {
-  if (typeof(self["__bx_nextFlowStep"]) === "function") {
+export async function nextFlowStep(id: number): Promise<any> {
+  if (typeof self["__bx_nextFlowStep"] === "function") {
     return await callBinding(self["__bx_nextFlowStep"], id);
   }
 
-  return {done: true, msg: ""};
+  return { done: true, msg: "" };
 }
 
-export function assertContentValid(assertFunc: () => boolean, reason = "invalid") {
-  if (typeof(self["__bx_contentCheckFailed"]) === "function") {
+export function assertContentValid(
+  assertFunc: () => boolean,
+  reason = "invalid",
+) {
+  if (typeof self["__bx_contentCheckFailed"] === "function") {
     if (!assertFunc()) {
       behaviorLog("Behavior content check failed: " + reason, "error");
       callBinding(self["__bx_contentCheckFailed"], reason);
@@ -164,10 +180,9 @@ export function assertContentValid(assertFunc: () => boolean, reason = "invalid"
   }
 }
 
-
 export async function openWindow(url) {
   if (self["__bx_open"]) {
-    const p = new Promise((resolve) => self["__bx_openResolve"] = resolve);
+    const p = new Promise((resolve) => (self["__bx_openResolve"] = resolve));
     await callBinding(self["__bx_open"], { url });
 
     let win = null;
@@ -209,7 +224,7 @@ export class RestoreState {
   async restore(rootPath, childMatch) {
     let root = null;
 
-    while (root = xpathNode(rootPath), !root) {
+    while (((root = xpathNode(rootPath)), !root)) {
       await sleep(100);
     }
 
@@ -237,9 +252,13 @@ export class HistoryState {
     const backButton = xpathNode(backButtonQuery);
 
     return new Promise((resolve) => {
-      window.addEventListener("popstate", () => {
-        resolve(null);
-      }, { once: true });
+      window.addEventListener(
+        "popstate",
+        () => {
+          resolve(null);
+        },
+        { once: true },
+      );
 
       if (backButton) {
         backButton["click"]();
@@ -253,12 +272,22 @@ export class HistoryState {
 // ===========================================================================
 export function xpathNode(path, root?) {
   root = root || document;
-  return document.evaluate(path, root, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+  return document.evaluate(
+    path,
+    root,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+  ).singleNodeValue;
 }
 
 export function* xpathNodes(path, root) {
   root = root || document;
-  const iter = document.evaluate(path, root, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);
+  const iter = document.evaluate(
+    path,
+    root,
+    null,
+    XPathResult.ORDERED_NODE_ITERATOR_TYPE,
+  );
   let result = null;
   while ((result = iter.iterateNext()) !== null) {
     yield result;
@@ -267,7 +296,8 @@ export function* xpathNodes(path, root) {
 
 export function xpathString(path, root) {
   root = root || document;
-  return document.evaluate(path, root, null, XPathResult.STRING_TYPE).stringValue;
+  return document.evaluate(path, root, null, XPathResult.STRING_TYPE)
+    .stringValue;
 }
 
 export async function* iterChildElem(root, timeout, totalTimeout) {
@@ -279,7 +309,7 @@ export async function* iterChildElem(root, timeout, totalTimeout) {
     if (!child.nextElementSibling) {
       await Promise.race([
         waitUntil(() => !!child.nextElementSibling, timeout),
-        sleep(totalTimeout)
+        sleep(totalTimeout),
       ]);
     }
 
@@ -288,20 +318,26 @@ export async function* iterChildElem(root, timeout, totalTimeout) {
 }
 
 export async function* iterChildMatches(
-  path, root, interval = waitUnit, timeout = 5000
+  path,
+  root,
+  interval = waitUnit,
+  timeout = 5000,
 ) {
   let node = xpathNode(`.//${path}`, root);
   const getMatch = (node) => xpathNode(`./following-sibling::${path}`, node);
   while (node) {
     yield node;
     let next = getMatch(node);
-    if (next) { node = next; continue; }
+    if (next) {
+      node = next;
+      continue;
+    }
     await Promise.race([
       waitUntil(() => {
         next = getMatch(node);
         return next;
       }, interval),
-      sleep(timeout)
+      sleep(timeout),
     ]);
     node = next;
   }
@@ -313,8 +349,10 @@ export function isInViewport(elem) {
   return (
     bounding.top >= 0 &&
     bounding.left >= 0 &&
-    bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-    bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
+    bounding.bottom <=
+      (window.innerHeight || document.documentElement.clientHeight) &&
+    bounding.right <=
+      (window.innerWidth || document.documentElement.clientWidth)
   );
 }
 
@@ -324,14 +362,19 @@ export function scrollToOffset(element, offset = 0) {
   window.scrollTo({ top: topPosition, behavior: "smooth" });
 }
 
-export function scrollIntoView(element, opts = {
-  behavior: "smooth", block: "center", inline: "center"
-}) {
+export function scrollIntoView(
+  element,
+  opts = {
+    behavior: "smooth",
+    block: "center",
+    inline: "center",
+  },
+) {
   element.scrollIntoView(opts);
 }
 
 export function getState(ctx: any, msg: string, incrValue?: string) {
-  if (typeof(ctx.state) === "undefined") {
+  if (typeof ctx.state === "undefined") {
     ctx.state = {};
   }
   if (incrValue) {

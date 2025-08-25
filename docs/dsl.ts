@@ -17,18 +17,19 @@ const ViewMoreThread = (q: XPath) =>
 // Behaviors
 
 const viewThread = (bx: Behavior) =>
-  bx.scrollIntoView()
-    .yield("View thread", "threads");
+  bx.scrollIntoView().yield("View thread", "threads");
 
 const expandThread = (bx: Behavior) =>
-  bx.findOne(ViewMoreReplies, { timeout: 1000 })
+  bx
+    .findOne(ViewMoreReplies, { timeout: 1000 })
     .yield("Expand thread", "expandedThreads")
     .scrollIntoView()
     .wait(500)
     .click();
 
 const crawlThread = (bx: Behavior) =>
-  bx.findOne(ViewMoreThread, { timeout: 1000 })
+  bx
+    .findOne(ViewMoreThread, { timeout: 1000 })
     .yield("View more replies", "replies")
     .scrollIntoView()
     .wait(500)
@@ -36,10 +37,11 @@ const crawlThread = (bx: Behavior) =>
     .chain(crawlThread);
 
 export default (bx: Behavior) =>
-  bx.findOne(CommentListContainer)
+  bx
+    .findOne(CommentListContainer)
     .yield("Iterating Commentlist")
     .iterateMatches(
       CommentItemContainer,
       (bx: Behavior) => bx.chain(viewThread, expandThread, crawlThread),
-      { waitForMore: 2000 }
+      { waitForMore: 2000 },
     );

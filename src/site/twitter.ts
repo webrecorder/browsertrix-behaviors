@@ -1,16 +1,23 @@
 const Q = {
-  rootPath: "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]//div[@style]",
+  rootPath:
+    "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]//div[@style]",
   anchor: ".//article",
-  childMatchSelect: "string(.//article//a[starts-with(@href, '/') and @aria-label]/@href)",
+  childMatchSelect:
+    "string(.//article//a[starts-with(@href, '/') and @aria-label]/@href)",
   childMatch: "child::div[.//a[@href='$1']]",
-  expand: ".//div[@role='button' and not(@aria-haspopup) and not(@data-testid)]",
+  expand:
+    ".//div[@role='button' and not(@aria-haspopup) and not(@data-testid)]",
   quote: ".//div[@role='blockquote' and @aria-haspopup='false']",
-  image: ".//a[@role='link' and starts-with(@href, '/') and contains(@href, '/photo/')]",
-  imageFirstNext: "//div[@aria-roledescription='carousel']/div[2]/div[1]//div[@role='button']",
-  imageNext: "//div[@aria-roledescription='carousel']/div[2]/div[2]//div[@role='button']",
+  image:
+    ".//a[@role='link' and starts-with(@href, '/') and contains(@href, '/photo/')]",
+  imageFirstNext:
+    "//div[@aria-roledescription='carousel']/div[2]/div[1]//div[@role='button']",
+  imageNext:
+    "//div[@aria-roledescription='carousel']/div[2]/div[2]//div[@role='button']",
   imageClose: "//div[@role='presentation']/div[@role='button' and @aria-label]",
   backButton: "//div[@data-testid='titleContainer']//div[@role='button']",
-  viewSensitive: ".//a[@href='/settings/content_you_see']/parent::div/parent::div/parent::div//div[@role='button']",
+  viewSensitive:
+    ".//a[@href='/settings/content_you_see']/parent::div/parent::div/parent::div//div[@role='button']",
   progress: ".//*[@role='progressbar']",
   promoted: ".//div[data-testid='placementTracking']",
 };
@@ -30,11 +37,11 @@ export class TwitterTimelineBehavior {
       state: {
         tweets: 0,
         images: 0,
-        videos: 0
+        videos: 0,
       },
       opts: {
-        maxDepth: 0
-      }
+        maxDepth: 0,
+      },
     };
   }
 
@@ -89,8 +96,9 @@ export class TwitterTimelineBehavior {
     return child;
   }
 
-  async* infScroll(ctx) {
-    const { scrollIntoView, RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
+  async *infScroll(ctx) {
+    const { scrollIntoView, RestoreState, sleep, waitUnit, xpathNode } =
+      ctx.Lib;
     const root = xpathNode(Q.rootPath);
 
     if (!root) {
@@ -131,7 +139,7 @@ export class TwitterTimelineBehavior {
     }
   }
 
-  async* mediaPlaying(ctx, tweet) {
+  async *mediaPlaying(ctx, tweet) {
     const { getState, sleep, xpathNode, xpathString } = ctx.Lib;
     const media = xpathNode("(.//video | .//audio)", tweet);
     if (!media || media.paused) {
@@ -141,14 +149,21 @@ export class TwitterTimelineBehavior {
     let mediaTweetUrl = null;
 
     try {
-      mediaTweetUrl = new URL(xpathString(Q.childMatchSelect, tweet.parentElement), window.location.origin).href;
+      mediaTweetUrl = new URL(
+        xpathString(Q.childMatchSelect, tweet.parentElement),
+        window.location.origin,
+      ).href;
     } catch (e) {
       console.warn(e);
     }
 
     // no need to wait for mp4s, should be loaded fully automatically
     if (media.src.startsWith("https://") && media.src.indexOf(".mp4") > 0) {
-      yield getState(ctx, `Loading video for ${mediaTweetUrl || "unknown"}`, "videos");
+      yield getState(
+        ctx,
+        `Loading video for ${mediaTweetUrl || "unknown"}`,
+        "videos",
+      );
       return;
     }
 
@@ -177,7 +192,7 @@ export class TwitterTimelineBehavior {
     await Promise.race([p, sleep(60000)]);
   }
 
-  async* clickImages(ctx, tweet) {
+  async *clickImages(ctx, tweet) {
     const { getState, HistoryState, sleep, waitUnit, xpathNode } = ctx.Lib;
     const imagePopup = xpathNode(Q.image, tweet);
 
@@ -211,7 +226,7 @@ export class TwitterTimelineBehavior {
     }
   }
 
-  async* clickTweet(ctx, tweet, depth) {
+  async *clickTweet(ctx, tweet, depth) {
     const { getState, HistoryState, sleep, waitUnit } = ctx.Lib;
     const tweetState = new HistoryState(() => tweet.click());
 
@@ -235,7 +250,7 @@ export class TwitterTimelineBehavior {
     }
   }
 
-  async* iterTimeline(ctx, depth = 0) {
+  async *iterTimeline(ctx, depth = 0) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     if (this.seenTweets.has(window.location.href)) {
       return;
@@ -279,13 +294,16 @@ export class TwitterTimelineBehavior {
     }
   }
 
-  async* run(ctx) {
+  async *run(ctx) {
     yield* this.iterTimeline(ctx, 0);
   }
 
   async awaitPageLoad(ctx: any) {
     const { sleep, assertContentValid } = ctx.Lib;
     await sleep(5);
-    assertContentValid(() => !document.documentElement.outerHTML.match(/Log In/i), "not_logged_in");
+    assertContentValid(
+      () => !document.documentElement.outerHTML.match(/Log In/i),
+      "not_logged_in",
+    );
   }
 }

@@ -53,20 +53,27 @@ To integrate behaviors into an automated workflow, here is an short example usin
 
 ```javascript
 // assumes browsertrix-behaviors is installed as a node module
-const behaviors = fs.readFileSync("./node_modules/browsertrix-behaviors/dist/behaviors.js", "utf-8");
+const behaviors = fs.readFileSync(
+  "./node_modules/browsertrix-behaviors/dist/behaviors.js",
+  "utf-8",
+);
 
-await page.evaluateOnNewDocument(behaviors + `
+await page.evaluateOnNewDocument(
+  behaviors +
+    `
 self.__bx_behaviors.init({
   autofetch: true,
   autoplay: true,
   autoscroll: true,
   siteSpecific: true,
 });
-`);
+`,
+);
 
 // call and await run on top frame and all child iframes
-await Promise.allSettled(page.frames().map(frame => frame.evaluate("self.__bx_behaviors.run()")));
-
+await Promise.allSettled(
+  page.frames().map((frame) => frame.evaluate("self.__bx_behaviors.run()")),
+);
 ```
 
 see [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) for a complete working example of injection using puppeteer.
@@ -75,7 +82,7 @@ see [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) fo
 
 Once the behavior script has been injected, run: `__bx_behaviors.init(opts)` to initialize which behaviors should be used. `opts` includes several boolean options:
 
-- `autofetch` - enable background autofetching of img srcsets, stylesheets (when possible) and any data-* attribute
+- `autofetch` - enable background autofetching of img srcsets, stylesheets (when possible) and any data-\* attribute
 - `autoplay` - attempt to automatically play and video/audio, or fetch the URLs for any video streams found on the page.
 - `autoscroll` - attempt to repeatedly scroll the page to the bottom as far as possible.
 - `timeout` - set a timeout (in ms) for all behaviors to finish.

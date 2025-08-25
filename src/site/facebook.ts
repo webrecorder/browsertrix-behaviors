@@ -1,28 +1,38 @@
 const Q = {
   feed: "//div[@role='feed']",
   article: ".//div[@role='article']",
-  pageletPostList: "//div[@data-pagelet='page']/div[@role='main']//div[@role='main']/div",
-  pageletProfilePostList: "//div[@data-pagelet='page']//div[@data-pagelet='ProfileTimeline']",
+  pageletPostList:
+    "//div[@data-pagelet='page']/div[@role='main']//div[@role='main']/div",
+  pageletProfilePostList:
+    "//div[@data-pagelet='page']//div[@data-pagelet='ProfileTimeline']",
   articleToPostList: "//div[@role='article']/../../../../div",
   photosOrVideos: `.//a[(contains(@href, '/photos/') or contains(@href, '/photo/?') or contains(@href, '/videos/')) and (starts-with(@href, '${window.location.origin}/') or starts-with(@href, '/'))]`,
   postQuery: ".//a[contains(@href, '/posts/')]",
   extraLabel: "//*[starts-with(text(), '+')]",
-  nextSlideQuery: "//div[@data-name='media-viewer-nav-container']/div[@data-visualcompletion][2]//div[@role='button']",
-  nextSlide: "//div[@aria-hidden='false']//div[@role='button' and not(@aria-hidden) and @aria-label]",
+  nextSlideQuery:
+    "//div[@data-name='media-viewer-nav-container']/div[@data-visualcompletion][2]//div[@role='button']",
+  nextSlide:
+    "//div[@aria-hidden='false']//div[@role='button' and not(@aria-hidden) and @aria-label]",
   commentList: ".//ul[(../h3) or (../h4)]",
   commentMoreReplies: "./div[2]/div[1]/div[2]/div[@role='button']",
-  commentMoreComments: "./following-sibling::div/div/div[2][@role='button'][./span/span]",
+  commentMoreComments:
+    "./following-sibling::div/div/div[2][@role='button'][./span/span]",
   viewComments: ".//h4/..//div[@role='button']",
   photoCommentList: "//ul[../h2]",
-  firstPhotoThumbnail: "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']",
-  firstVideoThumbnail: "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']",
-  firstVideoSimple: "//div[@role='main']//a[contains(@href, '/videos/') and @aria-hidden!='true']",
-  mainVideo: "//div[@data-pagelet='root']//div[@role='dialog']//div[@role='main']//video",
-  nextVideo: "following::a[contains(@href, '/videos/') and @aria-hidden!='true']",
+  firstPhotoThumbnail:
+    "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']",
+  firstVideoThumbnail:
+    "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']",
+  firstVideoSimple:
+    "//div[@role='main']//a[contains(@href, '/videos/') and @aria-hidden!='true']",
+  mainVideo:
+    "//div[@data-pagelet='root']//div[@role='dialog']//div[@role='main']//video",
+  nextVideo:
+    "following::a[contains(@href, '/videos/') and @aria-hidden!='true']",
   isPhotoVideoPage: /^.*facebook\.com\/[^/]+\/(photos|videos)\/.+/,
   isPhotosPage: /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/,
   isVideosPage: /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/,
-  pageLoadWaitUntil: "//div[@role='main']"
+  pageLoadWaitUntil: "//div[@role='main']",
 };
 
 export class FacebookTimelineBehavior {
@@ -33,12 +43,14 @@ export class FacebookTimelineBehavior {
 
   static isMatch() {
     // match just for posts for now
-    return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\/.*\/posts\//);
+    return !!window.location.href.match(
+      /https:\/\/(www\.)?facebook\.com\/.*\/posts\//,
+    );
   }
 
   static init() {
     return {
-      state: {}
+      state: {},
     };
   }
 
@@ -48,12 +60,17 @@ export class FacebookTimelineBehavior {
     this.allowNewWindow = false;
   }
 
-  async* iterPostFeeds(ctx) {
-    const { iterChildElem, waitUnit, waitUntil, xpathNode, xpathNodes } = ctx.Lib;
+  async *iterPostFeeds(ctx) {
+    const { iterChildElem, waitUnit, waitUntil, xpathNode, xpathNodes } =
+      ctx.Lib;
     const feeds = Array.from(xpathNodes(Q.feed));
     if (feeds && feeds.length) {
       for (const feed of feeds) {
-        for await (const post of iterChildElem(feed, waitUnit, waitUntil * 10)) {
+        for await (const post of iterChildElem(
+          feed,
+          waitUnit,
+          waitUntil * 10,
+        )) {
           yield* this.viewPost(ctx, xpathNode(Q.article, post));
         }
       }
@@ -77,7 +94,7 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async* viewPost(ctx, post, maxExpands = 2) {
+  async *viewPost(ctx, post, maxExpands = 2) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
     if (!post) {
       return;
@@ -119,7 +136,7 @@ export class FacebookTimelineBehavior {
     await sleep(waitUnit * 5);
   }
 
-  async* viewPhotosOrVideos(ctx, post) {
+  async *viewPhotosOrVideos(ctx, post) {
     const { getState, sleep, waitUnit, xpathNode, xpathNodes } = ctx.Lib;
     const objects: any[] = Array.from(xpathNodes(Q.photosOrVideos, post));
 
@@ -170,7 +187,7 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async* viewExtraObjects(ctx, obj, type, openNew) {
+  async *viewExtraObjects(ctx, obj, type, openNew) {
     const { getState, sleep, waitUnit, waitUntil, xpathNode } = ctx.Lib;
     const extraLabel = xpathNode(Q.extraLabel, obj);
 
@@ -215,7 +232,7 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async* iterComments(ctx, commentRootUL, maxExpands = 2) {
+  async *iterComments(ctx, commentRootUL, maxExpands = 2) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
     if (!commentRootUL) {
       await sleep(waitUnit * 5);
@@ -262,8 +279,9 @@ export class FacebookTimelineBehavior {
     await sleep(waitUnit * 2);
   }
 
-  async* iterPhotoSlideShow(ctx) {
-    const { getState, scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } = ctx.Lib;
+  async *iterPhotoSlideShow(ctx) {
+    const { getState, scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } =
+      ctx.Lib;
     const firstPhoto = xpathNode(Q.firstPhotoThumbnail);
 
     if (!firstPhoto) {
@@ -289,7 +307,7 @@ export class FacebookTimelineBehavior {
 
       await Promise.race([
         waitUntil(() => window.location.href !== lastHref, waitUnit * 2),
-        sleep(3000)
+        sleep(3000),
       ]);
 
       if (window.location.href === lastHref) {
@@ -305,15 +323,24 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async* iterAllVideos(ctx) {
-    const { getState, scrollIntoView, sleep, waitUnit, waitUntil, xpathNode, xpathNodes } = ctx.Lib;
+  async *iterAllVideos(ctx) {
+    const {
+      getState,
+      scrollIntoView,
+      sleep,
+      waitUnit,
+      waitUntil,
+      xpathNode,
+      xpathNodes,
+    } = ctx.Lib;
     const firstInlineVideo = xpathNode("//video");
     if (firstInlineVideo) {
       scrollIntoView(firstInlineVideo);
       await sleep(waitUnit * 5);
     }
 
-    let videoLink = xpathNode(Q.firstVideoThumbnail) || xpathNode(Q.firstVideoSimple);
+    let videoLink =
+      xpathNode(Q.firstVideoThumbnail) || xpathNode(Q.firstVideoSimple);
 
     if (!videoLink) {
       return;
@@ -340,7 +367,8 @@ export class FacebookTimelineBehavior {
           }
           return false;
         }, waitUnit * 2),
-        sleep(20000)]);
+        sleep(20000),
+      ]);
 
       await sleep(waitUnit * 10);
 
@@ -358,32 +386,32 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async* run(ctx) {
+  async *run(ctx) {
     const { getState, sleep, xpathNode } = ctx.Lib;
     yield getState(ctx, "Starting...");
 
     await sleep(2000);
 
     if (Q.isPhotosPage.exec(window.location.href)) {
-      ctx.state = { "photos": 0, "comments": 0 };
+      ctx.state = { photos: 0, comments: 0 };
       yield* this.iterPhotoSlideShow(ctx);
       return;
     }
 
     if (Q.isVideosPage.exec(window.location.href)) {
-      ctx.state = { "videos": 0, "comments": 0 };
+      ctx.state = { videos: 0, comments: 0 };
       yield* this.iterAllVideos(ctx);
       return;
     }
 
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
-      ctx.state = { "comments": 0 };
+      ctx.state = { comments: 0 };
       const root = xpathNode(Q.photoCommentList);
       yield* this.iterComments(ctx, root, 1000);
       return;
     }
 
-    ctx.state = { "posts": 0, "comments": 0, "videos": 0 };
+    ctx.state = { posts: 0, comments: 0, videos: 0 };
     yield* this.iterPostFeeds(ctx);
   }
 
@@ -395,6 +423,9 @@ export class FacebookTimelineBehavior {
 
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 
-    assertContentValid(() => !!document.querySelector("div[aria-label*='Account Controls' i]"), "not_logged_in");
+    assertContentValid(
+      () => !!document.querySelector("div[aria-label*='Account Controls' i]"),
+      "not_logged_in",
+    );
   }
 }

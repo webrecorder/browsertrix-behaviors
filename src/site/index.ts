@@ -10,7 +10,7 @@ const siteBehaviors = [
   FacebookTimelineBehavior,
   TelegramBehavior,
   TikTokVideoBehavior,
-  TikTokProfileBehavior
+  TikTokProfileBehavior,
 ];
 
 export default siteBehaviors;

@@ -1,10 +1,9 @@
 ---
 name: New Behavior Request
 about: Suggest a New Behavior
-title: 'New Behavior Request For: '
+title: "New Behavior Request For: "
 labels: enhancement
-assignees: ''
-
+assignees: ""
 ---
 
 **What website should this before be applied to?**
