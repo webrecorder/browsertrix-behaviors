@@ -23,7 +23,10 @@
     "build-dev-copy": "webpack --mode development && cat ./dist/behaviors.js | pbcopy",
     "watch": "webpack watch --mode production",
     "watch-dev": "webpack watch --mode development",
-    "lint": "eslint ./src/**/*.ts webpack.config.js"
+    "lint": "eslint --fix index.ts ./src/**/*.ts webpack.config.js",
+    "lint:check": "eslint index.ts ./src/**/*.ts webpack.config.js",
+    "format": "prettier --write . webpack.config.js",
+    "format:check": "prettier --check . webpack.config.js"
   },
   "description": "Browsertrix Behaviors",
   "files": [

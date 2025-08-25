@@ -16,9 +16,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - name: install requirements
+      - name: Install Requirements
         run: yarn install
-      - name: run linter
-        run: yarn run eslint index.ts src/**/*.ts
-      - name: Bulid
+      - name: Lint
+        run: yarn lint:check
+      - name: Check Formatting
+        run: yarn format:check
+      - name: Build
         run: yarn build
