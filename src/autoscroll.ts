@@ -11,7 +11,7 @@ import {
 import { type AutoFetcher } from "./autofetcher";
 
 // ===========================================================================
-export class AutoScroll extends Behavior {
+export class AutoScroll extends Behavior<{}, {}> {
   autoFetcher: AutoFetcher;
   showMoreQuery: string;
   state: { segments: number } = { segments: 1 };
@@ -57,7 +57,7 @@ export class AutoScroll extends Behavior {
     this.lastMsg = msg;
   }
 
-  hasScrollEL(obj) {
+  hasScrollEL(obj: HTMLElement | Document | Window) {
     try {
       return !!self["getEventListeners"](obj).scroll;
     } catch (_) {
@@ -81,12 +81,12 @@ export class AutoScroll extends Behavior {
       return true;
     }
 
-    const lastScrollHeight = self.document.scrollingElement.scrollHeight;
+    const lastScrollHeight = self.document.scrollingElement!.scrollHeight;
     const numFetching = this.autoFetcher.numFetching;
 
     // scroll to almost end of page
     const scrollEnd =
-      document.scrollingElement.scrollHeight * 0.98 - self.innerHeight;
+      document.scrollingElement!.scrollHeight * 0.98 - self.innerHeight;
 
     window.scrollTo({ top: scrollEnd, left: 0, behavior: "smooth" });
 
@@ -95,7 +95,7 @@ export class AutoScroll extends Behavior {
 
     // scroll height changed, should scroll
     if (
-      lastScrollHeight !== self.document.scrollingElement.scrollHeight ||
+      lastScrollHeight !== self.document.scrollingElement!.scrollHeight ||
       numFetching < this.autoFetcher.numFetching
     ) {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -112,7 +112,7 @@ export class AutoScroll extends Behavior {
 
     if (
       (self.window.scrollY + self["scrollHeight"]) /
-        self.document.scrollingElement.scrollHeight <
+        self.document.scrollingElement!.scrollHeight <
       0.9
     ) {
       return false;
@@ -194,7 +194,6 @@ export class AutoScroll extends Behavior {
         showMoreElem = null;
       }
 
-      // eslint-disable-next-line
       self.scrollBy(scrollOpts as ScrollToOptions);
 
       await sleep(interval);
@@ -256,7 +255,6 @@ export class AutoScroll extends Behavior {
         lastScrollHeight = scrollHeight;
       }
 
-      // eslint-disable-next-line
       self.scrollBy(scrollOpts as ScrollToOptions);
 
       await sleep(interval);

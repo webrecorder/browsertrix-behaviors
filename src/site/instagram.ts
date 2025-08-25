@@ -1,4 +1,4 @@
-import { type Context } from "../lib/behavior";
+import { type AbstractBehavior, type Context } from "../lib/behavior";
 
 const subpostNextOnlyChevron =
   "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
@@ -27,7 +27,9 @@ type InstagramState = {
   rows: number;
 };
 
-export class InstagramPostsBehavior {
+export class InstagramPostsBehavior
+  implements AbstractBehavior<InstagramState>
+{
   maxCommentsTime: number;
   postOnlyWindow: WindowProxy | null;
 
@@ -61,10 +63,7 @@ export class InstagramPostsBehavior {
     }
   }
 
-  async waitForNext(
-    ctx: Context<InstagramState, unknown>,
-    child: Element | null,
-  ) {
+  async waitForNext(ctx: Context<InstagramState>, child: Element | null) {
     if (!child) {
       return null;
     }
@@ -78,7 +77,7 @@ export class InstagramPostsBehavior {
     return child.nextElementSibling;
   }
 
-  async *iterRow(ctx: Context<InstagramState, unknown>) {
+  async *iterRow(ctx: Context<InstagramState>) {
     const { RestoreState, sleep, waitUnit, xpathNode } = ctx.Lib;
     const root = xpathNode(Q.rootPath) as Element | null;
 
@@ -110,10 +109,7 @@ export class InstagramPostsBehavior {
     }
   }
 
-  async *viewStandalonePost(
-    ctx: Context<InstagramState, unknown>,
-    origLoc: string,
-  ) {
+  async *viewStandalonePost(ctx: Context<InstagramState>, origLoc: string) {
     const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } =
       ctx.Lib;
     const root = xpathNode(Q.rootPath) as HTMLElement | null;
@@ -157,7 +153,7 @@ export class InstagramPostsBehavior {
     //}
   }
 
-  async *iterSubposts(ctx: Context<InstagramState, unknown>) {
+  async *iterSubposts(ctx: Context<InstagramState>) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     let next = xpathNode(Q.subpostNextOnlyChevron) as HTMLElement | null;
 
@@ -179,7 +175,7 @@ export class InstagramPostsBehavior {
     await sleep(waitUnit * 5);
   }
 
-  async iterComments(ctx: Context<InstagramState, unknown>) {
+  async iterComments(ctx: Context<InstagramState>) {
     const { scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } = ctx.Lib;
     const root = xpathNode(Q.commentRoot) as HTMLElement | null;
 
@@ -236,10 +232,7 @@ export class InstagramPostsBehavior {
     return commentsLoaded;
   }
 
-  async *iterPosts(
-    ctx: Context<InstagramState, unknown>,
-    next: HTMLElement | null,
-  ) {
+  async *iterPosts(ctx: Context<InstagramState>, next: HTMLElement | null) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     //let count = 0;
 
@@ -263,7 +256,7 @@ export class InstagramPostsBehavior {
     await sleep(waitUnit * 5);
   }
 
-  async *handleSinglePost(ctx: Context<InstagramState, unknown>) {
+  async *handleSinglePost(ctx: Context<InstagramState>) {
     const { getState, sleep } = ctx.Lib;
 
     yield* this.iterSubposts(ctx);
@@ -273,7 +266,7 @@ export class InstagramPostsBehavior {
     await Promise.race([this.iterComments(ctx), sleep(this.maxCommentsTime)]);
   }
 
-  async *run(ctx: Context<InstagramState, unknown>) {
+  async *run(ctx: Context<InstagramState>) {
     if (window.location.pathname.startsWith("/p/")) {
       yield* this.handleSinglePost(ctx);
       return;
@@ -304,7 +297,7 @@ export class InstagramPostsBehavior {
     }
   }
 
-  async awaitPageLoad(ctx: Context<InstagramState, unknown>) {
+  async awaitPageLoad(ctx: Context<InstagramState>) {
     const { Lib, log } = ctx;
     const { assertContentValid, waitUntilNode } = Lib;
 

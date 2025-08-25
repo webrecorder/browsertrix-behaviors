@@ -1,4 +1,4 @@
-import { type Context } from "../lib/behavior";
+import { type AbstractBehavior, type Context } from "../lib/behavior";
 
 const Q = {
   commentList: "//div[contains(@class, 'CommentListContainer')]",
@@ -34,7 +34,10 @@ export class TikTokSharedBehavior {
   }
 }
 
-export class TikTokVideoBehavior extends TikTokSharedBehavior {
+export class TikTokVideoBehavior
+  extends TikTokSharedBehavior
+  implements AbstractBehavior<TikTokState, TikTokOpts>
+{
   static id = "TikTokVideo";
 
   static init() {
@@ -100,7 +103,10 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
   }
 }
 
-export class TikTokProfileBehavior extends TikTokSharedBehavior {
+export class TikTokProfileBehavior
+  extends TikTokSharedBehavior
+  implements AbstractBehavior<TikTokState, TikTokOpts>
+{
   static id = "TikTokProfile";
 
   static isMatch() {

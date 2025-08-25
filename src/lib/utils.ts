@@ -1,6 +1,7 @@
 import { type BehaviorManager } from "..";
 import { type Context } from "./behavior";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _logFunc: ((...data: any[]) => void) | null = console.log;
 // @ts-expect-error TODO: what is this, and why is it declared twice, once here and once as a function?
 let _behaviorMgrClass: (cls: typeof BehaviorManager) => void | null = null;
@@ -68,6 +69,7 @@ export async function awaitLoad(iframe?: HTMLIFrameElement) {
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function unsetToJson(obj: any) {
   if (obj.toJSON) {
     try {
@@ -79,6 +81,7 @@ function unsetToJson(obj: any) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function restoreToJson(obj: any) {
   if (obj.__bx__toJSON) {
     try {
@@ -91,40 +94,44 @@ function restoreToJson(obj: any) {
 }
 
 function unsetAllJson() {
-  unsetToJson(Object as any);
-  unsetToJson(Object.prototype as any);
-  unsetToJson(Array as any);
-  unsetToJson(Array.prototype as any);
+  unsetToJson(Object);
+  unsetToJson(Object.prototype);
+  unsetToJson(Array);
+  unsetToJson(Array.prototype);
 }
 
 function restoreAllJson() {
-  restoreToJson(Object as any);
-  restoreToJson(Object.prototype as any);
-  restoreToJson(Array as any);
-  restoreToJson(Array.prototype as any);
+  restoreToJson(Object);
+  restoreToJson(Object.prototype);
+  restoreToJson(Array);
+  restoreToJson(Array.prototype);
 }
 
 let needUnsetToJson = false;
 
+type WithToJSON<T> = T & {
+  toJSON?: () => unknown;
+};
+
 export function checkToJsonOverride() {
   needUnsetToJson =
-    !!(Object as any).toJSON ||
-    !!(Object.prototype as any).toJSON ||
-    !!(Array as any).toJSON ||
-    !!(Array.prototype as any).toJSON;
+    !!(Object as WithToJSON<typeof Object>).toJSON ||
+    !!(Object.prototype as WithToJSON<typeof Object.prototype>).toJSON ||
+    !!(Array as WithToJSON<typeof Array>).toJSON ||
+    !!(Array.prototype as WithToJSON<typeof Array.prototype>).toJSON;
 }
 
-export async function callBinding(
-  binding: (obj: any) => any,
-  obj: any,
-): Promise<any> {
+export async function callBinding<P, R>(
+  binding: (obj: P) => R,
+  obj: P,
+): Promise<R> {
   try {
     if (needUnsetToJson) {
       unsetAllJson();
     }
     return binding(obj);
   } catch (_) {
-    return binding(JSON.stringify(obj));
+    return binding(JSON.stringify(obj) as P);
   } finally {
     if (needUnsetToJson) {
       restoreAllJson();
@@ -189,8 +196,8 @@ export function assertContentValid(
 ) {
   if (typeof self["__bx_contentCheckFailed"] === "function") {
     if (!assertFunc()) {
-      behaviorLog("Behavior content check failed: " + reason, "error");
-      callBinding(self["__bx_contentCheckFailed"], reason);
+      void behaviorLog("Behavior content check failed: " + reason, "error");
+      void callBinding(self["__bx_contentCheckFailed"], reason);
     }
   }
 }
@@ -231,8 +238,7 @@ export function _behaviorMgrClass(cls: typeof BehaviorManager) {
   _behaviorMgrClass = cls;
 }
 
-export function installBehaviors(obj: any) {
-  // @ts-expect-error TODO: fix types here
+export function installBehaviors(obj: Window | WorkerGlobalScope) {
   obj.__bx_behaviors = new _behaviorMgrClass();
 }
 

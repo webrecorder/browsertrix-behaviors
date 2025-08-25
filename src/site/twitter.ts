@@ -1,4 +1,4 @@
-import { type Context } from "../lib/behavior";
+import { type AbstractBehavior, type Context } from "../lib/behavior";
 
 const Q = {
   rootPath:
@@ -24,18 +24,20 @@ const Q = {
   promoted: ".//div[data-testid='placementTracking']",
 };
 
-type TwitterState = Partial<{
-  tweets: number;
-  images: number;
-  videos: number;
-  threads: number;
-}>;
+type TwitterState = {
+  tweets?: number;
+  images?: number;
+  videos?: number;
+  threads?: number;
+};
 
 type TwitterOpts = {
   maxDepth: number;
 };
 
-export class TwitterTimelineBehavior {
+export class TwitterTimelineBehavior
+  implements AbstractBehavior<TwitterState, TwitterOpts>
+{
   seenTweets: Set<string>;
   seenMediaTweets: Set<string>;
 

@@ -53,20 +53,19 @@ export class Autoplay extends BackgroundBehavior {
     while (run) {
       for (const [, elem] of querySelectorAllDeep(
         "video, audio, picture",
-      ).entries()) {
-        interface AutoplayElement extends HTMLMediaElement {
-          __bx_autoplay_found?: boolean;
-        }
-        if (!(elem as AutoplayElement)["__bx_autoplay_found"]) {
+      ).entries() as ArrayIterator<
+        [number, HTMLVideoElement | HTMLAudioElement | HTMLPictureElement]
+      >) {
+        if (!elem["__bx_autoplay_found"]) {
           if (!this.running) {
             if (this.processFetchableUrl(elem as HTMLMediaElement)) {
-              (elem as AutoplayElement)["__bx_autoplay_found"] = true;
+              elem["__bx_autoplay_found"] = true;
             }
             continue;
           }
 
           await this.loadMedia(elem as HTMLMediaElement);
-          (elem as AutoplayElement)["__bx_autoplay_found"] = true;
+          elem["__bx_autoplay_found"] = true;
         }
       }
 

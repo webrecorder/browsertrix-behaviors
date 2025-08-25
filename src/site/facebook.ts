@@ -1,4 +1,4 @@
-import { type Context } from "../lib/behavior";
+import { type AbstractBehavior, type Context } from "../lib/behavior";
 
 const Q = {
   feed: "//div[@role='feed']",
@@ -44,7 +44,9 @@ type FacebookState = Partial<{
   posts: number;
 }>;
 
-export class FacebookTimelineBehavior {
+export class FacebookTimelineBehavior
+  implements AbstractBehavior<FacebookState>
+{
   extraWindow: WindowProxy | null;
   allowNewWindow: boolean;
 
@@ -69,7 +71,7 @@ export class FacebookTimelineBehavior {
     this.allowNewWindow = false;
   }
 
-  async *iterPostFeeds(ctx: Context<FacebookState, unknown>) {
+  async *iterPostFeeds(ctx: Context<FacebookState>) {
     const { iterChildElem, waitUnit, waitUntil, xpathNode, xpathNodes } =
       ctx.Lib;
     const feeds = Array.from(xpathNodes(Q.feed)) as Element[];
@@ -112,7 +114,7 @@ export class FacebookTimelineBehavior {
   }
 
   async *viewPost(
-    ctx: Context<FacebookState, unknown>,
+    ctx: Context<FacebookState>,
     post: Element | null,
     maxExpands = 2,
   ) {
@@ -123,7 +125,7 @@ export class FacebookTimelineBehavior {
 
     const postLink = xpathNode(Q.postQuery, post) as HTMLAnchorElement | null;
 
-    let url = null;
+    let url: URL | null = null;
 
     if (postLink) {
       url = new URL(postLink.href, window.location.href);
@@ -163,10 +165,7 @@ export class FacebookTimelineBehavior {
     await sleep(waitUnit * 5);
   }
 
-  async *viewPhotosOrVideos(
-    ctx: Context<FacebookState, unknown>,
-    post: Element | null,
-  ) {
+  async *viewPhotosOrVideos(ctx: Context<FacebookState>, post: Element | null) {
     const { getState, sleep, waitUnit, xpathNode, xpathNodes } = ctx.Lib;
     const objects = Array.from(
       xpathNodes(Q.photosOrVideos, post),
@@ -220,7 +219,7 @@ export class FacebookTimelineBehavior {
   }
 
   async *viewExtraObjects(
-    ctx: Context<FacebookState, unknown>,
+    ctx: Context<FacebookState>,
     obj: Node | null,
     type: string,
     openNew: boolean,
@@ -261,7 +260,7 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async openNewWindow(ctx: Context<FacebookState, unknown>, url: string) {
+  async openNewWindow(ctx: Context<FacebookState>, url: string) {
     if (!this.extraWindow) {
       this.extraWindow = await ctx.Lib.openWindow(url);
     } else {
@@ -270,7 +269,7 @@ export class FacebookTimelineBehavior {
   }
 
   async *iterComments(
-    ctx: Context<FacebookState, unknown>,
+    ctx: Context<FacebookState>,
     commentRootUL: HTMLUListElement | null,
     maxExpands = 2,
   ) {
@@ -280,7 +279,7 @@ export class FacebookTimelineBehavior {
       return;
     }
     let commentBlock = commentRootUL.firstElementChild;
-    let lastBlock = null;
+    let lastBlock: Element | null = null;
 
     let count = 0;
 
@@ -326,7 +325,7 @@ export class FacebookTimelineBehavior {
     await sleep(waitUnit * 2);
   }
 
-  async *iterPhotoSlideShow(ctx: Context<FacebookState, unknown>) {
+  async *iterPhotoSlideShow(ctx: Context<FacebookState>) {
     const { getState, scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } =
       ctx.Lib;
     const firstPhoto = xpathNode(Q.firstPhotoThumbnail) as HTMLElement | null;
@@ -343,7 +342,7 @@ export class FacebookTimelineBehavior {
     await sleep(waitUnit * 5);
     await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
 
-    let nextSlideButton = null;
+    let nextSlideButton: HTMLElement | null = null;
 
     while (
       (nextSlideButton = xpathNode(Q.nextSlideQuery) as HTMLElement | null)
@@ -372,7 +371,7 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async *iterAllVideos(ctx: Context<FacebookState, unknown>) {
+  async *iterAllVideos(ctx: Context<FacebookState>) {
     const {
       getState,
       scrollIntoView,
@@ -437,7 +436,7 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async *run(ctx: Context<FacebookState, unknown>) {
+  async *run(ctx: Context<FacebookState>) {
     const { getState, sleep, xpathNode } = ctx.Lib;
     yield getState(ctx, "Starting...");
 
@@ -466,7 +465,7 @@ export class FacebookTimelineBehavior {
     yield* this.iterPostFeeds(ctx);
   }
 
-  async awaitPageLoad(ctx: Context<FacebookState, unknown>) {
+  async awaitPageLoad(ctx: Context<FacebookState>) {
     const { Lib, log } = ctx;
     const { assertContentValid, waitUntilNode } = Lib;
 
