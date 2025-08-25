@@ -219,7 +219,9 @@ export async function openWindow(
   return window.open(url);
 }
 
-export function _setLogFunc(func: (message: string, level: string) => void) {
+export function _setLogFunc(
+  func: ((message: string, level: string) => void) | null,
+) {
   _logFunc = func;
 }
 
