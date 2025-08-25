@@ -6,6 +6,7 @@
     "preserveConstEnums": true,
     "allowJs": true,
     "checkJs": true,
+    "strict": true,
     "target": "es2022",
     "lib": ["es2022", "dom", "dom.iterable"],
     "outDir": "./dist/"

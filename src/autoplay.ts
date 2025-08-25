@@ -25,7 +25,7 @@ export class Autoplay extends BackgroundBehavior {
     this._initDone = () => null;
     this.promises.push(new Promise((resolve) => (this._initDone = resolve)));
     if (startEarly) {
-      document.addEventListener("DOMContentLoaded", () =>
+      document.addEventListener("DOMContentLoaded", async () =>
         this.pollAudioVideo(),
       );
     }
@@ -35,7 +35,7 @@ export class Autoplay extends BackgroundBehavior {
     this.running = true;
     //this.initObserver();
 
-    this.pollAudioVideo();
+    void this.pollAudioVideo();
 
     this._initDone();
   }
@@ -49,19 +49,20 @@ export class Autoplay extends BackgroundBehavior {
 
     this.polling = true;
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (run) {
       for (const [, elem] of querySelectorAllDeep(
         "video, audio, picture",
       ).entries()) {
         if (!elem["__bx_autoplay_found"]) {
           if (!this.running) {
-            if (this.processFetchableUrl(elem)) {
+            if (this.processFetchableUrl(elem as HTMLMediaElement)) {
               elem["__bx_autoplay_found"] = true;
             }
             continue;
           }
 
-          await this.loadMedia(elem);
+          await this.loadMedia(elem as HTMLMediaElement);
           elem["__bx_autoplay_found"] = true;
         }
       }
@@ -72,8 +73,8 @@ export class Autoplay extends BackgroundBehavior {
     this.polling = false;
   }
 
-  fetchSrcUrl(source) {
-    const url: string = source.src || source.currentSrc;
+  fetchSrcUrl(source: HTMLMediaElement | HTMLSourceElement) {
+    const url: string = source.src || (source as HTMLMediaElement).currentSrc;
 
     if (!url) {
       return false;
@@ -94,7 +95,7 @@ export class Autoplay extends BackgroundBehavior {
     return true;
   }
 
-  processFetchableUrl(media) {
+  processFetchableUrl(media: HTMLMediaElement) {
     let found = this.fetchSrcUrl(media);
 
     const sources = media.querySelectorAll("source");
@@ -107,11 +108,12 @@ export class Autoplay extends BackgroundBehavior {
     return found;
   }
 
-  async loadMedia(media) {
+  async loadMedia(media: HTMLMediaElement) {
     this.debug("processing media element: " + media.outerHTML);
 
     const found = this.processFetchableUrl(media);
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!media.play) {
       this.debug("media not playable, skipping");
       return;
@@ -138,12 +140,12 @@ export class Autoplay extends BackgroundBehavior {
         );
       }
 
-      this.attemptMediaPlay(media).then(
-        async (finished: Promise<any> | null) => {
+      void this.attemptMediaPlay(media).then(
+        async (finished: Promise<void> | undefined) => {
           let check = true;
 
           if (finished) {
-            finished.then(() => (check = false));
+            void finished.then(() => (check = false));
           }
 
           while (check) {
@@ -249,7 +251,7 @@ export class Autoplay extends BackgroundBehavior {
     return finished;
   }
 
-  done() {
+  async done() {
     return Promise.allSettled(this.promises);
   }
 }

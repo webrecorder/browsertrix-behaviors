@@ -1,3 +1,5 @@
+import { type Context } from "../lib/behavior";
+
 const Q = {
   rootPath:
     "//h1[@role='heading' and @aria-level='1']/following-sibling::div[@aria-label]//div[@style]",
@@ -22,9 +24,20 @@ const Q = {
   promoted: ".//div[data-testid='placementTracking']",
 };
 
+type TwitterState = Partial<{
+  tweets: number;
+  images: number;
+  videos: number;
+  threads: number;
+}>;
+
+type TwitterOpts = {
+  maxDepth: number;
+};
+
 export class TwitterTimelineBehavior {
-  seenTweets: Set<any>;
-  seenMediaTweets: Set<any>;
+  seenTweets: Set<string>;
+  seenMediaTweets: Set<string>;
 
   static id = "Twitter";
 
@@ -50,9 +63,12 @@ export class TwitterTimelineBehavior {
     this.seenMediaTweets = new Set();
   }
 
-  showingProgressBar(ctx, root) {
+  showingProgressBar(
+    ctx: Context<TwitterState, TwitterOpts>,
+    root: Node | null,
+  ) {
     const { xpathNode } = ctx.Lib;
-    const node = xpathNode(Q.progress, root);
+    const node = xpathNode(Q.progress, root) as Element | null;
     if (!node) {
       return false;
     }
@@ -60,7 +76,10 @@ export class TwitterTimelineBehavior {
     return node.clientHeight > 10;
   }
 
-  async waitForNext(ctx, child) {
+  async waitForNext(
+    ctx: Context<TwitterState, TwitterOpts>,
+    child: Element | null,
+  ) {
     const { sleep, waitUnit } = ctx.Lib;
     if (!child) {
       return null;
@@ -79,44 +98,47 @@ export class TwitterTimelineBehavior {
     return child.nextElementSibling;
   }
 
-  async expandMore(ctx, child) {
+  async expandMore(
+    ctx: Context<TwitterState, TwitterOpts>,
+    child: Element | null,
+  ) {
     const { sleep, waitUnit, xpathNode } = ctx.Lib;
-    const expandElem = xpathNode(Q.expand, child);
+    const expandElem = xpathNode(Q.expand, child) as HTMLElement | null;
     if (!expandElem) {
       return child;
     }
 
-    const prev = child.previousElementSibling;
+    const prev = child?.previousElementSibling;
     expandElem.click();
     await sleep(waitUnit);
-    while (this.showingProgressBar(ctx, prev.nextElementSibling)) {
+    while (this.showingProgressBar(ctx, prev?.nextElementSibling ?? null)) {
       await sleep(waitUnit);
     }
-    child = prev.nextElementSibling;
+    child = prev?.nextElementSibling ?? null;
     return child;
   }
 
-  async *infScroll(ctx) {
+  async *infScroll(ctx: Context<TwitterState, TwitterOpts>) {
     const { scrollIntoView, RestoreState, sleep, waitUnit, xpathNode } =
       ctx.Lib;
-    const root = xpathNode(Q.rootPath);
+    const root = xpathNode(Q.rootPath) as Element | null;
 
     if (!root) {
       return;
     }
 
-    let child = root.firstElementChild;
+    let child = root.firstElementChild as HTMLElement | null;
 
     if (!child) {
       return;
     }
 
     while (child) {
-      let anchorElem = xpathNode(Q.anchor, child);
+      let anchorElem = xpathNode(Q.anchor, child) as HTMLElement | null;
 
       if (!anchorElem && Q.expand) {
-        child = await this.expandMore(ctx, child);
-        anchorElem = xpathNode(Q.anchor, child);
+        child = (await this.expandMore(ctx, child)) as HTMLElement | null;
+        anchorElem = xpathNode(Q.anchor, child) as HTMLElement | null;
       }
 
       if (child?.innerText) {
@@ -131,17 +153,26 @@ export class TwitterTimelineBehavior {
         yield anchorElem;
 
         if (restorer.matchValue) {
-          child = await restorer.restore(Q.rootPath, Q.childMatch);
+          child = (await restorer.restore(
+            Q.rootPath,
+            Q.childMatch,
+          )) as HTMLElement | null;
         }
       }
 
-      child = await this.waitForNext(ctx, child);
+      child = (await this.waitForNext(ctx, child)) as HTMLElement | null;
     }
   }
 
-  async *mediaPlaying(ctx, tweet) {
+  async *mediaPlaying(
+    ctx: Context<TwitterState, TwitterOpts>,
+    tweet: HTMLElement,
+  ) {
     const { getState, sleep, xpathNode, xpathString } = ctx.Lib;
-    const media = xpathNode("(.//video | .//audio)", tweet);
+    const media = xpathNode(
+      "(.//video | .//audio)",
+      tweet,
+    ) as HTMLMediaElement | null;
     if (!media || media.paused) {
       return;
     }
@@ -192,9 +223,12 @@ export class TwitterTimelineBehavior {
     await Promise.race([p, sleep(60000)]);
   }
 
-  async *clickImages(ctx, tweet) {
+  async *clickImages(
+    ctx: Context<TwitterState, TwitterOpts>,
+    tweet: HTMLElement,
+  ) {
     const { getState, HistoryState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    const imagePopup = xpathNode(Q.image, tweet);
+    const imagePopup = xpathNode(Q.image, tweet) as HTMLElement | null;
 
     if (imagePopup) {
       const imageState = new HistoryState(() => imagePopup.click());
@@ -203,7 +237,7 @@ export class TwitterTimelineBehavior {
 
       await sleep(waitUnit * 5);
 
-      let nextImage = xpathNode(Q.imageFirstNext);
+      let nextImage = xpathNode(Q.imageFirstNext) as HTMLElement | null;
       let prevLocation = window.location.href;
 
       while (nextImage) {
@@ -219,14 +253,18 @@ export class TwitterTimelineBehavior {
         yield getState(ctx, "Loading Image: " + window.location.href, "images");
         await sleep(waitUnit * 5);
 
-        nextImage = xpathNode(Q.imageNext);
+        nextImage = xpathNode(Q.imageNext) as HTMLElement | null;
       }
 
       await imageState.goBack(Q.imageClose);
     }
   }
 
-  async *clickTweet(ctx, tweet, depth) {
+  async *clickTweet(
+    ctx: Context<TwitterState, TwitterOpts>,
+    tweet: HTMLElement,
+    depth: number,
+  ): AsyncGenerator<{ state: TwitterState; msg: string }> {
     const { getState, HistoryState, sleep, waitUnit } = ctx.Lib;
     const tweetState = new HistoryState(() => tweet.click());
 
@@ -250,7 +288,7 @@ export class TwitterTimelineBehavior {
     }
   }
 
-  async *iterTimeline(ctx, depth = 0) {
+  async *iterTimeline(ctx: Context<TwitterState, TwitterOpts>, depth = 0) {
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
     if (this.seenTweets.has(window.location.href)) {
       return;
@@ -267,7 +305,10 @@ export class TwitterTimelineBehavior {
 
       await sleep(waitUnit * 2.5);
 
-      const viewButton = xpathNode(Q.viewSensitive, tweet);
+      const viewButton = xpathNode(
+        Q.viewSensitive,
+        tweet,
+      ) as HTMLElement | null;
       if (viewButton) {
         viewButton.click();
         await sleep(waitUnit * 2.5);
@@ -277,7 +318,7 @@ export class TwitterTimelineBehavior {
       yield* this.clickImages(ctx, tweet);
 
       // process quoted tweet
-      const quoteTweet = xpathNode(Q.quote, tweet);
+      const quoteTweet = xpathNode(Q.quote, tweet) as HTMLElement | null;
 
       if (quoteTweet) {
         yield* this.clickTweet(ctx, quoteTweet, 1000);
@@ -294,11 +335,11 @@ export class TwitterTimelineBehavior {
     }
   }
 
-  async *run(ctx) {
+  async *run(ctx: Context<TwitterState, TwitterOpts>) {
     yield* this.iterTimeline(ctx, 0);
   }
 
-  async awaitPageLoad(ctx: any) {
+  async awaitPageLoad(ctx: Context<TwitterState, TwitterOpts>) {
     const { sleep, assertContentValid } = ctx.Lib;
     await sleep(5);
     assertContentValid(

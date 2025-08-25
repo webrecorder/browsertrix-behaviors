@@ -1,3 +1,5 @@
+import { type Context } from "../lib/behavior";
+
 const Q = {
   commentButton: "button[aria-label^='Read or add comments']",
   commentList: "//div[contains(@class, 'CommentListContainer')]",
@@ -13,8 +15,16 @@ const Q = {
 
 export const BREADTH_ALL = Symbol("BREADTH_ALL");
 
+type TikTokState = {
+  comments: number;
+  videos: number;
+};
+type TikTokOpts = {
+  breadth: number | typeof BREADTH_ALL;
+};
+
 export class TikTokSharedBehavior {
-  async awaitPageLoad(ctx: any) {
+  async awaitPageLoad(ctx: Context<TikTokState, TikTokOpts>) {
     const { assertContentValid, waitUntilNode } = ctx.Lib;
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 20000);
 
@@ -40,29 +50,44 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
     return !!window.location.href.match(pathRegex);
   }
 
-  breadthComplete({ opts: { breadth } }, iter) {
+  breadthComplete(
+    { opts: { breadth } }: { opts: { breadth: number | typeof BREADTH_ALL } },
+    iter: number,
+  ) {
     return breadth !== BREADTH_ALL && breadth <= iter;
   }
 
-  async *crawlThread(ctx, parentNode, prev = null, iter = 0) {
+  async *crawlThread(
+    ctx: Context<TikTokState, TikTokOpts>,
+    parentNode: Node | null = null,
+    prev: Node | null = null,
+    iter = 0,
+  ): AsyncGenerator<{ state: TikTokState; msg: string }> {
     const { waitUntilNode, scrollAndClick, getState } = ctx.Lib;
-    const next = await waitUntilNode(Q.viewMoreThread, parentNode, prev);
+    const next = (await waitUntilNode(
+      Q.viewMoreThread,
+      parentNode ?? undefined,
+      prev,
+    )) as HTMLElement | null;
     if (!next || this.breadthComplete(ctx, iter)) return;
     await scrollAndClick(next, 500);
     yield getState(ctx, "View more replies", "comments");
     yield* this.crawlThread(ctx, parentNode, next, iter + 1);
   }
 
-  async *expandThread(ctx, item) {
+  async *expandThread(
+    ctx: Context<TikTokState, TikTokOpts>,
+    item: Node | null,
+  ) {
     const { xpathNode, scrollAndClick, getState } = ctx.Lib;
-    const viewMore = xpathNode(Q.viewMoreReplies, item);
+    const viewMore = xpathNode(Q.viewMoreReplies, item) as HTMLElement | null;
     if (!viewMore) return;
     await scrollAndClick(viewMore, 500);
     yield getState(ctx, "View comment", "comments");
     yield* this.crawlThread(ctx, item, null, 1);
   }
 
-  async *run(ctx) {
+  async *run(ctx: Context<TikTokState, TikTokOpts>) {
     const {
       xpathNode,
       iterChildMatches,
@@ -80,10 +105,10 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
 
     // assert no captcha every 0.5 seconds
     void (async () => {
-      // eslint-disable-next-line no-constant-condition
+      // eslint-disable-next-line no-constant-condition, @typescript-eslint/no-unnecessary-condition
       while (true) {
         if (document.querySelector("div[class*=captcha]")) {
-          assertContentValid(false, "not_logged_in");
+          assertContentValid(() => false, "not_logged_in");
           break;
         }
         await sleep(500);
@@ -93,7 +118,7 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
     const commentList = xpathNode(Q.commentList);
     const commentItems = iterChildMatches(Q.commentItem, commentList);
     for await (const item of commentItems) {
-      scrollIntoView(item);
+      scrollIntoView(item as Element);
       yield getState(ctx, "View comment", "comments");
       if (this.breadthComplete(ctx, 0)) continue;
       yield* this.expandThread(ctx, item);
@@ -119,9 +144,9 @@ export class TikTokProfileBehavior extends TikTokSharedBehavior {
     };
   }
 
-  async *openVideo(ctx, item) {
+  async *openVideo(ctx: Context<TikTokState, TikTokOpts>, item: Node | null) {
     const { HistoryState, xpathNode, sleep } = ctx.Lib;
-    const link = xpathNode(".//a", item);
+    const link = xpathNode(".//a", item) as HTMLElement | null;
     if (!link) return;
     const viewState = new HistoryState(() => link.click());
     await sleep(500);
@@ -133,7 +158,7 @@ export class TikTokProfileBehavior extends TikTokSharedBehavior {
     }
   }
 
-  async *run(ctx) {
+  async *run(ctx: Context<TikTokState, TikTokOpts>) {
     const { xpathNode, iterChildMatches, scrollIntoView, getState, sleep } =
       ctx.Lib;
     const profileVideoList = xpathNode(Q.profileVideoList);
@@ -142,7 +167,7 @@ export class TikTokProfileBehavior extends TikTokSharedBehavior {
       profileVideoList,
     );
     for await (const item of profileVideos) {
-      scrollIntoView(item);
+      scrollIntoView(item as HTMLElement);
       yield getState(ctx, "View video", "videos");
       yield* this.openVideo(ctx, item);
       await sleep(500);

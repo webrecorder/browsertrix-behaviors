@@ -1,9 +1,15 @@
+import { type Context } from "../lib/behavior";
+
 const Q = {
   telegramContainer:
     "//main//section[@class='tgme_channel_history js-message_history']",
   postId: "string(./div[@data-post]/@data-post)",
   linkExternal:
     "string(.//a[@class='tgme_widget_message_link_preview' and @href]/@href)",
+};
+
+type TelegramState = {
+  messages: number;
 };
 
 export class TelegramBehavior {
@@ -19,7 +25,10 @@ export class TelegramBehavior {
     };
   }
 
-  async waitForPrev(ctx, child) {
+  async waitForPrev(
+    ctx: Context<TelegramState, unknown>,
+    child: Element | null,
+  ) {
     if (!child) {
       return null;
     }
@@ -33,7 +42,7 @@ export class TelegramBehavior {
     return child.previousElementSibling;
   }
 
-  async *run(ctx) {
+  async *run(ctx: Context<TelegramState, unknown>) {
     const {
       getState,
       scrollIntoView,
@@ -42,7 +51,7 @@ export class TelegramBehavior {
       xpathNode,
       xpathString,
     } = ctx.Lib;
-    const root = xpathNode(Q.telegramContainer);
+    const root = xpathNode(Q.telegramContainer) as Element | null;
 
     if (!root) {
       return;
@@ -57,7 +66,7 @@ export class TelegramBehavior {
 
       const linkUrl = xpathString(Q.linkExternal, child);
 
-      if (linkUrl?.endsWith(".jpg") || linkUrl.endsWith(".png")) {
+      if (linkUrl.endsWith(".jpg") || linkUrl.endsWith(".png")) {
         yield getState(ctx, "Loading External Image: " + linkUrl);
         const image = new Image();
         image.src = linkUrl;
