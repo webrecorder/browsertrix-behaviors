@@ -17,7 +17,10 @@ export class BackgroundBehavior {
 }
 
 // ===========================================================================
-export class Behavior extends BackgroundBehavior {
+export class Behavior<State, Opts = EmptyObject>
+  extends BackgroundBehavior
+  implements AbstractBehavior<State, Opts>
+{
   _running: Promise<void> | null;
   paused: any;
   _unpause: any;
@@ -105,7 +108,11 @@ export class Behavior extends BackgroundBehavior {
     }
   }
 
-  async *[Symbol.asyncIterator]() {
+  async *[Symbol.asyncIterator](): AsyncGenerator<
+    State | undefined,
+    void,
+    void
+  > {
     yield;
   }
 }
@@ -113,43 +120,54 @@ export class Behavior extends BackgroundBehavior {
 // WIP: BehaviorRunner class allows for arbitrary behaviors outside of the
 // library to be run through the BehaviorManager
 
-export type Context<State, Opts> = {
+export type EmptyObject = Record<string, never>;
+
+export type Context<State, Opts = EmptyObject> = {
   Lib: typeof Lib;
   state: State;
   opts: Opts;
   log: (data: any, type?: string) => Promise<void>;
 };
 
-abstract class AbstractBehaviorInst<State, Opts, RunResult> {
-  abstract run: (ctx: Context<State, Opts>) => AsyncIterable<RunResult | void>;
+export abstract class AbstractBehavior<State, Opts = EmptyObject> {
+  static id: String;
+  static isMatch: () => boolean;
+  static init: () => any;
+
+  abstract run: (ctx: Context<State, Opts>) => AsyncIterable<any>;
 
   abstract awaitPageLoad?: (ctx: Context<State, Opts>) => Promise<void>;
 }
 
-interface StaticAbstractBehavior {
-  id: string;
-  isMatch: () => boolean;
-  init: () => any;
-}
+type StaticProps<T> = {
+  [K in keyof T]: T[K];
+};
 
-export type AbstractBehavior<State, Opts, RunResult> =
-  (new () => AbstractBehaviorInst<State, Opts, RunResult>) &
-    StaticAbstractBehavior;
+type StaticBehaviorProps = StaticProps<typeof AbstractBehavior>;
 
-export class BehaviorRunner<State, Opts, RunResult> extends BackgroundBehavior {
-  inst: AbstractBehaviorInst<State, Opts, RunResult>;
-  behaviorProps: StaticAbstractBehavior;
+// Non-abstract constructor type
+type ConcreteBehaviorConstructor<State, Opts> = StaticBehaviorProps & {
+  new (): AbstractBehavior<State, Opts>;
+};
+
+export class BehaviorRunner<
+  State,
+  Opts = EmptyObject,
+> extends BackgroundBehavior {
+  inst: AbstractBehavior<State, Opts>;
+  behaviorProps: ConcreteBehaviorConstructor<State, Opts>;
   ctx: Context<State, Opts>;
-  _running: Promise<void> | null;
+  _running: any;
   paused: any;
-  _unpause: ((value?: unknown) => void) | null;
+  _unpause: any;
 
   get id() {
-    return (this.inst.constructor as any).id;
+    return (this.inst.constructor as ConcreteBehaviorConstructor<State, Opts>)
+      .id;
   }
 
   constructor(
-    behavior: AbstractBehavior<State, Opts, RunResult>,
+    behavior: ConcreteBehaviorConstructor<State, Opts>,
     mainOpts = {},
   ) {
     super();
@@ -167,7 +185,7 @@ export class BehaviorRunner<State, Opts, RunResult> extends BackgroundBehavior {
     state = state || {};
     opts = opts ? { ...opts, ...mainOpts } : mainOpts;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const log = async (data: any, type: string) => this.wrappedLog(data, type);
+    const log = async (data: any, type?: string) => this.wrappedLog(data, type);
 
     this.ctx = { Lib, state, opts, log };
 
@@ -194,7 +212,7 @@ export class BehaviorRunner<State, Opts, RunResult> extends BackgroundBehavior {
     this._running = this.run();
   }
 
-  async done() {
+  done() {
     return this._running ? this._running : Promise.resolve();
   }
 

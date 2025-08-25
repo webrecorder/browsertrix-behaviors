@@ -1,4 +1,4 @@
-import { type Context } from "../lib/behavior";
+import { type AbstractBehavior, type Context } from "../lib/behavior";
 
 const Q = {
   telegramContainer:
@@ -9,10 +9,10 @@ const Q = {
 };
 
 type TelegramState = {
-  messages: number;
+  messages?: number;
 };
 
-export class TelegramBehavior {
+export class TelegramBehavior implements AbstractBehavior<TelegramState> {
   static id = "Telegram";
 
   static isMatch() {
@@ -25,10 +25,7 @@ export class TelegramBehavior {
     };
   }
 
-  async waitForPrev(
-    ctx: Context<TelegramState, unknown>,
-    child: Element | null,
-  ) {
+  async waitForPrev(ctx: Context<TelegramState>, child: Element | null) {
     if (!child) {
       return null;
     }
@@ -42,7 +39,7 @@ export class TelegramBehavior {
     return child.previousElementSibling;
   }
 
-  async *run(ctx: Context<TelegramState, unknown>) {
+  async *run(ctx: Context<TelegramState>) {
     const {
       getState,
       scrollIntoView,
