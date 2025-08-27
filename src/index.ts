@@ -12,11 +12,7 @@ import {
   addLink,
   checkToJsonOverride,
 } from "./lib/utils";
-import {
-  type AbstractBehavior,
-  type Behavior,
-  BehaviorRunner,
-} from "./lib/behavior";
+import { type AbstractBehavior, BehaviorRunner } from "./lib/behavior";
 import * as Lib from "./lib/utils";
 
 import siteBehaviors from "./site";
@@ -63,18 +59,17 @@ type BehaviorClass =
   | typeof AutoClick
   | typeof AutoScroll
   | typeof Autoplay
-  | typeof AutoFetcher;
+  | typeof AutoFetcher
+  | typeof BehaviorRunner<any, any>;
 
 type BehaviorInstance = InstanceType<BehaviorClass>;
-type SiteSpecificBehaviorInstance = InstanceType<
-  (typeof siteBehaviors)[number]
->;
 
 export class BehaviorManager {
   autofetch?: AutoFetcher;
   behaviors: BehaviorInstance[] | null;
-  loadedBehaviors: { [key in BehaviorClass["id"]]: BehaviorClass };
-  mainBehavior: Behavior | BehaviorRunner<any, any> | null;
+  loadedBehaviors: Record<string, BehaviorClass>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mainBehavior: BehaviorInstance | BehaviorRunner<any, any> | null;
   mainBehaviorClass!: BehaviorClass;
   inited: boolean;
   started: boolean;
@@ -84,12 +79,13 @@ export class BehaviorManager {
 
   constructor() {
     this.behaviors = [];
-    this.loadedBehaviors = siteBehaviors.reduce<
-      Record<BehaviorClass["id"], BehaviorClass>
-    >((behaviors, next) => {
-      behaviors[next.id] = next;
-      return behaviors;
-    }, {});
+    this.loadedBehaviors = siteBehaviors.reduce<Record<string, BehaviorClass>>(
+      (behaviors, next) => {
+        behaviors[next.id] = next;
+        return behaviors;
+      },
+      {},
+    );
     this.mainBehavior = null;
     this.inited = false;
     this.started = false;
@@ -181,11 +177,7 @@ export class BehaviorManager {
     if (opts?.siteSpecific) {
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
-        if (
-          (
-            siteBehaviorClass as unknown as SiteSpecificBehaviorInstance
-          ).isMatch()
-        ) {
+        if ("isMatch" in siteBehaviorClass && siteBehaviorClass.isMatch()) {
           void behaviorLog("Using Site-Specific Behavior: " + name);
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts =
@@ -209,14 +201,14 @@ export class BehaviorManager {
       }
     }
 
-    if (!siteMatch && opts.autoscroll) {
-      behaviorLog("Using Autoscroll");
+    if (!siteMatch && opts?.autoscroll) {
+      void behaviorLog("Using Autoscroll");
       this.mainBehaviorClass = AutoScroll;
-      this.mainBehavior = new AutoScroll(this.autofetch);
+      this.mainBehavior = new AutoScroll(this.autofetch!);
     }
 
     if (this.mainBehavior) {
-      this.behaviors.push(this.mainBehavior);
+      this.behaviors!.push(this.mainBehavior);
 
       if (this.mainBehavior instanceof BehaviorRunner) {
         return this.mainBehavior.behaviorProps.id;
@@ -226,9 +218,16 @@ export class BehaviorManager {
     return "";
   }
 
-  load(behaviorClass) {
-    if (typeof behaviorClass.id !== "string") {
-      behaviorLog(
+  load(behaviorClass: unknown) {
+    if (typeof behaviorClass !== "function") {
+      void behaviorLog(
+        `Must pass a class object, got ${behaviorClass}`,
+        "error",
+      );
+      return;
+    }
+    if (!("id" in behaviorClass) || typeof behaviorClass.id !== "string") {
+      void behaviorLog(
         'Behavior class must have a string string "id" property',
         "error",
       );
@@ -237,16 +236,13 @@ export class BehaviorManager {
 
     const name = behaviorClass.id;
 
-    if (typeof behaviorClass !== "function") {
-      behaviorLog(`Must pass a class object, got ${behaviorClass}`, "error");
-      return;
-    }
-
     if (
+      !("isMatch" in behaviorClass) ||
       typeof behaviorClass.isMatch !== "function" ||
+      !("init" in behaviorClass) ||
       typeof behaviorClass.init !== "function"
     ) {
-      behaviorLog(
+      void behaviorLog(
         "Behavior class must have an is `isMatch()` and `init()` static methods",
         "error",
       );
@@ -254,8 +250,8 @@ export class BehaviorManager {
     }
 
     if (!this.isInTopFrame()) {
-      if (!behaviorClass.runInIframe) {
-        behaviorLog(
+      if (!("runInIframe" in behaviorClass) || !behaviorClass.runInIframe) {
+        void behaviorLog(
           `Behavior class ${name}: not running in iframes (.runInIframe not set)`,
           "debug",
         );
@@ -263,11 +259,11 @@ export class BehaviorManager {
       }
     }
 
-    behaviorLog(`Behavior class ${name}: loaded`, "debug");
-    this.loadedBehaviors[name] = behaviorClass;
+    void behaviorLog(`Behavior class ${name}: loaded`, "debug");
+    this.loadedBehaviors[name] = behaviorClass as BehaviorClass;
   }
 
-  async resolve(target) {
+  async resolve(target: string) {
     const imported = await import(`${target}`); // avoid Webpack warning
     if (Array.isArray(imported)) {
       for (const behavior of imported) {
@@ -280,11 +276,16 @@ export class BehaviorManager {
 
   async awaitPageLoad() {
     this.selectMainBehavior();
-    if (this.mainBehavior?.awaitPageLoad) {
-      behaviorLog("Waiting for custom page load via behavior");
+    if (
+      this.mainBehavior &&
+      "awaitPageLoad" in this.mainBehavior &&
+      (this.mainBehavior as AbstractBehavior<any, any>).awaitPageLoad
+    ) {
+      void behaviorLog("Waiting for custom page load via behavior");
+      // @ts-expect-error TODO why isn't `log` passed in here? It seems like functions expect it to be
       await this.mainBehavior.awaitPageLoad({ Lib });
     } else {
-      behaviorLog("No custom wait behavior");
+      void behaviorLog("No custom wait behavior");
     }
   }
 
@@ -303,7 +304,7 @@ export class BehaviorManager {
 
     await awaitLoad();
 
-    this.behaviors.forEach((x) => {
+    this.behaviors!.forEach((x) => {
       const id = x.id || x.constructor.id || "(Unnamed)";
       behaviorLog("Starting behavior: " + id, "debug");
       x.start();
@@ -318,7 +319,7 @@ export class BehaviorManager {
     );
 
     if (this.timeout) {
-      behaviorLog(
+      void behaviorLog(
         `Waiting for behaviors to finish or ${this.timeout}ms timeout`,
         "debug",
       );
