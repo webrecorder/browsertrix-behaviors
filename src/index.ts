@@ -12,7 +12,11 @@ import {
   addLink,
   checkToJsonOverride,
 } from "./lib/utils";
-import { AbstractBehavior, type Behavior, BehaviorRunner } from "./lib/behavior";
+import {
+  type AbstractBehavior,
+  type Behavior,
+  BehaviorRunner,
+} from "./lib/behavior";
 import * as Lib from "./lib/utils";
 
 import siteBehaviors from "./site";
@@ -54,14 +58,24 @@ const DEFAULT_CLICK_SELECTOR = "a";
 const DEFAULT_LINK_SELECTOR = "a[href]";
 const DEFAULT_LINK_EXTRACT = "href";
 
-type TODOBehaviorClass = AbstractBehavior<unknown, unknown, unknown>;
+type BehaviorClass =
+  | (typeof siteBehaviors)[number]
+  | typeof AutoClick
+  | typeof AutoScroll
+  | typeof Autoplay
+  | typeof AutoFetcher;
+
+type BehaviorInstance = InstanceType<BehaviorClass>;
+type SiteSpecificBehaviorInstance = InstanceType<
+  (typeof siteBehaviors)[number]
+>;
 
 export class BehaviorManager {
   autofetch?: AutoFetcher;
-  behaviors: TODOBehaviorClass[] | null;
-  loadedBehaviors: TODOBehaviorClass;
-  mainBehavior: Behavior | BehaviorRunner<unknown, unknown, unknown> | null;
-  mainBehaviorClass: TODOBehaviorClass;
+  behaviors: BehaviorInstance[] | null;
+  loadedBehaviors: { [key in BehaviorClass["id"]]: BehaviorClass };
+  mainBehavior: Behavior | BehaviorRunner<any, any> | null;
+  mainBehaviorClass!: BehaviorClass;
   inited: boolean;
   started: boolean;
   timeout?: number;
@@ -70,7 +84,9 @@ export class BehaviorManager {
 
   constructor() {
     this.behaviors = [];
-    this.loadedBehaviors = siteBehaviors.reduce((behaviors, next) => {
+    this.loadedBehaviors = siteBehaviors.reduce<
+      Record<BehaviorClass["id"], BehaviorClass>
+    >((behaviors, next) => {
       behaviors[next.id] = next;
       return behaviors;
     }, {});
@@ -87,7 +103,7 @@ export class BehaviorManager {
   init(
     opts: BehaviorManagerOpts = DEFAULT_OPTS,
     restart = false,
-    customBehaviors: TODOBehaviorClass[] | null = null,
+    customBehaviors: BehaviorClass[] | null = null,
   ) {
     if (this.inited && !restart) {
       return;
@@ -165,7 +181,11 @@ export class BehaviorManager {
     if (opts?.siteSpecific) {
       for (const name in this.loadedBehaviors) {
         const siteBehaviorClass = this.loadedBehaviors[name];
-        if (siteBehaviorClass.isMatch()) {
+        if (
+          (
+            siteBehaviorClass as unknown as SiteSpecificBehaviorInstance
+          ).isMatch()
+        ) {
           void behaviorLog("Using Site-Specific Behavior: " + name);
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts =

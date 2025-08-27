@@ -3,8 +3,7 @@ import { type Context } from "./behavior";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _logFunc: ((...data: any[]) => void) | null = console.log;
-// @ts-expect-error TODO: what is this, and why is it declared twice, once here and once as a function?
-let _behaviorMgrClass: (cls: typeof BehaviorManager) => void | null = null;
+let _behaviorMgrClass: typeof BehaviorManager | null = null;
 
 const scrollOpts: ScrollIntoViewOptions = {
   behavior: "smooth",
@@ -232,14 +231,12 @@ export function _setLogFunc(
   _logFunc = func;
 }
 
-// @ts-expect-error TODO: why is this declared over the `_behaviorMgrClass` declared earlier?
-export function _behaviorMgrClass(cls: typeof BehaviorManager) {
-  // @ts-expect-error TODO: `_behaviorMgrClass` is a function, is this trying to overwrite it?
+export function _setBehaviorManager(cls: typeof BehaviorManager) {
   _behaviorMgrClass = cls;
 }
 
 export function installBehaviors(obj: Window | WorkerGlobalScope) {
-  obj.__bx_behaviors = new _behaviorMgrClass();
+  obj.__bx_behaviors = new _behaviorMgrClass!();
 }
 
 // ===========================================================================

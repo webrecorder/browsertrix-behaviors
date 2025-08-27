@@ -17,10 +17,7 @@ export class BackgroundBehavior {
 }
 
 // ===========================================================================
-export class Behavior<State, Opts = EmptyObject>
-  extends BackgroundBehavior
-  implements AbstractBehavior<State, Opts>
-{
+export class Behavior extends BackgroundBehavior {
   _running: Promise<void> | null;
   paused: any;
   _unpause: any;
@@ -108,11 +105,7 @@ export class Behavior<State, Opts = EmptyObject>
     }
   }
 
-  async *[Symbol.asyncIterator](): AsyncGenerator<
-    State | undefined,
-    void,
-    void
-  > {
+  async *[Symbol.asyncIterator]() {
     yield;
   }
 }
@@ -130,11 +123,15 @@ export type Context<State, Opts = EmptyObject> = {
 };
 
 export abstract class AbstractBehavior<State, Opts = EmptyObject> {
-  static id: String;
+  static readonly id: string;
   static isMatch: () => boolean;
   static init: () => any;
 
-  abstract run: (ctx: Context<State, Opts>) => AsyncIterable<any>;
+  abstract run: (
+    ctx: Context<State, Opts>,
+  ) => AsyncIterable<{ state?: State }> | Promise<void>;
+
+  abstract [Symbol.asyncIterator]?(): AsyncIterable<void>;
 
   abstract awaitPageLoad?: (ctx: Context<State, Opts>) => Promise<void>;
 }
@@ -218,6 +215,7 @@ export class BehaviorRunner<
 
   async run() {
     try {
+      // @ts-expect-error TODO how does this work for behaviors where `run` isn't an iterator, e.g. Autoplay and Autoscroll?
       for await (const step of this.inst.run(this.ctx)) {
         if (step) {
           this.wrappedLog(step);

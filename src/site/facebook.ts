@@ -50,7 +50,7 @@ export class FacebookTimelineBehavior
   extraWindow: WindowProxy | null;
   allowNewWindow: boolean;
 
-  static id = "Facebook";
+  static id = "Facebook" as const;
 
   static isMatch() {
     // match just for posts for now

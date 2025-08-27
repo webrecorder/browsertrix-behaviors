@@ -33,7 +33,7 @@ export class InstagramPostsBehavior
   maxCommentsTime: number;
   postOnlyWindow: WindowProxy | null;
 
-  static id = "Instagram";
+  static id = "Instagram" as const;
 
   static isMatch() {
     return !!window.location.href.match(/https:\/\/(www\.)?instagram\.com\//);
