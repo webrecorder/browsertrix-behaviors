@@ -7,7 +7,7 @@ export class AutoClick extends BackgroundBehavior {
   selector: string;
   seenElem = new WeakSet<HTMLElement>();
 
-  static id = "Autoclick";
+  static id = "Autoclick" as const;
 
   constructor(selector = "a") {
     super();

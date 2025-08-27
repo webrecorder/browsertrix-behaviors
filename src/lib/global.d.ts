@@ -26,6 +26,17 @@ declare global {
   interface WorkerGlobalScope extends BehaviorGlobals {}
   interface Window extends BehaviorGlobals {
     __WB_replay_top?: Window;
+
+    /**
+     * Chrome DevTools’s `getEventListeners` API
+     * @see https://developer.chrome.com/docs/devtools/console/utilities/#getEventListeners-function
+     */
+    getEventListeners: <Obj>(
+      obj: Obj,
+    ) => Record<
+      Obj extends Window ? keyof WindowEventMap : string,
+      EventListenerOrEventListenerObject[]
+    >;
   }
 
   interface HTMLVideoElement extends AutoplayProperties {}

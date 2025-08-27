@@ -13,7 +13,7 @@ type TelegramState = {
 };
 
 export class TelegramBehavior implements AbstractBehavior<TelegramState> {
-  static id = "Telegram";
+  static id = "Telegram" as const;
 
   static isMatch() {
     return !!window.location.href.match(/https:\/\/t.me\/s\/\w[\w]+/);

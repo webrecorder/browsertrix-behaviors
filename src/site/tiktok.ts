@@ -38,7 +38,7 @@ export class TikTokVideoBehavior
   extends TikTokSharedBehavior
   implements AbstractBehavior<TikTokState, TikTokOpts>
 {
-  static id = "TikTokVideo";
+  static id = "TikTokVideo" as const;
 
   static init() {
     return {
@@ -107,7 +107,7 @@ export class TikTokProfileBehavior
   extends TikTokSharedBehavior
   implements AbstractBehavior<TikTokState, TikTokOpts>
 {
-  static id = "TikTokProfile";
+  static id = "TikTokProfile" as const;
 
   static isMatch() {
     const pathRegex =

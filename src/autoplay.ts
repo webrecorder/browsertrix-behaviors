@@ -14,7 +14,7 @@ export class Autoplay extends BackgroundBehavior {
   running = false;
   polling = false;
 
-  static id = "Autoplay";
+  static id = "Autoplay" as const;
 
   constructor(autofetcher: AutoFetcher, startEarly = false) {
     super();

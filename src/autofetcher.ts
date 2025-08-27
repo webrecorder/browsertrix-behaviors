@@ -37,7 +37,7 @@ export class AutoFetcher extends BackgroundBehavior {
   active: boolean;
   running = false;
 
-  static id = "Autofetcher";
+  static id = "Autofetcher" as const;
 
   constructor(
     active = false,
