@@ -147,10 +147,10 @@ type ConcreteBehaviorConstructor<State, Opts> = StaticBehaviorProps & {
   new (): AbstractBehavior<State, Opts>;
 };
 
-export class BehaviorRunner<
-  State,
-  Opts = EmptyObject,
-> extends BackgroundBehavior {
+export class BehaviorRunner<State, Opts>
+  extends BackgroundBehavior
+  implements AbstractBehavior<State, Opts>
+{
   inst: AbstractBehavior<State, Opts>;
   behaviorProps: ConcreteBehaviorConstructor<State, Opts>;
   ctx: Context<State, Opts>;
