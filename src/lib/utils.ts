@@ -1,8 +1,7 @@
 import { type BehaviorManager } from "..";
 import { type Context } from "./behavior";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _logFunc: ((...data: any[]) => void) | null = console.log;
+let _logFunc: ((...data: unknown[]) => void) | null = console.log;
 let _behaviorMgrClass: typeof BehaviorManager | null = null;
 
 const scrollOpts: ScrollIntoViewOptions = {
@@ -173,6 +172,7 @@ export async function waitForNetworkIdle(idleTime = 500, concurrency = 0) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function initFlow(params: any): Promise<number> {
   if (typeof self["__bx_initFlow"] === "function") {
     return await callBinding(self["__bx_initFlow"], params);
@@ -181,6 +181,7 @@ export async function initFlow(params: any): Promise<number> {
   return -1;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function nextFlowStep(id: number): Promise<any> {
   if (typeof self["__bx_nextFlowStep"] === "function") {
     return await callBinding(self["__bx_nextFlowStep"], id);
@@ -228,7 +229,7 @@ export async function openWindow(
 export function _setLogFunc(
   func: ((message: string, level: string) => void) | null,
 ) {
-  _logFunc = func;
+  _logFunc = func as (...data: unknown[]) => void;
 }
 
 export function _setBehaviorManager(cls: typeof BehaviorManager) {

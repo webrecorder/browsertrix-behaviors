@@ -10,7 +10,9 @@ interface BehaviorGlobals {
     idleTime: number;
     concurrency: number;
   }) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   __bx_initFlow?: (params: any) => Promise<number>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   __bx_nextFlowStep?: (id: number) => Promise<any>;
   __bx_contentCheckFailed?: (reason: string) => void;
   __bx_open?: (params: { url: string | URL }) => Promise<void>;
@@ -31,7 +33,7 @@ declare global {
      * Chrome DevTools’s `getEventListeners` API
      * @see https://developer.chrome.com/docs/devtools/console/utilities/#getEventListeners-function
      */
-    getEventListeners: <Obj>(
+    getEventListeners?: <Obj>(
       obj: Obj,
     ) => Record<
       Obj extends Window ? keyof WindowEventMap : string,

@@ -17,11 +17,11 @@ export class BackgroundBehavior {
 }
 
 // ===========================================================================
-export class Behavior extends BackgroundBehavior {
+export class Behavior<State> extends BackgroundBehavior {
   _running: Promise<void> | null;
-  paused: any;
-  _unpause: any;
-  state: any;
+  paused: Promise<void> | null;
+  _unpause: (() => void) | null;
+  state: Partial<State>;
   scrollOpts: {
     behavior: string;
     block: string;
@@ -77,12 +77,15 @@ export class Behavior extends BackgroundBehavior {
     }
   }
 
-  getState(msg: string, incrValue?: string) {
+  getState<IncrKey extends Lib.NumberKeys<State>>(
+    msg: string,
+    incrValue?: IncrKey,
+  ) {
     if (incrValue) {
       if (this.state[incrValue] === undefined) {
-        this.state[incrValue] = 1;
+        (this.state[incrValue] as number) = 1;
       } else {
-        this.state[incrValue]++;
+        (this.state[incrValue] as number)++;
       }
     }
 
@@ -91,7 +94,7 @@ export class Behavior extends BackgroundBehavior {
 
   cleanup() {}
 
-  async awaitPageLoad(_: any) {
+  async awaitPageLoad() {
     // wait for initial page load here
   }
 
@@ -119,13 +122,19 @@ export type Context<State, Opts = EmptyObject> = {
   Lib: typeof Lib;
   state: State;
   opts: Opts;
-  log: (data: any, type?: string) => Promise<void>;
+  log: (data: unknown, type?: string) => Promise<void>;
 };
 
 export abstract class AbstractBehavior<State, Opts = EmptyObject> {
   static readonly id: string;
   static isMatch: () => boolean;
-  static init: () => any;
+  static init: () => {
+    // TODO: type these
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    state?: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    opts?: any;
+  };
 
   abstract run: (
     ctx: Context<State, Opts>,
@@ -154,9 +163,9 @@ export class BehaviorRunner<State, Opts>
   inst: AbstractBehavior<State, Opts>;
   behaviorProps: ConcreteBehaviorConstructor<State, Opts>;
   ctx: Context<State, Opts>;
-  _running: any;
-  paused: any;
-  _unpause: any;
+  _running: Promise<void> | null;
+  paused: Promise<void> | (() => Promise<void>) | null;
+  _unpause: ((value: void | PromiseLike<void>) => void) | null;
 
   get id() {
     return (this.inst.constructor as ConcreteBehaviorConstructor<State, Opts>)
@@ -209,7 +218,7 @@ export class BehaviorRunner<State, Opts>
     this._running = this.run();
   }
 
-  done() {
+  async done() {
     return this._running ? this._running : Promise.resolve();
   }
 
