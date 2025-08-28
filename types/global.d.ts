@@ -1,6 +1,4 @@
-import { type BehaviorManager } from "..";
-
-export {}; // Ensure this is treated as a module
+import { type BehaviorManager } from "../src";
 
 interface BehaviorGlobals {
   __bx_addLink?: (url: string) => Promise<void>;
@@ -25,12 +23,21 @@ interface AutoplayProperties {
 }
 
 declare global {
-  interface WorkerGlobalScope extends BehaviorGlobals {}
+  interface WorkerGlobalScope extends BehaviorGlobals {
+    scrollHeight?: number;
+    getEventListeners?: <Obj>(
+      obj: Obj,
+    ) => Record<
+      Obj extends Window ? keyof WindowEventMap : string,
+      EventListenerOrEventListenerObject[]
+    >;
+    [key: string]: any;
+  }
   interface Window extends BehaviorGlobals {
     __WB_replay_top?: Window;
 
     /**
-     * Chrome DevTools’s `getEventListeners` API
+     * Chrome DevTools's `getEventListeners` API
      * @see https://developer.chrome.com/docs/devtools/console/utilities/#getEventListeners-function
      */
     getEventListeners?: <Obj>(
@@ -39,6 +46,7 @@ declare global {
       Obj extends Window ? keyof WindowEventMap : string,
       EventListenerOrEventListenerObject[]
     >;
+    [key: string]: any;
   }
 
   interface HTMLVideoElement extends AutoplayProperties {}
