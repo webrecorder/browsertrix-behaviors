@@ -179,7 +179,7 @@ export class TwitterTimelineBehavior
       return;
     }
 
-    let mediaTweetUrl = null;
+    let mediaTweetUrl: string | null = null;
 
     try {
       mediaTweetUrl = new URL(

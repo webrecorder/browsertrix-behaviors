@@ -415,7 +415,7 @@ export class BehaviorManager {
       }
     });
 
-    const promises = [];
+    const promises: Promise<void>[] = [];
 
     for (const url of urls) {
       promises.push(addLink(url));

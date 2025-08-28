@@ -39,7 +39,7 @@ export async function waitUntilNode(
   timeout = 1000,
   interval = waitUnit,
 ): Promise<Node | null> {
-  let node = null;
+  let node: Node | null = null;
   let stop = false;
   const waitP = waitUntil(() => {
     node = xpathNode(path, root);
@@ -209,12 +209,12 @@ export async function openWindow(
     const p = new Promise((resolve) => (self["__bx_openResolve"] = resolve));
     await callBinding(self["__bx_open"], { url });
 
-    let win = null;
+    let win: WindowProxy | null = null;
 
     try {
-      win = await p;
+      win = (await p) as WindowProxy | null;
       if (win) {
-        return win as WindowProxy;
+        return win;
       }
     } catch (e) {
       console.warn(e);
@@ -248,7 +248,7 @@ export class RestoreState {
   }
 
   async restore(rootPath: string, childMatch: string) {
-    let root = null;
+    let root: Node | null = null;
 
     while (((root = xpathNode(rootPath)), !root)) {
       await sleep(100);
@@ -314,7 +314,7 @@ export function* xpathNodes(path: string, root?: Node | null) {
     null,
     XPathResult.ORDERED_NODE_ITERATOR_TYPE,
   );
-  let result = null;
+  let result: Node | null = null;
   while ((result = iter.iterateNext()) !== null) {
     yield result;
   }

@@ -134,7 +134,7 @@ export class AutoFetcher extends BackgroundBehavior {
 
       const reader = resp.body!.getReader();
 
-      let res = null;
+      let res: ReadableStreamReadResult<Uint8Array> | null = null;
 
       do {
         res = await reader.read();

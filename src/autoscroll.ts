@@ -122,7 +122,6 @@ export class AutoScroll
     }
 
     if (
-      // @ts-expect-error TODO not sure what self.scrollHeight is here
       (self.window.scrollY + self["scrollHeight"]) /
         self.document.scrollingElement!.scrollHeight <
       0.9
