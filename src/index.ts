@@ -60,13 +60,14 @@ type BehaviorClass =
   | typeof AutoScroll
   | typeof Autoplay
   | typeof AutoFetcher
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | typeof BehaviorRunner<any, any>;
 
 type BehaviorInstance = InstanceType<BehaviorClass>;
 
 export class BehaviorManager {
   autofetch?: AutoFetcher;
-  behaviors: BehaviorInstance[] | null;
+  behaviors: BehaviorInstance[];
   loadedBehaviors: Record<string, BehaviorClass>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mainBehavior: BehaviorInstance | BehaviorRunner<any, any> | null;
@@ -139,17 +140,17 @@ export class BehaviorManager {
 
     if (opts.autofetch) {
       void behaviorLog("Using AutoFetcher");
-      this.behaviors!.push(this.autofetch);
+      this.behaviors.push(this.autofetch);
     }
 
     if (opts.autoplay) {
       void behaviorLog("Using Autoplay");
-      this.behaviors!.push(new Autoplay(this.autofetch, !!opts.startEarly));
+      this.behaviors.push(new Autoplay(this.autofetch, !!opts.startEarly));
     }
 
     if (opts.autoclick) {
       void behaviorLog("Using AutoClick");
-      this.behaviors!.push(
+      this.behaviors.push(
         new AutoClick(opts.clickSelector || DEFAULT_CLICK_SELECTOR),
       );
     }
@@ -160,6 +161,7 @@ export class BehaviorManager {
           this.load(behaviorClass);
         } catch (e) {
           void behaviorLog(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `Failed to load custom behavior: ${e} ${behaviorClass}`,
           );
         }
@@ -186,6 +188,7 @@ export class BehaviorManager {
               : {};
           try {
             this.mainBehavior = new BehaviorRunner(
+              // @ts-expect-error TODO figure out types here
               siteBehaviorClass,
               siteSpecificOpts,
             );
@@ -208,7 +211,7 @@ export class BehaviorManager {
     }
 
     if (this.mainBehavior) {
-      this.behaviors!.push(this.mainBehavior);
+      this.behaviors.push(this.mainBehavior);
 
       if (this.mainBehavior instanceof BehaviorRunner) {
         return this.mainBehavior.behaviorProps.id;
@@ -221,6 +224,7 @@ export class BehaviorManager {
   load(behaviorClass: unknown) {
     if (typeof behaviorClass !== "function") {
       void behaviorLog(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `Must pass a class object, got ${behaviorClass}`,
         "error",
       );
@@ -279,7 +283,7 @@ export class BehaviorManager {
     if (
       this.mainBehavior &&
       "awaitPageLoad" in this.mainBehavior &&
-      (this.mainBehavior as AbstractBehavior<any, any>).awaitPageLoad
+      (this.mainBehavior as AbstractBehavior<unknown, unknown>).awaitPageLoad
     ) {
       void behaviorLog("Waiting for custom page load via behavior");
       // @ts-expect-error TODO why isn't `log` passed in here? It seems like functions expect it to be
@@ -304,10 +308,13 @@ export class BehaviorManager {
 
     await awaitLoad();
 
-    this.behaviors!.forEach((x) => {
-      const id = x.id || x.constructor.id || "(Unnamed)";
-      behaviorLog("Starting behavior: " + id, "debug");
-      x.start();
+    this.behaviors.forEach((x) => {
+      const id =
+        (x as unknown as typeof AbstractBehavior<unknown>).id ||
+        (x.constructor as unknown as typeof AbstractBehavior<unknown>).id ||
+        "(Unnamed)";
+      void behaviorLog("Starting behavior: " + id, "debug");
+      "start" in x && void x.start();
     });
 
     this.started = true;
@@ -315,7 +322,7 @@ export class BehaviorManager {
     await sleep(500);
 
     const allBehaviors = Promise.allSettled(
-      this.behaviors.map((x) => x.done()),
+      this.behaviors.map(async (x) => "done" in x && x.done()),
     );
 
     if (this.timeout) {
@@ -325,25 +332,29 @@ export class BehaviorManager {
       );
       await Promise.race([allBehaviors, sleep(this.timeout)]);
     } else {
-      behaviorLog("Waiting for behaviors to finish", "debug");
+      void behaviorLog("Waiting for behaviors to finish", "debug");
       await allBehaviors;
     }
 
-    behaviorLog("All Behaviors Done for " + self.location.href, "debug");
+    void behaviorLog("All Behaviors Done for " + self.location.href, "debug");
 
-    if (this.mainBehavior && this.mainBehaviorClass.cleanup) {
+    if (this.mainBehavior && "cleanup" in this.mainBehavior) {
       this.mainBehavior.cleanup();
     }
   }
 
-  async runOne(name, behaviorOpts = {}) {
+  async runOne(name: string, behaviorOpts = {}) {
     const siteBehaviorClass = siteBehaviors.find((b) => b.name === name);
     if (typeof siteBehaviorClass === "undefined") {
       console.error(`No behavior of name ${name} found`);
       return;
     }
     //const behavior = new siteBehaviorClass(behaviorOpts);
-    const behavior = new BehaviorRunner(siteBehaviorClass, behaviorOpts);
+    const behavior = new BehaviorRunner(
+      // @ts-expect-error TODO figure out types here
+      siteBehaviorClass,
+      behaviorOpts,
+    );
     behavior.start();
     console.log(`Running behavior: ${name}`);
     await behavior.done();
@@ -351,18 +362,18 @@ export class BehaviorManager {
   }
 
   pause() {
-    behaviorLog("Pausing Main Behavior" + this.mainBehaviorClass.name);
-    this.behaviors.forEach((x) => x.pause());
+    void behaviorLog("Pausing Main Behavior" + this.mainBehaviorClass.name);
+    this.behaviors.forEach((x) => "pause" in x && x.pause());
   }
 
   unpause() {
     // behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
-    this.behaviors.forEach((x) => x.unpause());
+    this.behaviors.forEach((x) => "pause" in x && x.unpause());
   }
 
-  doAsyncFetch(url) {
-    behaviorLog("Queueing Async Fetch Url: " + url);
-    return this.autofetch.queueUrl(url, true);
+  doAsyncFetch(url: string) {
+    void behaviorLog("Queueing Async Fetch Url: " + url);
+    return this.autofetch!.queueUrl(url, true);
   }
 
   isInTopFrame() {
@@ -391,9 +402,10 @@ export class BehaviorManager {
 
     const urls = new Set<string>();
 
-    document.querySelectorAll(selector).forEach((elem: any) => {
+    document.querySelectorAll(selector).forEach((elem) => {
       // first, try property, unless attrOnly is set
-      let value = !attrOnly ? elem[extractName] : null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let value = !attrOnly ? (elem as any)[extractName] : null;
       if (!value) {
         value = elem.getAttribute(extractName);
       }

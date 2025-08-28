@@ -9,7 +9,7 @@ export class Autoplay extends BackgroundBehavior {
   mediaSet: Set<string>;
   autofetcher: AutoFetcher;
   numPlaying: number;
-  promises: Promise<any>[];
+  promises: Promise<boolean | undefined>[];
   _initDone: Function;
   running = false;
   polling = false;

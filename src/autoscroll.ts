@@ -44,7 +44,9 @@ export class AutoScroll
     this.origPath = document.location.pathname;
   }
 
-  static id = "Autoscroll" as const;
+  static get id() {
+    return "Autoscroll";
+  }
 
   currScrollPos() {
     return Math.round(self.scrollY + self.innerHeight);
@@ -68,7 +70,7 @@ export class AutoScroll
 
   hasScrollEL(obj: HTMLElement | Document | Window) {
     try {
-      return !!self["getEventListeners"](obj).scroll;
+      return !!self["getEventListeners"]!(obj).scroll;
     } catch (_) {
       // unknown, assume has listeners
       this.debug("getEventListeners() not available");
