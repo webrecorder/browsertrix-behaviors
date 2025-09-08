@@ -26,7 +26,8 @@
     "lint": "eslint --fix index.ts ./src/**/*.ts webpack.config.js",
     "lint:check": "eslint index.ts ./src/**/*.ts webpack.config.js",
     "format": "prettier --write . webpack.config.js",
-    "format:check": "prettier --check . webpack.config.js"
+    "format:check": "prettier --check . webpack.config.js",
+    "test": "node ./scripts/test-harness.mjs"
   },
   "description": "Browsertrix Behaviors",
   "files": [
@@ -36,5 +37,9 @@
   ],
   "dependencies": {
     "query-selector-shadow-dom": "^1.0.1"
+  },
+  "optionalDependencies": {
+    "memfs": "^4.17.0",
+    "puppeteer": "^24.7.2"
   }
 }
