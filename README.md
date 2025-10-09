@@ -44,7 +44,7 @@ For an extensive walkthrough of creating your own custom behaviors to use with B
 To test out the behaviors in your current browser, you can:
 
 1. Build the behaviors: `yarn run build`
-2. Copy the rsulting `dist/behaviors.js` file (it is minified so will be on one line).
+2. Copy the resulting `dist/behaviors.js` file (it is minified so will be on one line).
 3. Open a web page, such as one that has a custom behavior, like: [https://twitter.com/webrecorder_io](https://twitter.com/webrecorder_io)
 4. Open devtools console, and paste the script
 5. Enter `self.__bx_behaviors.run();`
