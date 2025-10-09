@@ -26,22 +26,25 @@
 A set of behaviors injected into the browser to perform certain operations on a page, such as scrolling, fetching additional URLs, or performing
 customized actions for social-media sites.
 
+Additional information about behaviors and how they work can be found in the [Browser Behaviors section of the Browsertrix Crawler documentation](https://crawler.docs.browsertrix.com/user-guide/behaviors/).
+
+For an extensive walkthrough of creating your own custom behaviors to use with Browsertrix and Browsertrix Crawler, [follow the Tutorial](https://crawler.docs.browsertrix.com/user-guide/behaviors/#creating-custom-behaviors).
+
 ## Usage
 
 The behaviors are compiled into a single file, `dist/behaviors.js`, which can be injected into any modern browser to load the behavior system.
+
 No additional dependencies are required, and the behaviors file can be pasted directly into your browser.
 
 The file can injected in a number of ways, using tools like puppeteer/playwright, a browser extension content script, or even a devtools Snippet, or even a regular
 `<script>` tag. Injecting the behaviors into the browser is outside the scope of this repo, but here are a few ways you can try the behaviors:
 
-For an extensive walkthrough of creating your own custom behaviors to use with Browsertrix and Browsertrix Crawler, [follow the Tutorial](https://crawler.docs.browsertrix.com/user-guide/behaviors/#creating-custom-behaviors).
-
 ### Copy & Paste Behaviors (for testing)
 
 To test out the behaviors in your current browser, you can:
 
-1. Go to the [dist/behaviors.js](dist/behaviors.js)
-2. Copy the file (it is minified so will be on one line).
+1. Build the behaviors: `yarn run build`
+2. Copy the resulting `dist/behaviors.js` file (it is minified so will be on one line).
 3. Open a web page, such as one that has a custom behavior, like: [https://twitter.com/webrecorder_io](https://twitter.com/webrecorder_io)
 4. Open devtools console, and paste the script
 5. Enter `self.__bx_behaviors.run();`
