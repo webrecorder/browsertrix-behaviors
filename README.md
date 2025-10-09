@@ -26,9 +26,12 @@
 A set of behaviors injected into the browser to perform certain operations on a page, such as scrolling, fetching additional URLs, or performing
 customized actions for social-media sites.
 
+For additional information about behaviors, including how to develop your own custom behaviors to use with Browsertrix or Browsertrix Crawler, please refer to the [Browser Behaviors page of the Browsertrix Crawler documentation](https://crawler.docs.browsertrix.com/user-guide/behaviors/).
+
 ## Usage
 
 The behaviors are compiled into a single file, `dist/behaviors.js`, which can be injected into any modern browser to load the behavior system.
+
 No additional dependencies are required, and the behaviors file can be pasted directly into your browser.
 
 The file can injected in a number of ways, using tools like puppeteer/playwright, a browser extension content script, or even a devtools Snippet, or even a regular
@@ -40,8 +43,8 @@ For an extensive walkthrough of creating your own custom behaviors to use with B
 
 To test out the behaviors in your current browser, you can:
 
-1. Go to the [dist/behaviors.js](dist/behaviors.js)
-2. Copy the file (it is minified so will be on one line).
+1. Build the behaviors: `yarn run build`
+2. Copy the rsulting `dist/behaviors.js` file (it is minified so will be on one line).
 3. Open a web page, such as one that has a custom behavior, like: [https://twitter.com/webrecorder_io](https://twitter.com/webrecorder_io)
 4. Open devtools console, and paste the script
 5. Enter `self.__bx_behaviors.run();`
