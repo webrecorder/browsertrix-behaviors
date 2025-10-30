@@ -30,6 +30,8 @@ Additional information about behaviors and how they work can be found in the [Br
 
 For an extensive walkthrough of creating your own custom behaviors to use with Browsertrix and Browsertrix Crawler, [follow the Tutorial](https://crawler.docs.browsertrix.com/user-guide/behaviors/#creating-custom-behaviors).
 
+If you are looking for advice on how to create or use Browsertrix Behaviors there is a dedicated category for [custom behaviors](https://forum.webrecorder.net/c/behaviors/29) in the Webrecorder forum.
+
 ## Usage
 
 The behaviors are compiled into a single file, `dist/behaviors.js`, which can be injected into any modern browser to load the behavior system.
