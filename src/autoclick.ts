@@ -47,8 +47,6 @@ export class AutoClick extends BackgroundBehavior {
   }
 
   async start() {
-    const origHref = self.location.href;
-
     const beforeUnload = (event) => {
       event.preventDefault();
       return false;
@@ -67,7 +65,7 @@ export class AutoClick extends BackgroundBehavior {
         break;
       }
 
-      await this.processElem(elem, origHref);
+      await this.processElem(elem);
     }
 
     window.removeEventListener("beforeunload", beforeUnload);
@@ -75,7 +73,7 @@ export class AutoClick extends BackgroundBehavior {
     this._markDone();
   }
 
-  async processElem(elem: HTMLAnchorElement, origHref: string) {
+  async processElem(elem: HTMLAnchorElement) {
     if (elem.target) {
       return;
     }
@@ -91,11 +89,24 @@ export class AutoClick extends BackgroundBehavior {
       this.debug("Click empty link");
     }
 
-    elem.click();
+    const origHref = self.location.href;
+    const origHistoryLen = self.history.length;
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (elem.click) {
+      elem.click();
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    } else if (elem.dispatchEvent) {
+      elem.dispatchEvent(new MouseEvent("click"));
+    }
 
     await sleep(250);
 
-    if (self.location.href != origHref) {
+    // only attempt to go back if history stack updated (pushState, not replaceState) and location changed
+    if (
+      self.history.length === origHistoryLen + 1 &&
+      self.location.href != origHref
+    ) {
       await new Promise((resolve) => {
         window.addEventListener(
           "popstate",
