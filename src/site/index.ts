@@ -11,6 +11,6 @@ const siteBehaviors = [
   TelegramBehavior,
   TikTokVideoBehavior,
   TikTokProfileBehavior,
-];
+] as const;
 
 export default siteBehaviors;

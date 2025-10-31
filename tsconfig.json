@@ -6,11 +6,12 @@
     "preserveConstEnums": true,
     "allowJs": true,
     "checkJs": true,
+    "strict": true,
     "target": "es2022",
     "lib": ["es2022", "dom", "dom.iterable"],
     "outDir": "./dist/"
   },
   "files": ["index.ts"],
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "types/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

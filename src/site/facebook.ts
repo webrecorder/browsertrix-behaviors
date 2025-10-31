@@ -1,3 +1,5 @@
+import { type AbstractBehavior, type Context } from "../lib/behavior";
+
 const Q = {
   feed: "//div[@role='feed']",
   article: ".//div[@role='article']",
@@ -35,11 +37,20 @@ const Q = {
   pageLoadWaitUntil: "//div[@role='main']",
 };
 
-export class FacebookTimelineBehavior {
-  extraWindow: any;
+type FacebookState = Partial<{
+  photos: number;
+  videos: number;
+  comments: number;
+  posts: number;
+}>;
+
+export class FacebookTimelineBehavior
+  implements AbstractBehavior<FacebookState>
+{
+  extraWindow: WindowProxy | null;
   allowNewWindow: boolean;
 
-  static id = "Facebook";
+  static id = "Facebook" as const;
 
   static isMatch() {
     // match just for posts for now
@@ -60,32 +71,40 @@ export class FacebookTimelineBehavior {
     this.allowNewWindow = false;
   }
 
-  async *iterPostFeeds(ctx) {
+  async *iterPostFeeds(ctx: Context<FacebookState>) {
     const { iterChildElem, waitUnit, waitUntil, xpathNode, xpathNodes } =
       ctx.Lib;
-    const feeds = Array.from(xpathNodes(Q.feed));
-    if (feeds && feeds.length) {
+    const feeds = Array.from(xpathNodes(Q.feed)) as Element[];
+    if (feeds.length) {
       for (const feed of feeds) {
         for await (const post of iterChildElem(
           feed,
           waitUnit,
+          // @ts-expect-error TODO: `waitUntil` is a function, why are we trying to multiply it by 10?
           waitUntil * 10,
         )) {
-          yield* this.viewPost(ctx, xpathNode(Q.article, post));
+          yield* this.viewPost(
+            ctx,
+            xpathNode(Q.article, post) as Element | null,
+          );
         }
       }
     } else {
-      const feed =
-        xpathNode(Q.pageletPostList) ||
+      const feed = (xpathNode(Q.pageletPostList) ||
         xpathNode(Q.pageletProfilePostList) ||
-        xpathNode(Q.articleToPostList);
+        xpathNode(Q.articleToPostList)) as Element | null;
 
       if (!feed) {
         return;
       }
 
-      for await (const post of iterChildElem(feed, waitUnit, waitUntil * 10)) {
-        yield* this.viewPost(ctx, xpathNode(Q.article, post));
+      for await (const post of iterChildElem(
+        feed,
+        waitUnit,
+        // @ts-expect-error TODO: again, `waitUntil` is a function, not a number
+        waitUntil * 10,
+      )) {
+        yield* this.viewPost(ctx, xpathNode(Q.article, post) as Element);
       }
     }
 
@@ -94,15 +113,19 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async *viewPost(ctx, post, maxExpands = 2) {
+  async *viewPost(
+    ctx: Context<FacebookState>,
+    post: Element | null,
+    maxExpands = 2,
+  ) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
     if (!post) {
       return;
     }
 
-    const postLink = xpathNode(Q.postQuery, post);
+    const postLink = xpathNode(Q.postQuery, post) as HTMLAnchorElement | null;
 
-    let url = null;
+    let url: URL | null = null;
 
     if (postLink) {
       url = new URL(postLink.href, window.location.href);
@@ -122,23 +145,31 @@ export class FacebookTimelineBehavior {
 
     //yield* this.viewPhotosOrVideos(ctx, post);
 
-    let commentRootUL = xpathNode(Q.commentList, post);
+    let commentRootUL = xpathNode(
+      Q.commentList,
+      post,
+    ) as HTMLUListElement | null;
     if (!commentRootUL) {
-      const viewCommentsButton = xpathNode(Q.viewComments, post);
+      const viewCommentsButton = xpathNode(
+        Q.viewComments,
+        post,
+      ) as HTMLElement | null;
       if (viewCommentsButton) {
         viewCommentsButton.click();
         await sleep(waitUnit * 2);
       }
-      commentRootUL = xpathNode(Q.commentList, post);
+      commentRootUL = xpathNode(Q.commentList, post) as HTMLUListElement | null;
     }
     yield* this.iterComments(ctx, commentRootUL, maxExpands);
 
     await sleep(waitUnit * 5);
   }
 
-  async *viewPhotosOrVideos(ctx, post) {
+  async *viewPhotosOrVideos(ctx: Context<FacebookState>, post: Element | null) {
     const { getState, sleep, waitUnit, xpathNode, xpathNodes } = ctx.Lib;
-    const objects: any[] = Array.from(xpathNodes(Q.photosOrVideos, post));
+    const objects = Array.from(
+      xpathNodes(Q.photosOrVideos, post),
+    ) as HTMLAnchorElement[];
 
     const objHrefs = new Set();
     let count = 0;
@@ -178,7 +209,7 @@ export class FacebookTimelineBehavior {
         yield* this.viewExtraObjects(ctx, obj, type, this.allowNewWindow);
       }
 
-      const close = xpathNode(Q.nextSlide);
+      const close = xpathNode(Q.nextSlide) as HTMLElement | null;
 
       if (close) {
         close.click();
@@ -187,9 +218,14 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async *viewExtraObjects(ctx, obj, type, openNew) {
+  async *viewExtraObjects(
+    ctx: Context<FacebookState>,
+    obj: Node | null,
+    type: string,
+    openNew: boolean,
+  ) {
     const { getState, sleep, waitUnit, waitUntil, xpathNode } = ctx.Lib;
-    const extraLabel = xpathNode(Q.extraLabel, obj);
+    const extraLabel = xpathNode(Q.extraLabel, obj) as HTMLElement | null;
 
     if (!extraLabel) {
       return;
@@ -200,10 +236,10 @@ export class FacebookTimelineBehavior {
       return;
     }
 
-    let lastHref;
+    let lastHref: string | undefined;
 
     for (let i = 0; i < num; i++) {
-      const nextSlideButton = xpathNode(Q.nextSlideQuery);
+      const nextSlideButton = xpathNode(Q.nextSlideQuery) as HTMLElement | null;
 
       if (!nextSlideButton) {
         continue;
@@ -224,7 +260,7 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async openNewWindow(ctx, url) {
+  async openNewWindow(ctx: Context<FacebookState>, url: string) {
     if (!this.extraWindow) {
       this.extraWindow = await ctx.Lib.openWindow(url);
     } else {
@@ -232,14 +268,18 @@ export class FacebookTimelineBehavior {
     }
   }
 
-  async *iterComments(ctx, commentRootUL, maxExpands = 2) {
+  async *iterComments(
+    ctx: Context<FacebookState>,
+    commentRootUL: HTMLUListElement | null,
+    maxExpands = 2,
+  ) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
     if (!commentRootUL) {
       await sleep(waitUnit * 5);
       return;
     }
     let commentBlock = commentRootUL.firstElementChild;
-    let lastBlock = null;
+    let lastBlock: Element | null = null;
 
     let count = 0;
 
@@ -249,7 +289,10 @@ export class FacebookTimelineBehavior {
         scrollIntoView(commentBlock);
         await sleep(waitUnit * 2);
 
-        const moreReplies = xpathNode(Q.commentMoreReplies, commentBlock);
+        const moreReplies = xpathNode(
+          Q.commentMoreReplies,
+          commentBlock,
+        ) as HTMLElement | null;
         if (moreReplies) {
           moreReplies.click();
           await sleep(waitUnit * 5);
@@ -264,7 +307,10 @@ export class FacebookTimelineBehavior {
         break;
       }
 
-      const moreButton = xpathNode(Q.commentMoreComments, commentRootUL);
+      const moreButton = xpathNode(
+        Q.commentMoreComments,
+        commentRootUL,
+      ) as HTMLElement | null;
       if (moreButton) {
         scrollIntoView(moreButton);
         moreButton.click();
@@ -279,10 +325,10 @@ export class FacebookTimelineBehavior {
     await sleep(waitUnit * 2);
   }
 
-  async *iterPhotoSlideShow(ctx) {
+  async *iterPhotoSlideShow(ctx: Context<FacebookState>) {
     const { getState, scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } =
       ctx.Lib;
-    const firstPhoto = xpathNode(Q.firstPhotoThumbnail);
+    const firstPhoto = xpathNode(Q.firstPhotoThumbnail) as HTMLElement | null;
 
     if (!firstPhoto) {
       return;
@@ -296,9 +342,11 @@ export class FacebookTimelineBehavior {
     await sleep(waitUnit * 5);
     await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
 
-    let nextSlideButton = null;
+    let nextSlideButton: HTMLElement | null = null;
 
-    while ((nextSlideButton = xpathNode(Q.nextSlideQuery))) {
+    while (
+      (nextSlideButton = xpathNode(Q.nextSlideQuery) as HTMLElement | null)
+    ) {
       lastHref = window.location.href;
 
       await sleep(waitUnit);
@@ -316,14 +364,14 @@ export class FacebookTimelineBehavior {
 
       yield getState(ctx, `Viewing photo ${window.location.href}`, "photos");
 
-      const root = xpathNode(Q.photoCommentList);
+      const root = xpathNode(Q.photoCommentList) as HTMLUListElement | null;
       yield* this.iterComments(ctx, root, 2);
 
       await sleep(waitUnit * 5);
     }
   }
 
-  async *iterAllVideos(ctx) {
+  async *iterAllVideos(ctx: Context<FacebookState>) {
     const {
       getState,
       scrollIntoView,
@@ -333,14 +381,14 @@ export class FacebookTimelineBehavior {
       xpathNode,
       xpathNodes,
     } = ctx.Lib;
-    const firstInlineVideo = xpathNode("//video");
+    const firstInlineVideo = xpathNode("//video") as HTMLElement | null;
     if (firstInlineVideo) {
       scrollIntoView(firstInlineVideo);
       await sleep(waitUnit * 5);
     }
 
-    let videoLink =
-      xpathNode(Q.firstVideoThumbnail) || xpathNode(Q.firstVideoSimple);
+    let videoLink = (xpathNode(Q.firstVideoThumbnail) ||
+      xpathNode(Q.firstVideoSimple)) as HTMLElement | null;
 
     if (!videoLink) {
       return;
@@ -360,7 +408,9 @@ export class FacebookTimelineBehavior {
       // wait for video to play, or 20s
       await Promise.race([
         waitUntil(() => {
-          for (const video of xpathNodes("//video")) {
+          for (const video of xpathNodes(
+            "//video",
+          ) as Generator<HTMLVideoElement>) {
             if (video.readyState >= 3) {
               return true;
             }
@@ -372,7 +422,7 @@ export class FacebookTimelineBehavior {
 
       await sleep(waitUnit * 10);
 
-      const close = xpathNode(Q.nextSlide);
+      const close = xpathNode(Q.nextSlide) as HTMLElement | null;
 
       if (!close) {
         break;
@@ -382,11 +432,11 @@ export class FacebookTimelineBehavior {
       close.click();
       await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
 
-      videoLink = xpathNode(Q.nextVideo, videoLink);
+      videoLink = xpathNode(Q.nextVideo, videoLink) as HTMLElement | null;
     }
   }
 
-  async *run(ctx) {
+  async *run(ctx: Context<FacebookState>) {
     const { getState, sleep, xpathNode } = ctx.Lib;
     yield getState(ctx, "Starting...");
 
@@ -406,7 +456,7 @@ export class FacebookTimelineBehavior {
 
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
       ctx.state = { comments: 0 };
-      const root = xpathNode(Q.photoCommentList);
+      const root = xpathNode(Q.photoCommentList) as HTMLUListElement | null;
       yield* this.iterComments(ctx, root, 1000);
       return;
     }
@@ -415,11 +465,11 @@ export class FacebookTimelineBehavior {
     yield* this.iterPostFeeds(ctx);
   }
 
-  async awaitPageLoad(ctx: any) {
+  async awaitPageLoad(ctx: Context<FacebookState>) {
     const { Lib, log } = ctx;
     const { assertContentValid, waitUntilNode } = Lib;
 
-    log("Waiting for Facebook to fully load", "info");
+    void log("Waiting for Facebook to fully load", "info");
 
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 

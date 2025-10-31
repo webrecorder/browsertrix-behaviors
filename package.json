@@ -5,6 +5,7 @@
   "author": "Webrecorder Software",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
+    "@types/query-selector-shadow-dom": "^1.0.4",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
     "@webpack-cli/init": "^1.1.3",
