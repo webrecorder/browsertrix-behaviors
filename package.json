@@ -1,6 +1,6 @@
 {
   "name": "browsertrix-behaviors",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "main": "index.js",
   "author": "Webrecorder Software",
   "license": "AGPL-3.0-or-later",
@@ -10,7 +10,9 @@
     "@webpack-cli/init": "^1.1.3",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
+    "memfs": "^4.17.0",
     "prettier": "^3.6.2",
+    "puppeteer": "^24.7.2",
     "ts-loader": "^9.4.2",
     "typescript": "^5.7.3",
     "webpack": "^5.75.0",
@@ -37,9 +39,5 @@
   ],
   "dependencies": {
     "query-selector-shadow-dom": "^1.0.1"
-  },
-  "optionalDependencies": {
-    "memfs": "^4.17.0",
-    "puppeteer": "^24.7.2"
   }
 }
