@@ -2,7 +2,7 @@ const subpostNextOnlyChevron =
   "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
 
 const Q = {
-  rootPath: "//main/div/div[2]/div",
+  rootPath: "//main//div/div[2]/div/div/div/div",
   childMatchSelect: "string(.//a[starts-with(@href, '/')]/@href)",
   childMatch: "child::div[.//a[@href='$1']]",
   firstPostInRow: "div[1]//a",
