@@ -1,4 +1,6 @@
 const Q = {
+  commentButton: "button[aria-label^='Read or add comments']",
+
   commentList: "//div[contains(@class, 'CommentListContainer')]",
   commentItem: "div[contains(@class, 'CommentItemContainer')]",
   viewMoreReplies: ".//p[contains(@class, 'ReplyActionText')]",
@@ -62,7 +64,14 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
   }
 
   async *run(ctx) {
-    const { xpathNode, iterChildMatches, scrollIntoView, getState } = ctx.Lib;
+    const { xpathNode, iterChildMatches, scrollIntoView, getState, sleep } = ctx.Lib;
+
+    const showComments = document.querySelector(Q.commentButton);
+    if (showComments) {
+      (showComments as HTMLButtonElement).click();
+      await sleep(500);
+    }
+
     const commentList = xpathNode(Q.commentList);
     const commentItems = iterChildMatches(Q.commentItem, commentList);
     for await (const item of commentItems) {
