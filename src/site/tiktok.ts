@@ -62,7 +62,14 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
   }
 
   async *run(ctx) {
-    const { xpathNode, iterChildMatches, scrollIntoView, getState } = ctx.Lib;
+    const {
+      xpathNode,
+      iterChildMatches,
+      scrollIntoView,
+      getState,
+      assertContentValid,
+    } = ctx.Lib;
+
     const commentList = xpathNode(Q.commentList);
     const commentItems = iterChildMatches(Q.commentItem, commentList);
     for await (const item of commentItems) {
@@ -71,6 +78,13 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
       if (this.breadthComplete(ctx, 0)) continue;
       yield* this.expandThread(ctx, item);
     }
+
+    // assert no captcha
+    assertContentValid(
+      () => !document.querySelector("div[class*=captcha]"),
+      "captcha_found",
+    );
+
     yield getState(ctx, "TikTok Video Behavior Complete");
   }
 }
