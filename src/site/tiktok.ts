@@ -76,7 +76,7 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
     // assert no captcha
     assertContentValid(
       () => !document.querySelector("div[class*=captcha]"),
-      "not_logged_in",
+      "captcha_found",
     );
 
     yield getState(ctx, "TikTok Video Behavior Complete");
