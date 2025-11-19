@@ -62,7 +62,13 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
   }
 
   async *run(ctx) {
-    const { xpathNode, iterChildMatches, scrollIntoView, getState, assertContentValid } = ctx.Lib;
+    const {
+      xpathNode,
+      iterChildMatches,
+      scrollIntoView,
+      getState,
+      assertContentValid,
+    } = ctx.Lib;
 
     const commentList = xpathNode(Q.commentList);
     const commentItems = iterChildMatches(Q.commentItem, commentList);
