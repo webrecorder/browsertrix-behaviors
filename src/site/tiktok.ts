@@ -1,4 +1,5 @@
 const Q = {
+  commentButton: "button[aria-label^='Read or add comments']",
   commentList: "//div[contains(@class, 'CommentListContainer')]",
   commentItem: "div[contains(@class, 'CommentItemContainer')]",
   viewMoreReplies: ".//p[contains(@class, 'ReplyActionText')]",
@@ -15,7 +16,7 @@ export const BREADTH_ALL = Symbol("BREADTH_ALL");
 export class TikTokSharedBehavior {
   async awaitPageLoad(ctx: any) {
     const { assertContentValid, waitUntilNode } = ctx.Lib;
-    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
+    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 20000);
 
     assertContentValid(
       () => !!document.querySelector("*[aria-label='Messages']"),
@@ -68,7 +69,26 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
       scrollIntoView,
       getState,
       assertContentValid,
+      sleep,
     } = ctx.Lib;
+
+    const showComments = document.querySelector(Q.commentButton);
+    if (showComments) {
+      (showComments as HTMLButtonElement).click();
+      await sleep(10000);
+    }
+
+    // assert no captcha every 0.5 seconds
+    void (async () => {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        if (document.querySelector("div[class*=captcha]")) {
+          assertContentValid(false, "not_logged_in");
+          break;
+        }
+        await sleep(500);
+      }
+    })();
 
     const commentList = xpathNode(Q.commentList);
     const commentItems = iterChildMatches(Q.commentItem, commentList);
@@ -78,12 +98,6 @@ export class TikTokVideoBehavior extends TikTokSharedBehavior {
       if (this.breadthComplete(ctx, 0)) continue;
       yield* this.expandThread(ctx, item);
     }
-
-    // assert no captcha
-    assertContentValid(
-      () => !document.querySelector("div[class*=captcha]"),
-      "captcha_found",
-    );
 
     yield getState(ctx, "TikTok Video Behavior Complete");
   }
