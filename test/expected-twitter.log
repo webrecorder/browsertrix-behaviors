@@ -3,7 +3,11 @@
 {"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/2","state":{"tweets":1,"images":2,"videos":0,"threads":1}}
 {"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/3","state":{"tweets":1,"images":3,"videos":0,"threads":1}}
 {"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369531770962550788/photo/4","state":{"tweets":1,"images":4,"videos":0,"threads":1}}
-{"msg":"Waiting for media playback for https://twitter.com/CaptureSample/status/1369492279585501184 to finish","state":{"tweets":4,"images":4,"videos":1,"threads":1}}
+{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369492279585501184","state":{"tweets":4,"images":4,"videos":1,"threads":1}}
 {"msg":"Loading video for https://twitter.com/CaptureSample/status/1369487726710431750","state":{"tweets":7,"images":4,"videos":2,"threads":1}}
 {"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369486018714345477/photo/1","state":{"tweets":9,"images":5,"videos":2,"threads":1}}
-{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369487726710431750","state":{"tweets":15,"images":5,"videos":3,"threads":1}}
+{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369492279585501184","state":{"tweets":12,"images":5,"videos":3,"threads":1}}
+{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369487726710431750","state":{"tweets":15,"images":5,"videos":4,"threads":1}}
+{"msg":"Loading Image: https://twitter.com/CaptureSample/status/1369486018714345477/photo/1","state":{"tweets":17,"images":6,"videos":4,"threads":1}}
+{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369492279585501184","state":{"tweets":20,"images":6,"videos":5,"threads":1}}
+{"msg":"Loading video for https://twitter.com/CaptureSample/status/1369487726710431750","state":{"tweets":23,"images":6,"videos":6,"threads":1}}
