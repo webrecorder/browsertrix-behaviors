@@ -169,7 +169,7 @@ export class AutoFetcher extends BackgroundBehavior {
         this.numPending++;
 
         // first, try opaque response, then do external fetch
-        if (!await this.doFetchNonCors(url)) {
+        if (!(await this.doFetchNonCors(url))) {
           await doExternalFetch(url);
         }
 
