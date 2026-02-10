@@ -3,6 +3,10 @@
   "version": "0.9.8",
   "main": "index.js",
   "author": "Webrecorder Software",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/webrecorder/browsertrix-behaviors"
+  },
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.28.0",
