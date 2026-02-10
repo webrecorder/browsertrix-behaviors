@@ -146,18 +146,17 @@ export class AutoFetcher extends BackgroundBehavior {
   // start non-cors fetch, abort immediately (assumes full streaming by backend)
   async doFetchNonCors(url: string) {
     try {
-      const abort = new AbortController();
       await fetch(url, {
         mode: "no-cors",
         credentials: "include",
         referrerPolicy: "origin-when-cross-origin",
         headers: this.headers,
-        abort,
       } as {});
-      abort.abort();
       this.debug(`Autofetch: started non-cors stream for ${url}`);
+      return true;
     } catch (e) {
       this.debug(`Autofetch: failed non-cors for ${url}`);
+      return false;
     }
   }
 
@@ -169,10 +168,9 @@ export class AutoFetcher extends BackgroundBehavior {
 
         this.numPending++;
 
-        let success = await doExternalFetch(url);
-
-        if (!success) {
-          await this.doFetchNonCors(url);
+        // first, try opaque response, then do external fetch
+        if (!(await this.doFetchNonCors(url))) {
+          await doExternalFetch(url);
         }
 
         this.numPending--;
