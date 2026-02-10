@@ -323,12 +323,12 @@ export class BehaviorManager {
 
   pause() {
     behaviorLog("Pausing Main Behavior" + this.mainBehaviorClass.name);
-    this.behaviors.forEach((x) => x.pause());
+    this.behaviors.forEach((x) => "pause" in x && x.pause());
   }
 
   unpause() {
     // behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
-    this.behaviors.forEach((x) => x.unpause());
+    this.behaviors.forEach((x) => "unpause" in x && x.unpause());
   }
 
   doAsyncFetch(url) {
