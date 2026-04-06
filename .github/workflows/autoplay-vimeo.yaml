@@ -7,7 +7,7 @@ on:
     - cron: "12 16 * * *"
 
 jobs:
-  autoscroll_test:
+  autoplay_vimeo_test:
     runs-on: ubuntu-latest
 
     strategy:
@@ -39,3 +39,10 @@ jobs:
 
       - name: check mp4 capture
         run: grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj
+
+      - name: upload cdxj if failed
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: vimeo-cdxj
+          path: ./crawls/collections/test/indexes/index.cdxj
