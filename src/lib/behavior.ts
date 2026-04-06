@@ -21,11 +21,13 @@ export class BackgroundBehavior {
 
 export type EmptyObject = Record<string, never>;
 
+type LogData = string | { msg: string; [k: string]: unknown };
+
 export type Context<State, Opts = EmptyObject> = {
   Lib: typeof Lib;
   state: State;
   opts: Opts;
-  log: (data: unknown, type?: string) => Promise<void>;
+  log: (data: LogData, type?: string) => Promise<void>;
 };
 
 export abstract class AbstractBehavior<State, Opts = EmptyObject> {
@@ -69,6 +71,7 @@ export class BehaviorRunner<State, Opts>
   _running: Promise<void> | null;
   paused: Promise<void> | (() => Promise<void>) | null;
   _unpause: ((value: void | PromiseLike<void>) => void) | null;
+  isSiteSpecific: boolean;
 
   get id() {
     return (this.inst.constructor as ConcreteBehaviorConstructor<State, Opts>)
@@ -78,10 +81,12 @@ export class BehaviorRunner<State, Opts>
   constructor(
     behavior: ConcreteBehaviorConstructor<State, Opts>,
     mainOpts = {},
+    isSiteSpecific = true,
   ) {
     super();
     this.behaviorProps = behavior;
     this.inst = new behavior();
+    this.isSiteSpecific = isSiteSpecific;
 
     if (
       typeof this.inst.run !== "function" ||
@@ -93,8 +98,9 @@ export class BehaviorRunner<State, Opts>
     let { state, opts } = behavior.init();
     state = state || {};
     opts = opts ? { ...opts, ...mainOpts } : mainOpts;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const log = async (data: any, type?: string) => this.wrappedLog(data, type);
+
+    const log = async (data: LogData, type?: string) =>
+      this.wrappedLog(data, type);
 
     this.ctx = { Lib, state, opts, log };
 
@@ -103,8 +109,7 @@ export class BehaviorRunner<State, Opts>
     this._unpause = null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  wrappedLog(data: any, type = "info") {
+  wrappedLog(data: LogData, type = "info") {
     let logData;
     if (typeof data === "string" || data instanceof String) {
       logData = { msg: data };
@@ -112,7 +117,11 @@ export class BehaviorRunner<State, Opts>
       logData = data;
     }
     this.log(
-      { ...logData, behavior: this.behaviorProps.id, siteSpecific: true },
+      {
+        ...logData,
+        behavior: this.behaviorProps.id,
+        siteSpecific: this.isSiteSpecific,
+      },
       type,
     );
   }

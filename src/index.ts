@@ -207,9 +207,13 @@ export class BehaviorManager {
     if (!siteMatch && opts?.autoscroll) {
       void behaviorLog("Using Autoscroll");
       this.mainBehaviorClass = AutoScroll;
-      this.mainBehavior = new BehaviorRunner(AutoScroll, {
-        autoFetcher: this.autofetch!,
-      });
+      this.mainBehavior = new BehaviorRunner(
+        AutoScroll,
+        {
+          autoFetcher: this.autofetch!,
+        },
+        false,
+      );
     }
 
     if (this.mainBehavior) {
