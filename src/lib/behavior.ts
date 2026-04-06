@@ -1,17 +1,17 @@
-import { behaviorLog } from "./utils";
+import { behaviorLog, type LogData } from "./utils";
 import * as Lib from "./utils";
 
 // ===========================================================================
 export class BackgroundBehavior {
-  debug(msg: unknown) {
+  debug(msg: LogData) {
     void behaviorLog(msg, "debug");
   }
 
-  error(msg: unknown) {
+  error(msg: LogData) {
     void behaviorLog(msg, "error");
   }
 
-  log(msg: unknown, type = "info") {
+  log(msg: LogData, type = "info") {
     void behaviorLog(msg, type);
   }
 }
@@ -20,8 +20,6 @@ export class BackgroundBehavior {
 // library to be run through the BehaviorManager
 
 export type EmptyObject = Record<string, never>;
-
-type LogData = string | { msg: string; [k: string]: unknown };
 
 export type Context<State, Opts = EmptyObject> = {
   Lib: typeof Lib;
@@ -110,9 +108,9 @@ export class BehaviorRunner<State, Opts>
   }
 
   wrappedLog(data: LogData, type = "info") {
-    let logData;
+    let logData: Exclude<LogData, string>;
     if (typeof data === "string" || data instanceof String) {
-      logData = { msg: data };
+      logData = { msg: data.toString() };
     } else {
       logData = data;
     }

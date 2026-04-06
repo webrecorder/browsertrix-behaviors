@@ -1,6 +1,8 @@
 import { type BehaviorManager } from "..";
 import { type Context } from "./behavior";
 
+export type LogData = string | { msg: string; [k: string]: unknown };
+
 let _logFunc: ((...data: unknown[]) => void) | null = console.log;
 let _behaviorMgrClass: typeof BehaviorManager | null = null;
 
@@ -137,7 +139,7 @@ export async function callBinding<P, R>(
   }
 }
 
-export async function behaviorLog(data: unknown, type = "debug") {
+export async function behaviorLog(data: LogData, type = "debug") {
   if (_logFunc) {
     await callBinding(_logFunc, { data, type });
   }

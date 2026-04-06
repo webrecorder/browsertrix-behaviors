@@ -144,7 +144,7 @@ export class AutoFetcher extends BackgroundBehavior {
 
       return true;
     } catch (e) {
-      this.debug(e);
+      this.debug({ msg: "Error fetching stream", err: e });
 
       return false;
     }
