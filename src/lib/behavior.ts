@@ -28,7 +28,7 @@ export type Context<State, Opts = EmptyObject> = {
   log: (data: LogData, type?: string) => Promise<void>;
 };
 
-export abstract class AbstractBehavior<State, Opts = EmptyObject> {
+abstract class AbstractBehaviorBase<State, Opts = EmptyObject> {
   static readonly id: string;
   static isMatch: () => boolean;
   static init: () => {
@@ -39,13 +39,18 @@ export abstract class AbstractBehavior<State, Opts = EmptyObject> {
     opts?: any;
   };
 
-  abstract run: (
-    ctx: Context<State, Opts>,
-  ) => AsyncIterable<{ state?: State }> | Promise<void>;
-
   abstract [Symbol.asyncIterator]?(): AsyncIterable<void>;
 
   abstract awaitPageLoad?: (ctx: Context<State, Opts>) => Promise<void>;
+}
+
+export abstract class AbstractBehavior<
+  State,
+  Opts = EmptyObject,
+> extends AbstractBehaviorBase<State, Opts> {
+  abstract run: (
+    ctx: Context<State, Opts>,
+  ) => AsyncIterable<{ state?: State; msg: string } | undefined>;
 }
 
 type StaticProps<T> = {
@@ -61,7 +66,7 @@ type ConcreteBehaviorConstructor<State, Opts> = StaticBehaviorProps & {
 
 export class BehaviorRunner<State, Opts>
   extends BackgroundBehavior
-  implements AbstractBehavior<State, Opts>
+  implements AbstractBehaviorBase<State, Opts>
 {
   inst: AbstractBehavior<State, Opts>;
   behaviorProps: ConcreteBehaviorConstructor<State, Opts>;
@@ -134,7 +139,6 @@ export class BehaviorRunner<State, Opts>
 
   async run() {
     try {
-      // @ts-expect-error TODO how does this work for behaviors where `run` isn't an iterator, e.g. Autoplay and Autoscroll?
       for await (const step of this.inst.run(this.ctx)) {
         if (step) {
           this.wrappedLog(step);
