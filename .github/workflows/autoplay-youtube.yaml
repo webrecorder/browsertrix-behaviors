@@ -44,7 +44,7 @@ jobs:
           max_attempts: 3
           command: grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj
           new_command_on_retry: |
-            docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/crawls:/crawls $BROWSERTRIX_IMAGE crawl --url https://oembed.link/https://vimeo.com/1084537 --limit 1 --generateCDX --collection test && \
+            docker run -v $PWD/dist/behaviors.js:/app/node_modules/browsertrix-behaviors/dist/behaviors.js -v $PWD/crawls:/crawls $BROWSERTRIX_IMAGE crawl --url https://oembed.link/https://www.youtube.com/watch?v=aT-Up5Y4uRI --limit 1 --generateCDX --collection test && \
             grep '"video/mp4"' ./crawls/collections/test/indexes/index.cdxj
 
       - name: upload cdxj if failed
