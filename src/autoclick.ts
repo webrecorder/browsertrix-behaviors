@@ -120,10 +120,6 @@ export class AutoClick extends BackgroundBehavior {
       });
     }
   }
-  // TODO: this looks like maybe a typo, there's no associated `try` block for this `catch` block, so it ends up being a method
-  catch(e: unknown) {
-    this.debug((e as Error).toString());
-  }
 
   async done() {
     return this._donePromise;
