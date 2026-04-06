@@ -2,7 +2,6 @@ import {
   type AbstractBehavior,
   BackgroundBehavior,
   type Context,
-  type EmptyObject,
 } from "./lib/behavior";
 import {
   sleep,
@@ -16,24 +15,21 @@ import {
 } from "./lib/utils";
 import { type AutoFetcher } from "./autofetcher";
 
-// ===========================================================================
+type AutoScrollState = { segments: number };
+type AutoScrollOpts = { autoFetcher: AutoFetcher };
+
 export class AutoScroll
   extends BackgroundBehavior
-  implements AbstractBehavior<EmptyObject>
+  implements AbstractBehavior<AutoScrollState, AutoScrollOpts>
 {
-  autoFetcher: AutoFetcher;
   showMoreQuery: string;
-  state: { segments: number } = { segments: 1 };
   lastScrollPos: number;
   samePosCount: number;
-
   origPath: string;
   lastMsg = "";
 
-  constructor(autofetcher: AutoFetcher) {
+  constructor() {
     super();
-
-    this.autoFetcher = autofetcher;
 
     this.showMoreQuery =
       "//*[contains(text(), 'show more') or contains(text(), 'Show more')]";
@@ -44,8 +40,17 @@ export class AutoScroll
     this.origPath = document.location.pathname;
   }
 
-  static get id() {
-    return "Autoscroll";
+  static id = "Autoscroll";
+
+  static isMatch() {
+    return true;
+  }
+
+  static init() {
+    return {
+      state: { segments: 1 },
+      opts: {},
+    };
   }
 
   currScrollPos() {
@@ -78,7 +83,7 @@ export class AutoScroll
     }
   }
 
-  async shouldScroll() {
+  async shouldScroll(ctx: Context<AutoScrollState, AutoScrollOpts>) {
     if (
       !this.hasScrollEL(self.window) &&
       !this.hasScrollEL(self.document) &&
@@ -93,7 +98,7 @@ export class AutoScroll
     }
 
     const lastScrollHeight = self.document.scrollingElement!.scrollHeight;
-    const numFetching = this.autoFetcher.numFetching;
+    const numFetching = ctx.opts.autoFetcher.numFetching;
 
     // scroll to almost end of page
     const scrollEnd =
@@ -107,7 +112,7 @@ export class AutoScroll
     // scroll height changed, should scroll
     if (
       lastScrollHeight !== self.document.scrollingElement!.scrollHeight ||
-      numFetching < this.autoFetcher.numFetching
+      numFetching < ctx.opts.autoFetcher.numFetching
     ) {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
       return true;
@@ -132,13 +137,13 @@ export class AutoScroll
     return true;
   }
 
-  async *run(ctx: Context<EmptyObject>) {
+  async *run(ctx: Context<AutoScrollState, AutoScrollOpts>) {
     if (this.shouldScrollUp()) {
       yield* this.scrollUp(ctx);
       return;
     }
 
-    if (await this.shouldScroll()) {
+    if (await this.shouldScroll(ctx)) {
       yield* this.scrollDown(ctx);
       return;
     }
@@ -149,7 +154,7 @@ export class AutoScroll
     );
   }
 
-  async *scrollDown(ctx: Context<EmptyObject>) {
+  async *scrollDown(ctx: Context<AutoScrollState, AutoScrollOpts>) {
     const scrollInc = Math.min(
       self.document.scrollingElement!.clientHeight * 0.1,
       30,
@@ -177,7 +182,7 @@ export class AutoScroll
       const scrollHeight = self.document.scrollingElement!.scrollHeight;
 
       if (scrollHeight > lastScrollHeight) {
-        this.state.segments++;
+        ctx.state.segments++;
         lastScrollHeight = scrollHeight;
       }
 
@@ -210,7 +215,7 @@ export class AutoScroll
 
       await sleep(interval);
 
-      if (this.state.segments === 1) {
+      if (ctx.state.segments === 1) {
         // only print this the first time
         yield getState(
           ctx,
@@ -218,7 +223,7 @@ export class AutoScroll
         );
         elapsedWait = 2.0;
       } else {
-        const waitSecs = elapsedWait / (this.state.segments - 1);
+        const waitSecs = elapsedWait / (ctx.state.segments - 1);
         // only add extra wait if actually changed height
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
         this.debug(
@@ -249,7 +254,7 @@ export class AutoScroll
     }
   }
 
-  async *scrollUp(ctx: Context<EmptyObject>) {
+  async *scrollUp(ctx: Context<AutoScrollState, AutoScrollOpts>) {
     const scrollInc = Math.min(
       self.document.scrollingElement!.clientHeight * 0.1,
       30,
@@ -264,7 +269,7 @@ export class AutoScroll
       const scrollHeight = self.document.scrollingElement!.scrollHeight;
 
       if (scrollHeight > lastScrollHeight) {
-        this.state.segments++;
+        ctx.state.segments++;
         lastScrollHeight = scrollHeight;
       }
 
@@ -272,7 +277,7 @@ export class AutoScroll
 
       await sleep(interval);
 
-      if (this.state.segments === 1) {
+      if (ctx.state.segments === 1) {
         // only print this the first time
         yield getState(
           ctx,
@@ -283,7 +288,7 @@ export class AutoScroll
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
         await Promise.race([
           waitUntil(() => self.scrollY > 0, interval),
-          sleep((this.state.segments - 1) * 2000),
+          sleep((ctx.state.segments - 1) * 2000),
         ]);
       }
     }

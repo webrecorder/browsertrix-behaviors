@@ -207,7 +207,9 @@ export class BehaviorManager {
     if (!siteMatch && opts?.autoscroll) {
       void behaviorLog("Using Autoscroll");
       this.mainBehaviorClass = AutoScroll;
-      this.mainBehavior = new AutoScroll(this.autofetch!);
+      this.mainBehavior = new BehaviorRunner(AutoScroll, {
+        autoFetcher: this.autofetch!,
+      });
     }
 
     if (this.mainBehavior) {
@@ -349,9 +351,8 @@ export class BehaviorManager {
       console.error(`No behavior of name ${name} found`);
       return;
     }
-    //const behavior = new siteBehaviorClass(behaviorOpts);
-    const behavior = new BehaviorRunner(
-      // @ts-expect-error TODO figure out types here
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const behavior = new BehaviorRunner<any, any>(
       siteBehaviorClass,
       behaviorOpts,
     );
@@ -367,7 +368,7 @@ export class BehaviorManager {
   }
 
   unpause() {
-    // behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
+    void behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
     this.behaviors.forEach((x) => "unpause" in x && x.unpause());
   }
 
