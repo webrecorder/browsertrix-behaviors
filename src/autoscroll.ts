@@ -75,7 +75,7 @@ export class AutoScroll
 
   hasScrollEL(obj: HTMLElement | Document | Window) {
     try {
-      return !!self["getEventListeners"]!(obj).scroll;
+      return !!self["getEventListeners"]?.(obj).scroll;
     } catch (_) {
       // unknown, assume has listeners
       this.debug("getEventListeners() not available");
