@@ -72,17 +72,11 @@ export class FacebookTimelineBehavior
   }
 
   async *iterPostFeeds(ctx: Context<FacebookState>) {
-    const { iterChildElem, waitUnit, waitUntil, xpathNode, xpathNodes } =
-      ctx.Lib;
+    const { iterChildElem, waitUnit, xpathNode, xpathNodes } = ctx.Lib;
     const feeds = Array.from(xpathNodes(Q.feed)) as Element[];
     if (feeds.length) {
       for (const feed of feeds) {
-        for await (const post of iterChildElem(
-          feed,
-          waitUnit,
-          // @ts-expect-error TODO: `waitUntil` is a function, why are we trying to multiply it by 10?
-          waitUntil * 10,
-        )) {
+        for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
           yield* this.viewPost(
             ctx,
             xpathNode(Q.article, post) as Element | null,
@@ -98,12 +92,7 @@ export class FacebookTimelineBehavior
         return;
       }
 
-      for await (const post of iterChildElem(
-        feed,
-        waitUnit,
-        // @ts-expect-error TODO: again, `waitUntil` is a function, not a number
-        waitUntil * 10,
-      )) {
+      for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
         yield* this.viewPost(ctx, xpathNode(Q.article, post) as Element);
       }
     }
