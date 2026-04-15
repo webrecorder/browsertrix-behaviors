@@ -9,12 +9,12 @@ export class Autoplay extends BackgroundBehavior {
   mediaSet: Set<string>;
   autofetcher: AutoFetcher;
   numPlaying: number;
-  promises: Promise<any>[];
+  promises: Promise<boolean | undefined>[];
   _initDone: Function;
   running = false;
   polling = false;
 
-  static id = "Autoplay";
+  static id = "Autoplay" as const;
 
   constructor(autofetcher: AutoFetcher, startEarly = false) {
     super();
@@ -25,7 +25,7 @@ export class Autoplay extends BackgroundBehavior {
     this._initDone = () => null;
     this.promises.push(new Promise((resolve) => (this._initDone = resolve)));
     if (startEarly) {
-      document.addEventListener("DOMContentLoaded", () =>
+      document.addEventListener("DOMContentLoaded", async () =>
         this.pollAudioVideo(),
       );
     }
@@ -35,7 +35,7 @@ export class Autoplay extends BackgroundBehavior {
     this.running = true;
     //this.initObserver();
 
-    this.pollAudioVideo();
+    void this.pollAudioVideo();
 
     this._initDone();
   }
@@ -49,19 +49,22 @@ export class Autoplay extends BackgroundBehavior {
 
     this.polling = true;
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (run) {
       for (const [, elem] of querySelectorAllDeep(
         "video, audio, picture",
-      ).entries()) {
+      ).entries() as ArrayIterator<
+        [number, HTMLVideoElement | HTMLAudioElement | HTMLPictureElement]
+      >) {
         if (!elem["__bx_autoplay_found"]) {
           if (!this.running) {
-            if (this.processFetchableUrl(elem)) {
+            if (this.processFetchableUrl(elem as HTMLMediaElement)) {
               elem["__bx_autoplay_found"] = true;
             }
             continue;
           }
 
-          await this.loadMedia(elem);
+          await this.loadMedia(elem as HTMLMediaElement);
           elem["__bx_autoplay_found"] = true;
         }
       }
@@ -72,8 +75,8 @@ export class Autoplay extends BackgroundBehavior {
     this.polling = false;
   }
 
-  fetchSrcUrl(source) {
-    const url: string = source.src || source.currentSrc;
+  fetchSrcUrl(source: HTMLMediaElement | HTMLSourceElement) {
+    const url: string = source.src || (source as HTMLMediaElement).currentSrc;
 
     if (!url) {
       return false;
@@ -94,7 +97,7 @@ export class Autoplay extends BackgroundBehavior {
     return true;
   }
 
-  processFetchableUrl(media) {
+  processFetchableUrl(media: HTMLMediaElement) {
     let found = this.fetchSrcUrl(media);
 
     const sources = media.querySelectorAll("source");
@@ -107,11 +110,12 @@ export class Autoplay extends BackgroundBehavior {
     return found;
   }
 
-  async loadMedia(media) {
+  async loadMedia(media: HTMLMediaElement) {
     this.debug("processing media element: " + media.outerHTML);
 
     const found = this.processFetchableUrl(media);
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!media.play) {
       this.debug("media not playable, skipping");
       return;
@@ -138,46 +142,45 @@ export class Autoplay extends BackgroundBehavior {
         );
       }
 
-      this.attemptMediaPlay(media).then(
-        async (finished: Promise<any> | null) => {
-          let check = true;
+      void this.attemptMediaPlay(media).then(async (finished) => {
+        let check = true;
 
-          if (finished) {
-            finished.then(() => (check = false));
-          }
+        if (finished) {
+          // @ts-expect-error TODO: not sure what this is supposed to be, I believe `finished` is a boolean here?
+          void finished.then(() => (check = false));
+        }
 
-          while (check) {
-            if (this.processFetchableUrl(media)) {
-              check = false;
-            }
-            this.debug(
-              "Waiting for fixed URL or media to finish: " + media.currentSrc,
-            );
-            await sleep(1000);
+        while (check) {
+          if (this.processFetchableUrl(media)) {
+            check = false;
           }
-        },
-      );
+          this.debug(
+            "Waiting for fixed URL or media to finish: " + media.currentSrc,
+          );
+          await sleep(1000);
+        }
+      });
     } else if (media.currentSrc) {
       this.debug("media playing from non-URL source: " + media.currentSrc);
     }
   }
 
-  async attemptMediaPlay(media) {
+  async attemptMediaPlay(media: HTMLMediaElement) {
     // finished promise
-    let resolveFinished;
+    let resolveFinished: (value?: boolean) => void;
 
-    const finished = new Promise((res) => {
+    const finished = new Promise<boolean | undefined>((res) => {
       resolveFinished = res;
     });
 
     // started promise
-    let resolveStarted;
+    let resolveStarted!: (value?: boolean) => void;
 
-    const started = new Promise((res) => {
+    const started = new Promise<boolean | undefined>((res) => {
       resolveStarted = res;
     });
 
-    started.then(() => this.promises.push(finished));
+    void started.then(() => this.promises.push(finished));
 
     // already started
     if (!media.paused && media.currentTime > 0) {
@@ -240,7 +243,7 @@ export class Autoplay extends BackgroundBehavior {
       }
     }
 
-    media.play();
+    void media.play();
 
     if (await Promise.race([started, sleep(1000)])) {
       this.debug("play started after media.play()");
@@ -249,7 +252,7 @@ export class Autoplay extends BackgroundBehavior {
     return finished;
   }
 
-  done() {
+  async done() {
     return Promise.allSettled(this.promises);
   }
 }

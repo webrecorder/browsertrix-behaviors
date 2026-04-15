@@ -49,6 +49,16 @@ const _watching = compiler.watch({}, async (err, stats) => {
   );
   const behaviorScript = fs.readFileSync("dist/behaviors.js", "utf8");
 
+  if (process.argv[3] === "--logging") {
+    page.on("console", async (msg) => {
+      const timestamp = new Date().toISOString();
+      const args = await Promise.all(
+        msg.args().map(async (obj) => await obj.jsonValue()),
+      );
+      return console.log(timestamp, ...args);
+    });
+  }
+
   await page.goto(validateUrl(process.argv[2]));
 
   await page.evaluate(

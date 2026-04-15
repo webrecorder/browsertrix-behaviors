@@ -1,4 +1,8 @@
-import { Behavior } from "./lib/behavior";
+import {
+  type AbstractBehavior,
+  BackgroundBehavior,
+  type Context,
+} from "./lib/behavior";
 import {
   sleep,
   waitUnit,
@@ -7,24 +11,25 @@ import {
   waitUntil,
   behaviorLog,
   addLink,
+  getState,
 } from "./lib/utils";
 import { type AutoFetcher } from "./autofetcher";
 
-// ===========================================================================
-export class AutoScroll extends Behavior {
-  autoFetcher: AutoFetcher;
+type AutoScrollState = { segments: number };
+type AutoScrollOpts = { autoFetcher: AutoFetcher };
+
+export class AutoScroll
+  extends BackgroundBehavior
+  implements AbstractBehavior<AutoScrollState, AutoScrollOpts>
+{
   showMoreQuery: string;
-  state: { segments: number } = { segments: 1 };
   lastScrollPos: number;
   samePosCount: number;
-
   origPath: string;
   lastMsg = "";
 
-  constructor(autofetcher: AutoFetcher) {
+  constructor() {
     super();
-
-    this.autoFetcher = autofetcher;
 
     this.showMoreQuery =
       "//*[contains(text(), 'show more') or contains(text(), 'Show more')]";
@@ -36,6 +41,17 @@ export class AutoScroll extends Behavior {
   }
 
   static id = "Autoscroll";
+
+  static isMatch() {
+    return true;
+  }
+
+  static init() {
+    return {
+      state: { segments: 1 },
+      opts: {},
+    };
+  }
 
   currScrollPos() {
     return Math.round(self.scrollY + self.innerHeight);
@@ -57,9 +73,9 @@ export class AutoScroll extends Behavior {
     this.lastMsg = msg;
   }
 
-  hasScrollEL(obj) {
+  hasScrollEL(obj: HTMLElement | Document | Window) {
     try {
-      return !!self["getEventListeners"](obj).scroll;
+      return !!self["getEventListeners"]?.(obj).scroll;
     } catch (_) {
       // unknown, assume has listeners
       this.debug("getEventListeners() not available");
@@ -67,7 +83,7 @@ export class AutoScroll extends Behavior {
     }
   }
 
-  async shouldScroll() {
+  async shouldScroll(ctx: Context<AutoScrollState, AutoScrollOpts>) {
     if (
       !this.hasScrollEL(self.window) &&
       !this.hasScrollEL(self.document) &&
@@ -81,12 +97,12 @@ export class AutoScroll extends Behavior {
       return true;
     }
 
-    const lastScrollHeight = self.document.scrollingElement.scrollHeight;
-    const numFetching = this.autoFetcher.numFetching;
+    const lastScrollHeight = self.document.scrollingElement!.scrollHeight;
+    const numFetching = ctx.opts.autoFetcher.numFetching;
 
     // scroll to almost end of page
     const scrollEnd =
-      document.scrollingElement.scrollHeight * 0.98 - self.innerHeight;
+      document.scrollingElement!.scrollHeight * 0.98 - self.innerHeight;
 
     window.scrollTo({ top: scrollEnd, left: 0, behavior: "smooth" });
 
@@ -95,8 +111,8 @@ export class AutoScroll extends Behavior {
 
     // scroll height changed, should scroll
     if (
-      lastScrollHeight !== self.document.scrollingElement.scrollHeight ||
-      numFetching < this.autoFetcher.numFetching
+      lastScrollHeight !== self.document.scrollingElement!.scrollHeight ||
+      numFetching < ctx.opts.autoFetcher.numFetching
     ) {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
       return true;
@@ -112,7 +128,7 @@ export class AutoScroll extends Behavior {
 
     if (
       (self.window.scrollY + self["scrollHeight"]) /
-        self.document.scrollingElement.scrollHeight <
+        self.document.scrollingElement!.scrollHeight <
       0.9
     ) {
       return false;
@@ -121,92 +137,93 @@ export class AutoScroll extends Behavior {
     return true;
   }
 
-  async *[Symbol.asyncIterator]() {
+  async *run(ctx: Context<AutoScrollState, AutoScrollOpts>) {
     if (this.shouldScrollUp()) {
-      yield* this.scrollUp();
+      yield* this.scrollUp(ctx);
       return;
     }
 
-    if (await this.shouldScroll()) {
-      yield* this.scrollDown();
+    if (await this.shouldScroll(ctx)) {
+      yield* this.scrollDown(ctx);
       return;
     }
 
-    yield this.getState(
+    yield getState(
+      ctx,
       "Skipping autoscroll, page seems to not be responsive to scrolling events",
     );
   }
 
-  async *scrollDown() {
+  async *scrollDown(ctx: Context<AutoScrollState, AutoScrollOpts>) {
     const scrollInc = Math.min(
-      self.document.scrollingElement.clientHeight * 0.1,
+      self.document.scrollingElement!.clientHeight * 0.1,
       30,
     );
     const interval = 75;
     let elapsedWait = 0;
 
-    let showMoreElem = null;
+    let showMoreElem: HTMLElement | null = null;
     let ignoreShowMoreElem = false;
 
     const scrollOpts = { top: scrollInc, left: 0, behavior: "auto" };
-    let lastScrollHeight = self.document.scrollingElement.scrollHeight;
+    let lastScrollHeight = self.document.scrollingElement!.scrollHeight;
 
     while (this.canScrollMore()) {
       if (document.location.pathname !== this.origPath) {
-        behaviorLog(
+        void behaviorLog(
           "Location Changed, stopping scroll: " +
             `${document.location.pathname} != ${this.origPath}`,
           "info",
         );
-        addLink(document.location.href);
+        void addLink(document.location.href);
         return;
       }
 
-      const scrollHeight = self.document.scrollingElement.scrollHeight;
+      const scrollHeight = self.document.scrollingElement!.scrollHeight;
 
       if (scrollHeight > lastScrollHeight) {
-        this.state.segments++;
+        ctx.state.segments++;
         lastScrollHeight = scrollHeight;
       }
 
       if (!showMoreElem && !ignoreShowMoreElem) {
-        showMoreElem = xpathNode(this.showMoreQuery);
+        showMoreElem = xpathNode(this.showMoreQuery) as HTMLElement | null;
       }
 
       if (showMoreElem && isInViewport(showMoreElem)) {
-        yield this.getState("Clicking 'Show More', awaiting more content");
+        yield getState(ctx, "Clicking 'Show More', awaiting more content");
         showMoreElem["click"]();
 
         await sleep(waitUnit);
 
         await Promise.race([
           waitUntil(
-            () => self.document.scrollingElement.scrollHeight > scrollHeight,
+            () => self.document.scrollingElement!.scrollHeight > scrollHeight,
             500,
           ),
           sleep(30000),
         ]);
 
-        if (self.document.scrollingElement.scrollHeight === scrollHeight) {
+        if (self.document.scrollingElement!.scrollHeight === scrollHeight) {
           ignoreShowMoreElem = true;
         }
 
         showMoreElem = null;
       }
 
-      // eslint-disable-next-line
       self.scrollBy(scrollOpts as ScrollToOptions);
 
       await sleep(interval);
 
-      if (this.state.segments === 1) {
+      if (ctx.state.segments === 1) {
         // only print this the first time
-        yield this.getState(
+        yield getState(
+          ctx,
           `Scrolling down by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`,
         );
         elapsedWait = 2.0;
       } else {
-        const waitSecs = elapsedWait / (this.state.segments - 1);
+        const waitSecs = elapsedWait / (ctx.state.segments - 1);
         // only add extra wait if actually changed height
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
         this.debug(
@@ -237,33 +254,33 @@ export class AutoScroll extends Behavior {
     }
   }
 
-  async *scrollUp() {
+  async *scrollUp(ctx: Context<AutoScrollState, AutoScrollOpts>) {
     const scrollInc = Math.min(
-      self.document.scrollingElement.clientHeight * 0.1,
+      self.document.scrollingElement!.clientHeight * 0.1,
       30,
     );
     const interval = 75;
 
     const scrollOpts = { top: -scrollInc, left: 0, behavior: "auto" };
 
-    let lastScrollHeight = self.document.scrollingElement.scrollHeight;
+    let lastScrollHeight = self.document.scrollingElement!.scrollHeight;
 
     while (self.scrollY > 0) {
-      const scrollHeight = self.document.scrollingElement.scrollHeight;
+      const scrollHeight = self.document.scrollingElement!.scrollHeight;
 
       if (scrollHeight > lastScrollHeight) {
-        this.state.segments++;
+        ctx.state.segments++;
         lastScrollHeight = scrollHeight;
       }
 
-      // eslint-disable-next-line
       self.scrollBy(scrollOpts as ScrollToOptions);
 
       await sleep(interval);
 
-      if (this.state.segments === 1) {
+      if (ctx.state.segments === 1) {
         // only print this the first time
-        yield this.getState(
+        yield getState(
+          ctx,
           `Scrolling up by ${scrollOpts.top} pixels every ${interval / 1000.0} seconds`,
         );
       } else {
@@ -271,7 +288,7 @@ export class AutoScroll extends Behavior {
         // check for scrolling, but allow for more time for content to appear the longer have already scrolled
         await Promise.race([
           waitUntil(() => self.scrollY > 0, interval),
-          sleep((this.state.segments - 1) * 2000),
+          sleep((ctx.state.segments - 1) * 2000),
         ]);
       }
     }
