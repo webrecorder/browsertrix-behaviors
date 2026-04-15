@@ -45,7 +45,7 @@ The file can injected in a number of ways, using tools like puppeteer/playwright
 
 To test out the behaviors in your current browser, you can use Chrome's snippets feature to inject them into webpages. When setting up for the first time, or updating the script:
 
-1. Build the behaviors: `yarn run build`
+1. Build the behaviors: `yarn run build-dev` to build the dev build that is easier to debug.
 2. Copy the resulting `dist/behaviors.js` file (it is minified so will be on one line).
 3. Open Chrome's developer tools.
 4. Click the Sources tab.
