@@ -43,7 +43,7 @@ The file can injected in a number of ways, using tools like puppeteer/playwright
 
 ### Copy & Paste Behaviors (for testing)
 
-To test out the behaviors in your current browser, you can:
+To test out the behaviors in your current browser, you can use Chrome's snippets feature to inject them into webpages. When setting up for the first time, or updating the script:
 
 1. Build the behaviors: `yarn run build`
 2. Copy the resulting `dist/behaviors.js` file (it is minified so will be on one line).
@@ -52,10 +52,13 @@ To test out the behaviors in your current browser, you can:
 5. Click the >> icon, then choose Snippets to open the Snippets pane.
 6. Click "New snippet".
 7. Paste the content of `dist/behaviors.js` into this screen.
-8. Open a web page, such as one that has a custom behavior, like: [https://twitter.com/webrecorder_io](https://twitter.com/webrecorder_io)
-9. Click the "play" button at the bottom of the snippet you created.
-10. Open the console and enter `self.__bx_behaviors.run();`
-11. You should see the Twitter page automatically scrolling and visiting tweets.
+
+Once you have a snippet set up, you can run these steps on any page you want to test:
+
+1. Open a web page, such as one that has a custom behavior, like: [https://twitter.com/webrecorder_io](https://twitter.com/webrecorder_io)
+2. Click the "play" button at the bottom of the snippet you created.
+3. Open the console and enter `self.__bx_behaviors.run();`
+4. You should see the Twitter page automatically scrolling and visiting tweets.
 
 ### Use Puppeteer
 
