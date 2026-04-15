@@ -45,7 +45,8 @@ const DEFAULT_OPTS: BehaviorManagerOpts = {
   autofetch: true,
   autoplay: true,
   autoscroll: true,
-  autoclick: true,
+  // autoclick off by default
+  autoclick: false,
   siteSpecific: true,
 };
 
