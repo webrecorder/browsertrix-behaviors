@@ -1,10 +1,9 @@
 import { type AbstractBehavior, type Context } from "../lib/behavior";
 
 const subpostNextOnlyChevron =
-  "//div[@role='presentation']/following-sibling::button";
+  "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
 
-// These queries match the single-page version Instagram pages,
-// not the pop-ups that appear from the 
+// These queries match the pop-up view from profile pages
 const Q = {
   rootPath: "//main//div/div[2]/div/div/div/div",
   childMatchSelect: "string(.//a[starts-with(@href, '/')]/@href)",
@@ -16,10 +15,21 @@ const Q = {
   subpostNextOnlyChevron,
   subpostPrevNextChevron: subpostNextOnlyChevron + "[2]",
   commentRoot:
-    "//main//hr/following-sibling::div/div/div[last()]",
+    "//article[@role='presentation']/div[1]/div[2]//ul/div[last()]/div/div",
+  viewReplies: "ul/li//button[span[not(count(*)) and contains(text(), '(')]]",
+  loadMore: "//button[span[@aria-label]]",
+  pageLoadWaitUntil: "//main",
+};
+
+// These queries match the single-page versions
+const subpostNextOnlyChevronPage =
+  "//div[@role='presentation']/following-sibling::button";
+const PageQ = {
+  subpostNextOnlyChevron: subpostNextOnlyChevronPage,
+  subpostPrevNextChevron: subpostNextOnlyChevronPage + "[2]",
+  commentRoot: "//main//hr/following-sibling::div/div/div[last()]",
   viewReplies: "div[last()]//span[not(count(*))]",
   loadMore: "//button[div[*[name()='svg' and @aria-label]]]",
-  pageLoadWaitUntil: "//main",
 };
 
 type InstagramState = {
@@ -155,9 +165,11 @@ export class InstagramPostsBehavior
     //}
   }
 
-  async *iterSubposts(ctx: Context<InstagramState>) {
+  async *iterSubposts(ctx: Context<InstagramState>, profileView: boolean) {
+    const queries = profileView ? Q : PageQ;
+
     const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
-    let next = xpathNode(Q.subpostNextOnlyChevron) as HTMLElement | null;
+    let next = xpathNode(queries.subpostNextOnlyChevron) as HTMLElement | null;
 
     let count = 1;
 
@@ -171,15 +183,17 @@ export class InstagramPostsBehavior
         "slides",
       );
 
-      next = xpathNode(Q.subpostPrevNextChevron) as HTMLElement | null;
+      next = xpathNode(queries.subpostPrevNextChevron) as HTMLElement | null;
     }
 
     await sleep(waitUnit * 5);
   }
 
-  async iterComments(ctx: Context<InstagramState>) {
+  async iterComments(ctx: Context<InstagramState>, profileView: boolean) {
+    const queries = profileView ? Q : PageQ;
+
     const { scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } = ctx.Lib;
-    const root = xpathNode(Q.commentRoot) as HTMLElement | null;
+    const root = xpathNode(queries.commentRoot) as HTMLElement | null;
 
     if (!root) {
       return;
@@ -190,7 +204,7 @@ export class InstagramPostsBehavior
     let commentsLoaded = false;
 
     const getViewRepliesButton = (child: Element) => {
-      return xpathNode(Q.viewReplies, child) as HTMLElement | null;
+      return xpathNode(queries.viewReplies, child) as HTMLElement | null;
     };
 
     while (child) {
@@ -219,7 +233,7 @@ export class InstagramPostsBehavior
         !child.nextElementSibling.nextElementSibling
       ) {
         const loadMore = xpathNode(
-          Q.loadMore,
+          queries.loadMore,
           child.nextElementSibling,
         ) as HTMLElement | null;
         if (loadMore) {
@@ -241,14 +255,19 @@ export class InstagramPostsBehavior
     //let count = 0;
 
     while (next) {
-      const href = next.href;
+      next.click();
+      await sleep(waitUnit * 10);
 
-      yield getState(ctx, "Queuing Post: " + href, "posts");
+      yield getState(ctx, "Loading Post: " + window.location.href, "posts");
 
       // Instagram has different page structure when viewing a page from
-      // a timeline/profile vs when viewing single pages. For consistency
-      // we want to always browse it when viewing the single-page version.
-      await addLink(href);
+      // a timeline/profile vs when viewing single pages. Make sure we
+      // end up queuing these individual page versions for browsing too.
+      await addLink(window.location.href);
+
+      await fetch(window.location.href);
+
+      yield* this.handleSinglePost(ctx, true);
 
       next = xpathNode(Q.nextPost) as HTMLElement | null;
 
@@ -260,19 +279,22 @@ export class InstagramPostsBehavior
     await sleep(waitUnit * 5);
   }
 
-  async *handleSinglePost(ctx: Context<InstagramState>) {
+  async *handleSinglePost(ctx: Context<InstagramState>, profileView: boolean) {
     const { getState, sleep } = ctx.Lib;
 
-    yield* this.iterSubposts(ctx);
+    yield* this.iterSubposts(ctx, profileView);
 
     yield getState(ctx, "Loaded Comments", "comments");
 
-    await Promise.race([this.iterComments(ctx), sleep(this.maxCommentsTime)]);
+    await Promise.race([
+      this.iterComments(ctx, profileView),
+      sleep(this.maxCommentsTime),
+    ]);
   }
 
   async *run(ctx: Context<InstagramState>) {
     if (window.location.pathname.startsWith("/p/")) {
-      yield* this.handleSinglePost(ctx);
+      yield* this.handleSinglePost(ctx, false);
       return;
     }
 
