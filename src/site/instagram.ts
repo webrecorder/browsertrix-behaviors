@@ -1,8 +1,10 @@
 import { type AbstractBehavior, type Context } from "../lib/behavior";
 
 const subpostNextOnlyChevron =
-  "//article[@role='presentation']//div[@role='presentation']/following-sibling::button";
+  "//div[@role='presentation']/following-sibling::button";
 
+// These queries match the single-page version Instagram pages,
+// not the pop-ups that appear from the 
 const Q = {
   rootPath: "//main//div/div[2]/div/div/div/div",
   childMatchSelect: "string(.//a[starts-with(@href, '/')]/@href)",
@@ -14,9 +16,9 @@ const Q = {
   subpostNextOnlyChevron,
   subpostPrevNextChevron: subpostNextOnlyChevron + "[2]",
   commentRoot:
-    "//article[@role='presentation']/div[1]/div[2]//ul/div[last()]/div/div",
-  viewReplies: "ul/li//button[span[not(count(*)) and contains(text(), '(')]]",
-  loadMore: "//button[span[@aria-label]]",
+    "//main//hr/following-sibling::div/div/div[last()]",
+  viewReplies: "div[last()]//span[not(count(*))]",
+  loadMore: "//button[div[*[name()='svg' and @aria-label]]]",
   pageLoadWaitUntil: "//main",
 };
 
@@ -211,6 +213,8 @@ export class InstagramPostsBehavior
 
       if (
         child.nextElementSibling &&
+        // Top element for a comment is div, top element for the
+        // "load more" button is li
         child.nextElementSibling.tagName === "LI" &&
         !child.nextElementSibling.nextElementSibling
       ) {
@@ -233,18 +237,18 @@ export class InstagramPostsBehavior
   }
 
   async *iterPosts(ctx: Context<InstagramState>, next: HTMLElement | null) {
-    const { getState, sleep, waitUnit, xpathNode } = ctx.Lib;
+    const { getState, sleep, waitUnit, xpathNode, addLink } = ctx.Lib;
     //let count = 0;
 
     while (next) {
-      next.click();
-      await sleep(waitUnit * 10);
+      const href = next.href;
 
-      yield getState(ctx, "Loading Post: " + window.location.href, "posts");
+      yield getState(ctx, "Queuing Post: " + href, "posts");
 
-      await fetch(window.location.href);
-
-      yield* this.handleSinglePost(ctx);
+      // Instagram has different page structure when viewing a page from
+      // a timeline/profile vs when viewing single pages. For consistency
+      // we want to always browse it when viewing the single-page version.
+      await addLink(href);
 
       next = xpathNode(Q.nextPost) as HTMLElement | null;
 
