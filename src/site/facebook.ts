@@ -21,6 +21,10 @@ const Q = {
     "./following-sibling::div/div/div[2][@role='button'][./span/span]",
   viewComments: ".//h4/..//div[@role='button']",
   photoCommentList: "//ul[../h2]",
+  commentFilterDropdown:
+    "//div[@aria-haspopup='menu' and @role='button']/span/parent::div",
+  commentFilterAllComments:
+    "//div[@role='menuitem']//span[contains(text(), 'All comments')]",
   firstPhotoThumbnail:
     "//div[@role='main']//div[@data-pagelet='ProfileAppSection_0']//div[3]/div[1]/div[1]//a[@role='link']",
   firstVideoThumbnail:
@@ -267,6 +271,24 @@ export class FacebookTimelineBehavior
       await sleep(waitUnit * 5);
       return;
     }
+
+    // If there's a comment filter, try to set it to "All Comments"
+    const filterDropdown = xpathNode(
+      Q.commentFilterDropdown,
+    ) as HTMLElement | null;
+    if (filterDropdown) {
+      filterDropdown.click();
+      const allComments = xpathNode(
+        Q.commentFilterAllComments,
+        filterDropdown,
+      ) as HTMLElement | null;
+      // Clicking this will automatically close the dropdown so we don't
+      // have to worry about manually closing it
+      if (allComments) {
+        allComments.click();
+      }
+    }
+
     let commentBlock = commentRootUL.firstElementChild;
     let lastBlock: Element | null = null;
 
