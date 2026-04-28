@@ -139,11 +139,8 @@ export class FacebookTimelineBehavior
 
     //yield* this.viewPhotosOrVideos(ctx, post);
 
-    let commentRootUL = xpathNode(
-      Q.commentList,
-      post,
-    ) as HTMLUListElement | null;
-    if (!commentRootUL) {
+    let commentRoot = xpathNode(Q.commentList, post) as HTMLElement | null;
+    if (!commentRoot) {
       const viewCommentsButton = xpathNode(
         Q.viewComments,
         post,
@@ -152,9 +149,9 @@ export class FacebookTimelineBehavior
         viewCommentsButton.click();
         await sleep(waitUnit * 2);
       }
-      commentRootUL = xpathNode(Q.commentList, post) as HTMLUListElement | null;
+      commentRoot = xpathNode(Q.commentList, post) as HTMLElement | null;
     }
-    yield* this.iterComments(ctx, commentRootUL, maxExpands);
+    yield* this.iterComments(ctx, commentRoot, maxExpands);
 
     await sleep(waitUnit * 5);
   }
@@ -480,7 +477,7 @@ export class FacebookTimelineBehavior
 
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
       ctx.state = { comments: 0 };
-      const root = xpathNode(Q.photoCommentList) as HTMLUListElement | null;
+      const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
       yield* this.iterComments(ctx, root, 1000);
       return;
     }
