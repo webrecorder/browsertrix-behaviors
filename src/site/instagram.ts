@@ -28,7 +28,7 @@ const PageQ = {
   subpostNextOnlyChevron: subpostNextOnlyChevronPage,
   subpostPrevNextChevron: subpostNextOnlyChevronPage + "[2]",
   commentRoot: "//main//hr/following-sibling::div/div/div[last()]",
-  viewReplies: "div[last()]//span[not(count(*))]",
+  viewReplies: "div[last()]/div[@role='button']//span[not(count(*))]",
   loadMore: "//button[div[*[name()='svg' and @aria-label]]]",
 };
 
