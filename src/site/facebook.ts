@@ -16,13 +16,18 @@ const Q = {
   nextSlide:
     "//div[@aria-hidden='false']//div[@role='button' and not(@aria-hidden) and @aria-label]",
   commentList: ".//ul[(../h3) or (../h4)]",
-  commentMoreReplies: "./div[2]/div[1]/div[2]/div[@role='button']",
+  commentMoreReplies:
+    ".//span[contains(text(), 'View all')]/parent::span/parent::div[@role='button']",
   commentMoreComments:
-    "./following-sibling::div/div/div[2][@role='button'][./span/span]",
+    ".//span[text() = 'View more comments']/parent::span/parent::div[@role='button']",
   viewComments: ".//h4/..//div[@role='button']",
-  photoCommentList: "//ul[../h2]",
+  photoCommentList: "//h2[contains(text(), 'Comments')]/parent::div",
+  commentFilterDropdown:
+    "//div[@aria-haspopup='menu' and @role='button']/span/parent::div",
+  commentFilterAllComments:
+    "//div[@role='menuitem']//span[contains(text(), 'All comments')]",
   firstPhotoThumbnail:
-    "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']",
+    "//div[@role='main']//div[@data-pagelet='ProfileAppSection_0']//div[3]/div[1]/div[1]//a[@role='link']",
   firstVideoThumbnail:
     "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']",
   firstVideoSimple:
@@ -134,11 +139,8 @@ export class FacebookTimelineBehavior
 
     //yield* this.viewPhotosOrVideos(ctx, post);
 
-    let commentRootUL = xpathNode(
-      Q.commentList,
-      post,
-    ) as HTMLUListElement | null;
-    if (!commentRootUL) {
+    let commentRoot = xpathNode(Q.commentList, post) as HTMLElement | null;
+    if (!commentRoot) {
       const viewCommentsButton = xpathNode(
         Q.viewComments,
         post,
@@ -147,9 +149,9 @@ export class FacebookTimelineBehavior
         viewCommentsButton.click();
         await sleep(waitUnit * 2);
       }
-      commentRootUL = xpathNode(Q.commentList, post) as HTMLUListElement | null;
+      commentRoot = xpathNode(Q.commentList, post) as HTMLElement | null;
     }
-    yield* this.iterComments(ctx, commentRootUL, maxExpands);
+    yield* this.iterComments(ctx, commentRoot, maxExpands);
 
     await sleep(waitUnit * 5);
   }
@@ -259,15 +261,36 @@ export class FacebookTimelineBehavior
 
   async *iterComments(
     ctx: Context<FacebookState>,
-    commentRootUL: HTMLUListElement | null,
+    commentRoot: HTMLElement | null,
     maxExpands = 2,
   ) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
-    if (!commentRootUL) {
+    if (!commentRoot) {
       await sleep(waitUnit * 5);
       return;
     }
-    let commentBlock = commentRootUL.firstElementChild;
+
+    // If there's a comment filter, try to set it to "All Comments"
+    const filterDropdown = xpathNode(
+      Q.commentFilterDropdown,
+    ) as HTMLElement | null;
+    if (filterDropdown) {
+      filterDropdown.click();
+      const allComments = xpathNode(
+        Q.commentFilterAllComments,
+        filterDropdown,
+      ) as HTMLElement | null;
+      // Clicking this will automatically close the dropdown so we don't
+      // have to worry about manually closing it
+      if (allComments) {
+        allComments.click();
+      }
+    }
+
+    let commentBlock = xpathNode(
+      "div[2]/div[1]",
+      commentRoot,
+    ) as HTMLElement | null;
     let lastBlock: Element | null = null;
 
     let count = 0;
@@ -278,17 +301,26 @@ export class FacebookTimelineBehavior
         scrollIntoView(commentBlock);
         await sleep(waitUnit * 2);
 
-        const moreReplies = xpathNode(
+        let moreReplies = xpathNode(
           Q.commentMoreReplies,
           commentBlock,
         ) as HTMLElement | null;
-        if (moreReplies) {
+        while (moreReplies) {
+          scrollIntoView(moreReplies);
+          // TODO: apply maxExpands per-comment or per-click?
           moreReplies.click();
           await sleep(waitUnit * 5);
+          // There can be additional "more replies" buttons
+          // within nested comment chains, so keep searching
+          // for them until we've fully exhausted them.
+          moreReplies = xpathNode(
+            Q.commentMoreReplies,
+            commentBlock,
+          ) as HTMLElement | null;
         }
 
         lastBlock = commentBlock;
-        commentBlock = lastBlock.nextElementSibling;
+        commentBlock = lastBlock.nextElementSibling as HTMLElement | null;
         count++;
       }
 
@@ -298,14 +330,14 @@ export class FacebookTimelineBehavior
 
       const moreButton = xpathNode(
         Q.commentMoreComments,
-        commentRootUL,
+        commentRoot,
       ) as HTMLElement | null;
       if (moreButton) {
         scrollIntoView(moreButton);
         moreButton.click();
         await sleep(waitUnit * 5);
         if (lastBlock) {
-          commentBlock = lastBlock.nextElementSibling;
+          commentBlock = lastBlock.nextElementSibling as HTMLElement | null;
           await sleep(waitUnit * 5);
         }
       }
@@ -353,7 +385,7 @@ export class FacebookTimelineBehavior
 
       yield getState(ctx, `Viewing photo ${window.location.href}`, "photos");
 
-      const root = xpathNode(Q.photoCommentList) as HTMLUListElement | null;
+      const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
       yield* this.iterComments(ctx, root, 2);
 
       await sleep(waitUnit * 5);
@@ -445,7 +477,7 @@ export class FacebookTimelineBehavior
 
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
       ctx.state = { comments: 0 };
-      const root = xpathNode(Q.photoCommentList) as HTMLUListElement | null;
+      const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
       yield* this.iterComments(ctx, root, 1000);
       return;
     }
