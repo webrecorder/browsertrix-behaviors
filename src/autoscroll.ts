@@ -57,8 +57,15 @@ export class AutoScroll
     return Math.round(self.scrollY + self.innerHeight);
   }
 
+  getScrollElem() {
+    return self.document.scrollingElement || self.document.body;
+  }
+
   canScrollMore() {
-    const scrollElem = self.document.scrollingElement || self.document.body;
+    const scrollElem = this.getScrollElem();
+    if (!scrollElem) {
+      return false;
+    }
     return (
       this.currScrollPos() <
       Math.max(scrollElem.clientHeight, scrollElem.scrollHeight)
@@ -97,12 +104,16 @@ export class AutoScroll
       return true;
     }
 
-    const lastScrollHeight = self.document.scrollingElement!.scrollHeight;
+    const scrollElem = this.getScrollElem();
+    if (!scrollElem) {
+      return false;
+    }
+
+    const lastScrollHeight = scrollElem.scrollHeight;
     const numFetching = ctx.opts.autoFetcher.numFetching;
 
     // scroll to almost end of page
-    const scrollEnd =
-      document.scrollingElement!.scrollHeight * 0.98 - self.innerHeight;
+    const scrollEnd = scrollElem.scrollHeight * 0.98 - self.innerHeight;
 
     window.scrollTo({ top: scrollEnd, left: 0, behavior: "smooth" });
 
@@ -111,7 +122,7 @@ export class AutoScroll
 
     // scroll height changed, should scroll
     if (
-      lastScrollHeight !== self.document.scrollingElement!.scrollHeight ||
+      lastScrollHeight !== scrollElem.scrollHeight ||
       numFetching < ctx.opts.autoFetcher.numFetching
     ) {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -126,9 +137,13 @@ export class AutoScroll
       return false;
     }
 
+    const scrollElem = this.getScrollElem();
+    if (!scrollElem) {
+      return false;
+    }
+
     if (
-      (self.window.scrollY + self["scrollHeight"]) /
-        self.document.scrollingElement!.scrollHeight <
+      (self.window.scrollY + self["scrollHeight"]) / scrollElem.scrollHeight <
       0.9
     ) {
       return false;
@@ -155,10 +170,12 @@ export class AutoScroll
   }
 
   async *scrollDown(ctx: Context<AutoScrollState, AutoScrollOpts>) {
-    const scrollInc = Math.min(
-      self.document.scrollingElement!.clientHeight * 0.1,
-      30,
-    );
+    const scrollElem = this.getScrollElem();
+    if (!scrollElem) {
+      return;
+    }
+
+    const scrollInc = Math.min(scrollElem.clientHeight * 0.1, 30);
     const interval = 75;
     let elapsedWait = 0;
 
@@ -166,7 +183,7 @@ export class AutoScroll
     let ignoreShowMoreElem = false;
 
     const scrollOpts = { top: scrollInc, left: 0, behavior: "auto" };
-    let lastScrollHeight = self.document.scrollingElement!.scrollHeight;
+    let lastScrollHeight = scrollElem.scrollHeight;
 
     while (this.canScrollMore()) {
       if (document.location.pathname !== this.origPath) {
@@ -179,7 +196,7 @@ export class AutoScroll
         return;
       }
 
-      const scrollHeight = self.document.scrollingElement!.scrollHeight;
+      const scrollHeight = scrollElem.scrollHeight;
 
       if (scrollHeight > lastScrollHeight) {
         ctx.state.segments++;
@@ -197,14 +214,11 @@ export class AutoScroll
         await sleep(waitUnit);
 
         await Promise.race([
-          waitUntil(
-            () => self.document.scrollingElement!.scrollHeight > scrollHeight,
-            500,
-          ),
+          waitUntil(() => scrollElem.scrollHeight > scrollHeight, 500),
           sleep(30000),
         ]);
 
-        if (self.document.scrollingElement!.scrollHeight === scrollHeight) {
+        if (scrollElem.scrollHeight === scrollHeight) {
           ignoreShowMoreElem = true;
         }
 
@@ -255,18 +269,20 @@ export class AutoScroll
   }
 
   async *scrollUp(ctx: Context<AutoScrollState, AutoScrollOpts>) {
-    const scrollInc = Math.min(
-      self.document.scrollingElement!.clientHeight * 0.1,
-      30,
-    );
+    const scrollElem = this.getScrollElem();
+    if (!scrollElem) {
+      return;
+    }
+
+    const scrollInc = Math.min(scrollElem.clientHeight * 0.1, 30);
     const interval = 75;
 
     const scrollOpts = { top: -scrollInc, left: 0, behavior: "auto" };
 
-    let lastScrollHeight = self.document.scrollingElement!.scrollHeight;
+    let lastScrollHeight = scrollElem.scrollHeight;
 
     while (self.scrollY > 0) {
-      const scrollHeight = self.document.scrollingElement!.scrollHeight;
+      const scrollHeight = scrollElem.scrollHeight;
 
       if (scrollHeight > lastScrollHeight) {
         ctx.state.segments++;
