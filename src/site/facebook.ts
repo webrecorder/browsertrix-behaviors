@@ -62,10 +62,7 @@ export class FacebookTimelineBehavior
   static id = "Facebook" as const;
 
   static isMatch() {
-    // match just for posts for now
-    return !!window.location.href.match(
-      /https:\/\/(www\.)?facebook\.com\/.*\/posts\//,
-    );
+    return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\//);
   }
 
   static init() {
@@ -460,7 +457,8 @@ export class FacebookTimelineBehavior
 
     await sleep(waitUnit * 10);
 
-    let nextButton = xpathNode(Q.nextReelCard) as HTMLElement | null;
+    let nextButton = (xpathNode(Q.nextReelCard) ||
+      xpathNode(Q.nextReelCardAlt)) as HTMLElement | null;
 
     while (nextButton) {
       yield getState(ctx, "Viewing reel: " + window.location.href, "reels");
@@ -481,7 +479,8 @@ export class FacebookTimelineBehavior
 
       await sleep(waitUnit * 10);
 
-      nextButton = xpathNode(Q.nextReelCard) as HTMLElement | null;
+      nextButton = (xpathNode(Q.nextReelCard) ||
+        xpathNode(Q.nextReelCardAlt)) as HTMLElement | null;
 
       if (nextButton) {
         nextButton.click();
