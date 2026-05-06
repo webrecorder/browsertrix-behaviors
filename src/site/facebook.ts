@@ -32,6 +32,13 @@ const Q = {
     "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']",
   firstVideoSimple:
     "//div[@role='main']//a[contains(@href, '/videos/') and @aria-hidden!='true']",
+  firstReelThumbnail:
+    "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/reel/')]",
+  firstReelSimple: "//div[@role='main']//a[contains(@href, '/reel/')]",
+  // Horizontal layout
+  nextReelCard: "//div[@role='main']/div[2]/div[2]/div[@role='button']",
+  // Vertical layout
+  nextReelCardAlt: "//div[@role='main']/div/div/div/div[3][@role='button']",
   mainVideo:
     "//div[@data-pagelet='root']//div[@role='dialog']//div[@role='main']//video",
   nextVideo:
@@ -39,11 +46,13 @@ const Q = {
   isPhotoVideoPage: /^.*facebook\.com\/[^/]+\/(photos|videos)\/.+/,
   isPhotosPage: /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/,
   isVideosPage: /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/,
+  isReelsPage: /^.*facebook\.com\/[^/]+\/reels\/?($|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
 };
 
 type FacebookState = Partial<{
   photos: number;
+  reels: number;
   videos: number;
   comments: number;
   posts: number;
@@ -454,6 +463,63 @@ export class FacebookTimelineBehavior
     }
   }
 
+  async *iterAllReels(ctx: Context<FacebookState>) {
+    const {
+      getState,
+      scrollIntoView,
+      sleep,
+      waitUnit,
+      waitUntil,
+      xpathNode,
+      xpathNodes,
+    } = ctx.Lib;
+
+    const videoLink = (xpathNode(Q.firstReelThumbnail) ||
+      xpathNode(Q.firstReelSimple)) as HTMLElement | null;
+
+    if (!videoLink) {
+      return;
+    }
+
+    scrollIntoView(videoLink);
+
+    let lastHref = window.location.href;
+    videoLink.click();
+    await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+
+    await sleep(waitUnit * 10);
+
+    let nextButton = xpathNode(Q.nextReelCard) as HTMLElement | null;
+
+    while (nextButton) {
+      yield getState(ctx, "Viewing reel: " + window.location.href, "reels");
+      // wait for video to play, or 20s
+      await Promise.race([
+        waitUntil(() => {
+          for (const video of xpathNodes(
+            "//video",
+          ) as Generator<HTMLVideoElement>) {
+            if (video.readyState >= 3) {
+              return true;
+            }
+          }
+          return false;
+        }, waitUnit * 2),
+        sleep(20000),
+      ]);
+
+      await sleep(waitUnit * 10);
+
+      nextButton = xpathNode(Q.nextReelCard) as HTMLElement | null;
+
+      if (nextButton) {
+        nextButton.click();
+        lastHref = window.location.href;
+        await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+      }
+    }
+  }
+
   async *run(ctx: Context<FacebookState>) {
     const { getState, sleep, xpathNode } = ctx.Lib;
     yield getState(ctx, "Starting...");
@@ -469,6 +535,12 @@ export class FacebookTimelineBehavior
     if (Q.isVideosPage.exec(window.location.href)) {
       ctx.state = { videos: 0, comments: 0 };
       yield* this.iterAllVideos(ctx);
+      return;
+    }
+
+    if (Q.isReelsPage.exec(window.location.href)) {
+      ctx.state = { reels: 0, comments: 0 };
+      yield* this.iterAllReels(ctx);
       return;
     }
 
