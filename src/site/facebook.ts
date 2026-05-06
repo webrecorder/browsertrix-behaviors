@@ -58,10 +58,7 @@ export class FacebookTimelineBehavior
   static id = "Facebook" as const;
 
   static isMatch() {
-    // match just for posts for now
-    return !!window.location.href.match(
-      /https:\/\/(www\.)?facebook\.com\/.*\/posts\//,
-    );
+    return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\//);
   }
 
   static init() {
