@@ -530,18 +530,21 @@ export class FacebookTimelineBehavior
 
     if (Q.isPhotosPage.exec(window.location.href)) {
       ctx.state = { photos: 0, comments: 0 };
+      yield getState(ctx, "Iterating photos");
       yield* this.iterPhotoSlideShow(ctx);
       return;
     }
 
     if (Q.isVideosPage.exec(window.location.href)) {
       ctx.state = { videos: 0, comments: 0 };
+      yield getState(ctx, "Iterating videos");
       yield* this.iterAllVideos(ctx);
       return;
     }
 
     if (Q.isReelsPage.exec(window.location.href)) {
       ctx.state = { reels: 0, comments: 0 };
+      yield getState(ctx, "Iterating reels");
       yield* this.iterAllReels(ctx);
       return;
     }
