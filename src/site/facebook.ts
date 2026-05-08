@@ -18,16 +18,14 @@ const Q = {
   // Specifically the comment list from posts seen in a timeline,
   // distinct from comment lists located elsewhere
   commentList: ".//ul[(../h3) or (../h4)]",
-  commentMoreReplies:
-    ".//span[contains(text(), 'View all')]/parent::span/parent::div[@role='button']",
-  commentMoreComments:
-    ".//span[text() = 'View more comments']/parent::span/parent::div[@role='button']",
+  commentMoreReplies: ".//div[3]/div[2][@role='button']",
+  commentMoreComments: "./div/div[2]/div[2]/div[last()]//div[@role='button']",
   viewComments: ".//h4/..//div[@role='button']",
-  photoCommentList: "//h2[contains(text(), 'Comments')]/parent::div",
+  photoCommentList: "//div[@role='complementary']/div/div/div/div/div[3]/div",
   commentFilterDropdown:
     "//div[@aria-haspopup='menu' and @role='button']/span/parent::div",
   commentFilterAllComments:
-    "//div[@role='menuitem']//span[contains(text(), 'All comments')]",
+    "//div[@role='menu']//div[@role='menuitem' and @tabindex=0]",
   firstPhotoThumbnail:
     "//div[@role='main']//div[@data-pagelet='ProfileAppSection_0']//div[3]/div[1]/div[1]//a[@role='link']",
   firstVideoThumbnail:
