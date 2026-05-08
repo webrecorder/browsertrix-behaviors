@@ -62,6 +62,10 @@ export class AutoScroll
   }
 
   canScrollMore() {
+    // Can be null under some circumstances; avoid trying to do anything
+    // with it if that's the case.
+    // https://github.com/webrecorder/browsertrix-behaviors/pull/126
+    // https://developer.mozilla.org/en-US/docs/Web/API/Document/scrollingElement
     const scrollElem = this.getScrollElem();
     if (!scrollElem) {
       return false;
