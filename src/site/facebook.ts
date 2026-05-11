@@ -15,6 +15,8 @@ const Q = {
     "//div[@data-name='media-viewer-nav-container']/div[@data-visualcompletion][2]//div[@role='button']",
   nextSlide:
     "//div[@aria-hidden='false']//div[@role='button' and not(@aria-hidden) and @aria-label]",
+  // Specifically the comment list from posts seen in a timeline,
+  // distinct from comment lists located elsewhere
   commentList: ".//ul[(../h3) or (../h4)]",
   commentMoreReplies:
     ".//span[contains(text(), 'View all')]/parent::span/parent::div[@role='button']",
