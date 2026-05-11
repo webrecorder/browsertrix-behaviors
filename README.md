@@ -130,6 +130,26 @@ Alternatively, calling `await __bx_behaviors.run(opts)` will also call `init(opt
 
 The promised returned by run will wait for the active behavior to finish, for the `timeout` time to be reached. It will also ensure any pending autoplay requests are started for the `autoplay` behavior.
 
+#### Supported features
+
+The following features are expected to work for each of these site-specific behaviors:
+
+##### Facebook
+
+- Capturing a home timeline
+- Capturing single posts
+- Capturing business/organization pages, including posts within those pages
+- Capturing photos and videos
+
+##### Instagram
+
+- Capturing all subposts within every post
+- Expanding comment threads and capturing all comments
+- Capturing a single post
+- Capturing a profile, including the full content of every post on that profile
+- Capturing photos and videos
+- Extra media in "+N" click-through carousels
+
 ## Logging
 
 By default, behaviors will log debug messages to `console.log`. To disable this logging, set `log: false` in the init options.
