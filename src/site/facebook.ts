@@ -48,6 +48,7 @@ const Q = {
   isVideosPage: /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/,
   isReelsPage: /^.*facebook\.com\/[^/]+\/reels\/?($|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
+  loginModal: "//div[@role='dialog']//div[@role='button']",
 };
 
 type FacebookState = Partial<{
@@ -527,6 +528,13 @@ export class FacebookTimelineBehavior
     yield getState(ctx, "Starting...");
 
     await sleep(2000);
+
+    // If we're logged out, make sure to click the close button
+    // before trying to interact with the page in any other way.
+    const loginModal = xpathNode(Q.loginModal) as HTMLElement | null;
+    if (loginModal) {
+      loginModal.click();
+    }
 
     if (Q.isPhotosPage.exec(window.location.href)) {
       ctx.state = { photos: 0, comments: 0 };
