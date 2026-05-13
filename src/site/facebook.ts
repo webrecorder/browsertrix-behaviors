@@ -10,7 +10,6 @@ const Q = {
   articleToPostList: "//div[@role='article']/../../../../div",
   photosOrVideos: `.//a[(contains(@href, '/photos/') or contains(@href, '/photo/?') or contains(@href, '/videos/')) and (starts-with(@href, '${window.location.origin}/') or starts-with(@href, '/'))]`,
   pagePostRootQuery: "//div[@role='dialog']",
-  pagePostQuery: ".//div[@role='article']",
   postQuery: ".//a[contains(@href, '/posts/')]",
   extraLabel: "//*[starts-with(text(), '+')]",
   nextSlideQuery:
@@ -21,16 +20,17 @@ const Q = {
   // distinct from comment lists located elsewhere
   commentList: ".//ul[(../h3) or (../h4)]",
   // Single page post from an organization page
-  singlePostCommentList:
-    "./div/div/div/div/div/div[2]/div/div/div[4]/div/div/div[2]/div[2]",
+  singlePostCommentList: ".//div[2]//div[4]/div/div/div[2]/div[2]",
   // Single page post from a group page
   groupPostCommentList: "./div//div[2]/div/div/div[4]/div/div/div[2]/div[2]",
   commentMoreReplies: ".//div[2][@role='button']",
   commentMoreComments: "./div/div[2]/div[2]/div[last()]//div[@role='button']",
   viewComments: ".//h4/..//div[@role='button']",
   photoCommentList: "//div[@role='complementary']/div/div/div/div/div[3]/div",
+  // Checking for the existence of the span here helps distinguish this from
+  // other divs that also have role=button and aria-haspopup=menu
   commentFilterDropdown:
-    "//div[@aria-haspopup='menu' and @role='button']/span/parent::div",
+    ".//div[@aria-haspopup='menu' and @role='button']/span/parent::div",
   commentFilterAllComments:
     "//div[@role='menu']//div[@role='menuitem' and @tabindex=0]",
   firstPhotoThumbnail:
@@ -145,8 +145,7 @@ export class FacebookTimelineBehavior
   async *handleSinglePost(ctx: Context<FacebookState>) {
     const { xpathNode } = ctx.Lib;
 
-    const feed = xpathNode(Q.pagePostRootQuery) as Element | null;
-    const post = xpathNode(Q.pagePostQuery, feed) as Element | null;
+    const post = xpathNode(Q.pagePostRootQuery) as Element | null;
 
     yield* this.viewPost(ctx, post, Q.singlePostCommentList);
   }
@@ -196,7 +195,7 @@ export class FacebookTimelineBehavior
       }
       commentRoot = xpathNode(commentQuery, post) as HTMLElement | null;
     }
-    yield* this.iterComments(ctx, commentRoot, maxExpands);
+    yield* this.iterComments(ctx, post, commentRoot, maxExpands);
 
     await sleep(waitUnit * 5);
   }
@@ -306,6 +305,7 @@ export class FacebookTimelineBehavior
 
   async *iterComments(
     ctx: Context<FacebookState>,
+    post: Element | HTMLElement | null,
     commentRoot: HTMLElement | null,
     maxExpands = 2,
   ) {
@@ -318,6 +318,7 @@ export class FacebookTimelineBehavior
     // If there's a comment filter, try to set it to "All Comments"
     const filterDropdown = xpathNode(
       Q.commentFilterDropdown,
+      post,
     ) as HTMLElement | null;
     if (filterDropdown) {
       filterDropdown.click();
@@ -431,7 +432,7 @@ export class FacebookTimelineBehavior
       yield getState(ctx, `Viewing photo ${window.location.href}`, "photos");
 
       const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
-      yield* this.iterComments(ctx, root, 2);
+      yield* this.iterComments(ctx, root, root, 2);
 
       await sleep(waitUnit * 5);
     }
@@ -610,7 +611,7 @@ export class FacebookTimelineBehavior
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
       ctx.state = { comments: 0 };
       const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
-      yield* this.iterComments(ctx, root, 1000);
+      yield* this.iterComments(ctx, root, root, 1000);
       return;
     }
 
