@@ -9,6 +9,8 @@ const Q = {
     "//div[@data-pagelet='page']//div[@data-pagelet='ProfileTimeline']",
   articleToPostList: "//div[@role='article']/../../../../div",
   photosOrVideos: `.//a[(contains(@href, '/photos/') or contains(@href, '/photo/?') or contains(@href, '/videos/')) and (starts-with(@href, '${window.location.origin}/') or starts-with(@href, '/'))]`,
+  pagePostRootQuery: "//div[@role='dialog']",
+  pagePostQuery: ".//div[@role='article']",
   postQuery: ".//a[contains(@href, '/posts/')]",
   extraLabel: "//*[starts-with(text(), '+')]",
   nextSlideQuery:
@@ -18,7 +20,12 @@ const Q = {
   // Specifically the comment list from posts seen in a timeline,
   // distinct from comment lists located elsewhere
   commentList: ".//ul[(../h3) or (../h4)]",
-  commentMoreReplies: ".//div[3]/div[2][@role='button']",
+  // Single page post from an organization page
+  singlePostCommentList:
+    "./div/div/div/div/div/div[2]/div/div/div[4]/div/div/div[2]/div[2]",
+  // Single page post from a group page
+  groupPostCommentList: "./div//div[2]/div/div/div[4]/div/div/div[2]/div[2]",
+  commentMoreReplies: ".//div[2][@role='button']",
   commentMoreComments: "./div/div[2]/div[2]/div[last()]//div[@role='button']",
   viewComments: ".//h4/..//div[@role='button']",
   photoCommentList: "//div[@role='complementary']/div/div/div/div/div[3]/div",
@@ -47,6 +54,10 @@ const Q = {
   isPhotosPage: /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/,
   isVideosPage: /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/,
   isReelsPage: /^.*facebook\.com\/[^/]+\/reels\/?($|\?)/,
+  // Post from an organization/etc. page
+  isSinglePost: /^.*facebook\.com\/\w+\/posts\/[^/]+\/?($|\?)/,
+  // Post from a group
+  isSingleGroupPost: /^.*facebook\.com\/groups\/[^/]+\/posts\/[^/]+\/?($|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
   loginModal: "//div[@role='dialog']//div[@role='button']",
 };
@@ -92,6 +103,7 @@ export class FacebookTimelineBehavior
           yield* this.viewPost(
             ctx,
             xpathNode(Q.article, post) as Element | null,
+            Q.commentList,
           );
         }
       }
@@ -105,7 +117,11 @@ export class FacebookTimelineBehavior
       }
 
       for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
-        yield* this.viewPost(ctx, xpathNode(Q.article, post) as Element);
+        yield* this.viewPost(
+          ctx,
+          xpathNode(Q.article, post) as Element,
+          Q.commentList,
+        );
       }
     }
 
@@ -114,9 +130,31 @@ export class FacebookTimelineBehavior
     }
   }
 
+  async *handleGroupPost(ctx: Context<FacebookState>) {
+    const { xpathNode } = ctx.Lib;
+
+    const feed = xpathNode(Q.feed) as Element;
+    const post = xpathNode(
+      "./div[@role='presentation']",
+      feed,
+    ) as Element | null;
+
+    yield* this.viewPost(ctx, post, Q.groupPostCommentList);
+  }
+
+  async *handleSinglePost(ctx: Context<FacebookState>) {
+    const { xpathNode } = ctx.Lib;
+
+    const feed = xpathNode(Q.pagePostRootQuery) as Element | null;
+    const post = xpathNode(Q.pagePostQuery, feed) as Element | null;
+
+    yield* this.viewPost(ctx, post, Q.singlePostCommentList);
+  }
+
   async *viewPost(
     ctx: Context<FacebookState>,
     post: Element | null,
+    commentQuery: string,
     maxExpands = 2,
   ) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
@@ -146,7 +184,7 @@ export class FacebookTimelineBehavior
 
     //yield* this.viewPhotosOrVideos(ctx, post);
 
-    let commentRoot = xpathNode(Q.commentList, post) as HTMLElement | null;
+    let commentRoot = xpathNode(commentQuery, post) as HTMLElement | null;
     if (!commentRoot) {
       const viewCommentsButton = xpathNode(
         Q.viewComments,
@@ -156,7 +194,7 @@ export class FacebookTimelineBehavior
         viewCommentsButton.click();
         await sleep(waitUnit * 2);
       }
-      commentRoot = xpathNode(Q.commentList, post) as HTMLElement | null;
+      commentRoot = xpathNode(commentQuery, post) as HTMLElement | null;
     }
     yield* this.iterComments(ctx, commentRoot, maxExpands);
 
@@ -555,6 +593,18 @@ export class FacebookTimelineBehavior
       yield getState(ctx, "Iterating reels");
       yield* this.iterAllReels(ctx);
       return;
+    }
+
+    if (Q.isSingleGroupPost.exec(window.location.href)) {
+      ctx.state = { comments: 0 };
+      yield getState(ctx, "Viewing single group post");
+      yield* this.handleGroupPost(ctx);
+    }
+
+    if (Q.isSinglePost.exec(window.location.href)) {
+      ctx.state = { comments: 0 };
+      yield getState(ctx, "Viewing single post");
+      yield* this.handleSinglePost(ctx);
     }
 
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
