@@ -32,7 +32,7 @@ const Q = {
   commentFilterDropdown:
     ".//div[@aria-haspopup='menu' and @role='button']/span/parent::div",
   commentFilterAllComments:
-    "//div[@role='menu']//div[@role='menuitem' and @tabindex=0]",
+    "//div[@role='menu']//div[@role='menuitem'][last()]",
   firstPhotoThumbnail:
     "//div[@role='main']//div[@data-pagelet='ProfileAppSection_0']//div[3]/div[1]/div[1]//a[@role='link']",
   firstVideoThumbnail:
@@ -321,15 +321,19 @@ export class FacebookTimelineBehavior
       post,
     ) as HTMLElement | null;
     if (filterDropdown) {
+      yield getState(ctx, "Switching to 'All comments'");
       filterDropdown.click();
+      await sleep(waitUnit * 20);
+
       const allComments = xpathNode(
         Q.commentFilterAllComments,
-        filterDropdown,
       ) as HTMLElement | null;
       // Clicking this will automatically close the dropdown so we don't
       // have to worry about manually closing it
       if (allComments) {
+        yield getState(ctx, "Clicking 'All comments' button");
         allComments.click();
+        await sleep(waitUnit * 20);
       }
     }
 
