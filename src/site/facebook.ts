@@ -8,6 +8,9 @@ const Q = {
   pageletProfilePostList:
     "//div[@data-pagelet='page']//div[@data-pagelet='ProfileTimeline']",
   articleToPostList: "//div[@role='article']/../../../../div",
+  // In the feed view, comments also have @role='article' but additionally
+  // have an @aria-label that actual posts don't have.
+  articleList: "//div[@role='article' and not(@aria-label)]",
   photosOrVideos: `.//a[(contains(@href, '/photos/') or contains(@href, '/photo/?') or contains(@href, '/videos/')) and (starts-with(@href, '${window.location.origin}/') or starts-with(@href, '/'))]`,
   pagePostRootQuery: "//div[@role='dialog']",
   postQuery: ".//a[contains(@href, '/posts/')]",
@@ -95,8 +98,9 @@ export class FacebookTimelineBehavior
   }
 
   async *iterPostFeeds(ctx: Context<FacebookState>) {
-    const { iterChildElem, waitUnit, xpathNode, xpathNodes } = ctx.Lib;
-    const feeds = Array.from(xpathNodes(Q.feed)) as Element[];
+    const { iterChildElem, getState, waitUnit, xpathNode, xpathNodes } =
+      ctx.Lib;
+    let feeds = Array.from(xpathNodes(Q.feed)) as Element[];
     if (feeds.length) {
       for (const feed of feeds) {
         for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
@@ -106,6 +110,38 @@ export class FacebookTimelineBehavior
             Q.commentList,
           );
         }
+      }
+    } else if (
+      (feeds = Array.from(xpathNodes(Q.articleList)) as Element[]) &&
+      feeds.length
+    ) {
+      for (const post of feeds) {
+        yield getState(ctx, "Viewing post from feed");
+        yield* this.viewPost(
+          ctx,
+          xpathNode(Q.article, post) as Element | null,
+          Q.commentList,
+        );
+      }
+
+      // Keep looping until we run out of posts in the timeline
+      // or hit a limit
+      let lastSeen = feeds.at(-1);
+      for (let i = 0; i < 50; i++) {
+        feeds = Array.from(xpathNodes(Q.articleList)) as Element[];
+        if (feeds[0] == lastSeen) {
+          break;
+        }
+
+        for (const post of feeds) {
+          yield getState(ctx, "Viewing post from feed");
+          yield* this.viewPost(
+            ctx,
+            xpathNode(Q.article, post) as Element | null,
+            Q.commentList,
+          );
+        }
+        lastSeen = feeds.at(-1);
       }
     } else {
       const feed = (xpathNode(Q.pageletPostList) ||
