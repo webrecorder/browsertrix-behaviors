@@ -124,11 +124,7 @@ export class FacebookTimelineBehavior
       for (const post of feeds) {
         yield getState(ctx, "Viewing post from feed");
         scrollIntoView(post);
-        yield* this.viewPost(
-          ctx,
-          xpathNode(Q.article, post) as Element | null,
-          Q.commentList,
-        );
+        yield* this.viewPost(ctx, post, Q.commentList);
         await sleep(waitUnit * 20);
       }
 
@@ -144,11 +140,7 @@ export class FacebookTimelineBehavior
         for (const post of feeds) {
           yield getState(ctx, "Viewing post from feed");
           scrollIntoView(post);
-          yield* this.viewPost(
-            ctx,
-            xpathNode(Q.article, post) as Element | null,
-            Q.commentList,
-          );
+          yield* this.viewPost(ctx, post, Q.commentList);
           await sleep(waitUnit * 20);
         }
         lastSeen = feeds.at(-1);
