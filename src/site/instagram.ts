@@ -121,50 +121,6 @@ export class InstagramPostsBehavior
     }
   }
 
-  async *viewStandalonePost(ctx: Context<InstagramState>, origLoc: string) {
-    const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } =
-      ctx.Lib;
-    const root = xpathNode(Q.rootPath) as HTMLElement | null;
-
-    if (!root?.firstElementChild) {
-      return;
-    }
-
-    const firstPostHref = xpathString(
-      Q.childMatchSelect,
-      root.firstElementChild,
-    );
-
-    yield getState(
-      ctx,
-      "Loading single post view for first post: " + firstPostHref,
-    );
-
-    window.history.replaceState({}, "", firstPostHref);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-
-    let root2: Node | null = null;
-    let root3: Node | null = null;
-
-    await sleep(waitUnit * 5);
-
-    await waitUntil(
-      () => !!((root2 = xpathNode(Q.rootPath)) !== root && root2),
-      waitUnit * 5,
-    );
-
-    await sleep(waitUnit * 5);
-
-    window.history.replaceState({}, "", origLoc);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-
-    await waitUntil(
-      () => !!((root3 = xpathNode(Q.rootPath)) !== root2 && root3),
-      waitUnit * 5,
-    );
-    //}
-  }
-
   async *iterSubposts(ctx: Context<InstagramState>, profileView: boolean) {
     const queries = profileView ? Q : PageQ;
 
@@ -299,9 +255,6 @@ export class InstagramPostsBehavior
     }
 
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
-    //const origLoc = window.location.href;
-
-    //yield* this.viewStandalonePost(ctx, origLoc);
 
     for await (const row of this.iterRow(ctx)) {
       scrollIntoView(row);
