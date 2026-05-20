@@ -98,8 +98,15 @@ export class FacebookTimelineBehavior
   }
 
   async *iterPostFeeds(ctx: Context<FacebookState>) {
-    const { iterChildElem, getState, waitUnit, xpathNode, xpathNodes } =
-      ctx.Lib;
+    const {
+      iterChildElem,
+      getState,
+      scrollIntoView,
+      sleep,
+      waitUnit,
+      xpathNode,
+      xpathNodes,
+    } = ctx.Lib;
     let feeds = Array.from(xpathNodes(Q.feed)) as Element[];
     if (feeds.length) {
       for (const feed of feeds) {
@@ -112,16 +119,17 @@ export class FacebookTimelineBehavior
         }
       }
     } else if (
-      (feeds = Array.from(xpathNodes(Q.articleList)) as Element[]) &&
-      feeds.length
+      (feeds = Array.from(xpathNodes(Q.articleList)) as Element[]).length
     ) {
       for (const post of feeds) {
         yield getState(ctx, "Viewing post from feed");
+        scrollIntoView(post);
         yield* this.viewPost(
           ctx,
           xpathNode(Q.article, post) as Element | null,
           Q.commentList,
         );
+        await sleep(waitUnit * 20);
       }
 
       // Keep looping until we run out of posts in the timeline
@@ -135,11 +143,13 @@ export class FacebookTimelineBehavior
 
         for (const post of feeds) {
           yield getState(ctx, "Viewing post from feed");
+          scrollIntoView(post);
           yield* this.viewPost(
             ctx,
             xpathNode(Q.article, post) as Element | null,
             Q.commentList,
           );
+          await sleep(waitUnit * 20);
         }
         lastSeen = feeds.at(-1);
       }
