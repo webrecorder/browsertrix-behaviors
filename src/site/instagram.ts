@@ -19,6 +19,12 @@ const Q = {
   viewReplies: "ul/li//button[span[not(count(*)) and contains(text(), '(')]]",
   loadMore: "//button[span[@aria-label]]",
   pageLoadWaitUntil: "//main",
+  // The clickable ring that appears around a user avatar if the user
+  // has an active story
+  storiesHalo: "//section/div/span/div/div[@role='button']",
+  storiesViewStoryButton:
+    "//section/div[1]/div/div/div/div/div[2]/div/div[3]/div",
+  userPage: /^\/([^/]+)\/?$/,
 };
 
 // These queries match the single-page versions
@@ -37,6 +43,7 @@ type InstagramState = {
   slides: number;
   posts: number;
   rows: number;
+  stories: number;
 };
 
 export class InstagramPostsBehavior
@@ -248,13 +255,50 @@ export class InstagramPostsBehavior
     ]);
   }
 
+  async *handleStories(ctx: Context<InstagramState>) {
+    const { getState, xpathNode } = ctx.Lib;
+
+    yield getState(ctx, "Viewing Stories", "stories");
+
+    // When navigating directly to a story via URL, instagram prompts us
+    // whether to click through (because it'll reveal your identity to the
+    // original poster)
+    //
+    // No need to do anything else; stories autoplay once you visit them,
+    // including navigation to the next active story from the same account,
+    // so we can just hang out on this page and let every story play through.
+    const viewStory = xpathNode(Q.storiesViewStoryButton) as HTMLElement | null;
+    if (viewStory) {
+      viewStory.click();
+    }
+  }
+
   async *run(ctx: Context<InstagramState>) {
     if (window.location.pathname.startsWith("/p/")) {
       yield* this.handleSinglePost(ctx, false);
       return;
     }
 
-    const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
+    if (window.location.pathname.startsWith("/stories/")) {
+      yield* this.handleStories(ctx);
+      return;
+    }
+
+    const { addLink, getState, scrollIntoView, sleep, waitUnit, xpathNode } =
+      ctx.Lib;
+
+    // If we're navigating a profile page, queue up this user's stories
+    const match = Q.userPage.exec(window.location.pathname);
+    if (match) {
+      // This element is only present if the user has stories available to view.
+      // We're not going to click it, just use it as a sign we should be
+      // queuing up the user's stories as a separate URL.
+      const storyHalo = xpathNode(Q.storiesHalo) as HTMLElement | null;
+      if (storyHalo) {
+        const userName = match[1];
+        await addLink(`https://instagram.com/stories/${userName}/`);
+      }
+    }
 
     for await (const row of this.iterRow(ctx)) {
       scrollIntoView(row);
