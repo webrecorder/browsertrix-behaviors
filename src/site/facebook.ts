@@ -37,7 +37,7 @@ const Q = {
   commentFilterAllComments:
     "//div[@role='menu']//div[@role='menuitem'][last()]",
   firstPhotoThumbnail:
-    "//div[@role='main']//div[@data-pagelet='ProfileAppSection_0']//div[3]/div[1]/div[1]//a[@role='link']",
+    "//div[@role='main']//div[4]/div/div/div/div//div[3]/div[1]/div[1]//a[@role='link']",
   firstVideoThumbnail:
     "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']",
   firstVideoSimple:
