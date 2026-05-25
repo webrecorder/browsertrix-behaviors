@@ -448,7 +448,7 @@ export class FacebookTimelineBehavior
     scrollIntoView(firstPhoto);
 
     firstPhoto.click();
-    await sleep(waitUnit * 5);
+    await sleep(waitUnit * 20);
     await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
 
     let nextSlideButton: HTMLElement | null = null;
