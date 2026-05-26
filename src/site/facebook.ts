@@ -661,6 +661,11 @@ export class FacebookTimelineBehavior
     yield* this.iterPostFeeds(ctx);
   }
 
+  isLoggedIn() {
+    // Login form only appears for logged-out users
+    return !document.querySelector("form[id='login_form']");
+  }
+
   async awaitPageLoad(ctx: Context<FacebookState>) {
     const { Lib, log } = ctx;
     const { assertContentValid, waitUntilNode } = Lib;
@@ -669,9 +674,6 @@ export class FacebookTimelineBehavior
 
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 
-    assertContentValid(
-      () => !!document.querySelector("div[aria-label*='Account Controls' i]"),
-      "not_logged_in",
-    );
+    assertContentValid(() => !this.isLoggedIn(), "not_logged_in");
   }
 }
