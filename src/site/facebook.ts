@@ -685,12 +685,14 @@ export class FacebookTimelineBehavior
       ctx.state = { comments: 0 };
       yield getState(ctx, "Viewing single group post");
       yield* this.handleGroupPost(ctx);
+      return;
     }
 
     if (Q.isSinglePost.exec(window.location.href)) {
       ctx.state = { comments: 0 };
       yield getState(ctx, "Viewing single post");
       yield* this.handleSinglePost(ctx);
+      return;
     }
 
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
