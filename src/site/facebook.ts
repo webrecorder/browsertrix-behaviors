@@ -177,7 +177,7 @@ export class FacebookTimelineBehavior
       feed,
     ) as Element | null;
 
-    yield* this.viewPost(ctx, post, Q.groupPostCommentList);
+    yield* this.viewPost(ctx, post, Q.groupPostCommentList, 1000);
   }
 
   async *handleSinglePost(ctx: Context<FacebookState>) {
@@ -185,7 +185,7 @@ export class FacebookTimelineBehavior
 
     const post = xpathNode(Q.pagePostRootQuery) as Element | null;
 
-    yield* this.viewPost(ctx, post, Q.singlePostCommentList);
+    yield* this.viewPost(ctx, post, Q.singlePostCommentList, 1000);
   }
 
   async *viewPost(
@@ -233,7 +233,7 @@ export class FacebookTimelineBehavior
       }
       commentRoot = xpathNode(commentQuery, post) as HTMLElement | null;
     }
-    yield* this.iterComments(ctx, post, commentRoot, maxExpands);
+    yield* this.iterInfiniteScrollComments(ctx, post, commentRoot, maxExpands);
 
     await sleep(waitUnit * 5);
   }
@@ -341,7 +341,9 @@ export class FacebookTimelineBehavior
     }
   }
 
-  async *iterComments(
+  // Used on some logged-in pages and all logged-out pages;
+  // additional comments are loaded by clicking a button.
+  async *iterPaginatedComments(
     ctx: Context<FacebookState>,
     post: Element | HTMLElement | null,
     commentRoot: HTMLElement | null,
@@ -434,6 +436,45 @@ export class FacebookTimelineBehavior
     await sleep(waitUnit * 2);
   }
 
+  // Used by certain logged-in pages; there's no way to explicitly
+  // expand comments, they just load in as you scroll.
+  async *iterInfiniteScrollComments(
+    ctx: Context<FacebookState>,
+    post: Element | HTMLElement | null,
+    commentRoot: HTMLElement | null,
+    maxExpands = 2,
+  ) {
+    const { getState, scrollIntoView, sleep, waitUnit } = ctx.Lib;
+
+    if (!commentRoot) {
+      yield getState(ctx, "Comment root is null; returning");
+      return;
+    }
+
+    let lastFinalComment =
+      commentRoot.children[commentRoot.children.length - 1];
+
+    for (let i = 0; i < maxExpands; i++) {
+      yield getState(
+        ctx,
+        "Scrolling to bottom of comments to load more",
+        "comments",
+      );
+      scrollIntoView(lastFinalComment);
+      await sleep(waitUnit * 20);
+
+      // Looks like we've run out of comments, so stop iterating
+      if (
+        commentRoot.children[commentRoot.children.length - 1] ===
+        lastFinalComment
+      ) {
+        break;
+      }
+
+      lastFinalComment = commentRoot.children[commentRoot.children.length - 1];
+    }
+  }
+
   async *iterPhotoSlideShow(ctx: Context<FacebookState>) {
     const { getState, scrollIntoView, sleep, waitUnit, waitUntil, xpathNode } =
       ctx.Lib;
@@ -474,7 +515,9 @@ export class FacebookTimelineBehavior
       yield getState(ctx, `Viewing photo ${window.location.href}`, "photos");
 
       const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
-      yield* this.iterComments(ctx, root, root, 2);
+      // Photo pages seen in the slideshow always use paginated comments,
+      // both when signed in and when not.
+      yield* this.iterPaginatedComments(ctx, root, root, 2);
 
       await sleep(waitUnit * 5);
     }
@@ -653,7 +696,14 @@ export class FacebookTimelineBehavior
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
       ctx.state = { comments: 0 };
       const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
-      yield* this.iterComments(ctx, root, root, 1000);
+      // Single photo pages use the infinite scroll comment widget
+      // when logged in, but the paginated comment widget when
+      // logged out.
+      if (this.isLoggedIn()) {
+        yield* this.iterInfiniteScrollComments(ctx, root, root, 1000);
+      } else {
+        yield* this.iterPaginatedComments(ctx, root, root, 1000);
+      }
       return;
     }
 
