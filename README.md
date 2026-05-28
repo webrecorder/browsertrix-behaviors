@@ -148,6 +148,7 @@ The following features are expected to work for each of these site-specific beha
 - Capturing a single post
 - Capturing a profile, including the full content of every post on that profile
 - Capturing photos and videos
+- Capturing ephemeral stories from the story carousel
 - Capturing stories with each story loaded via it's unique URL.
 - Extra media in "+N" click-through carousels
 
