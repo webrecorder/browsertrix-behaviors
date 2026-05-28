@@ -8,25 +8,47 @@ const Q = {
   pageletProfilePostList:
     "//div[@data-pagelet='page']//div[@data-pagelet='ProfileTimeline']",
   articleToPostList: "//div[@role='article']/../../../../div",
+  // In the feed view, comments also have @role='article' but additionally
+  // have an @aria-label that actual posts don't have.
+  articleList: "//div[@role='article' and not(@aria-label)]",
   photosOrVideos: `.//a[(contains(@href, '/photos/') or contains(@href, '/photo/?') or contains(@href, '/videos/')) and (starts-with(@href, '${window.location.origin}/') or starts-with(@href, '/'))]`,
+  pagePostRootQuery: "//div[@role='dialog']",
   postQuery: ".//a[contains(@href, '/posts/')]",
   extraLabel: "//*[starts-with(text(), '+')]",
   nextSlideQuery:
     "//div[@data-name='media-viewer-nav-container']/div[@data-visualcompletion][2]//div[@role='button']",
   nextSlide:
     "//div[@aria-hidden='false']//div[@role='button' and not(@aria-hidden) and @aria-label]",
+  // Specifically the comment list from posts seen in a timeline,
+  // distinct from comment lists located elsewhere
   commentList: ".//ul[(../h3) or (../h4)]",
-  commentMoreReplies: "./div[2]/div[1]/div[2]/div[@role='button']",
-  commentMoreComments:
-    "./following-sibling::div/div/div[2][@role='button'][./span/span]",
+  // Single page post from an organization page
+  singlePostCommentList: ".//div[2]//div[4]/div/div/div[2]/div[2]",
+  // Single page post from a group page
+  groupPostCommentList: "./div//div[2]/div/div/div[4]/div/div/div[2]/div[2]",
+  commentMoreReplies: ".//div[2][@role='button']",
+  commentMoreComments: "./div/div[2]/div[2]/div[last()]//div[@role='button']",
   viewComments: ".//h4/..//div[@role='button']",
-  photoCommentList: "//ul[../h2]",
+  photoCommentList: "//div[@role='complementary']/div/div/div/div/div[3]/div",
+  // Checking for the existence of the span here helps distinguish this from
+  // other divs that also have role=button and aria-haspopup=menu
+  commentFilterDropdown:
+    ".//div[@aria-haspopup='menu' and @role='button']/span/parent::div",
+  commentFilterAllComments:
+    "//div[@role='menu']//div[@role='menuitem'][last()]",
   firstPhotoThumbnail:
-    "//div[@role='main']//div[3]//div[contains(@style, 'border-radius')]//div[contains(@style, 'max-width') and contains(@style, 'min-width')]//a[@role='link']",
+    "//div[@role='main']//div[4]/div/div/div/div//div[3]/div[1]/div[1]//a[@role='link']",
   firstVideoThumbnail:
     "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/videos/') and @aria-hidden!='true']",
   firstVideoSimple:
     "//div[@role='main']//a[contains(@href, '/videos/') and @aria-hidden!='true']",
+  firstReelThumbnail:
+    "//div[@role='main']//div[contains(@style, 'z-index')]/following-sibling::div/div/div/div[last()]//a[contains(@href, '/reel/')]",
+  firstReelSimple: "//div[@role='main']//a[contains(@href, '/reel/')]",
+  // Horizontal layout
+  nextReelCard: "//div[@role='main']/div[2]/div[2]/div[@role='button']",
+  // Vertical layout
+  nextReelCardAlt: "//div[@role='main']/div/div/div/div[3][@role='button']",
   mainVideo:
     "//div[@data-pagelet='root']//div[@role='dialog']//div[@role='main']//video",
   nextVideo:
@@ -34,11 +56,21 @@ const Q = {
   isPhotoVideoPage: /^.*facebook\.com\/[^/]+\/(photos|videos)\/.+/,
   isPhotosPage: /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/,
   isVideosPage: /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/,
+  isReelsPage: /^.*facebook\.com\/[^/]+\/reels\/?($|\?)/,
+  // Post from an organization/etc. page
+  isSinglePost: /^.*facebook\.com\/\w+\/posts\/[^/]+\/?($|\?)/,
+  // Post from a group
+  isSingleGroupPost: /^.*facebook\.com\/groups\/[^/]+\/posts\/[^/]+\/?($|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
+  // Limit query to only modals with the login_popup_cta_form form child in order
+  // to avoid grabbing unrelated modals, like pop-up posts
+  loginModal:
+    "//div[@role='dialog'][.//form[@id='login_popup_cta_form']]//div[@role='button']",
 };
 
 type FacebookState = Partial<{
   photos: number;
+  reels: number;
   videos: number;
   comments: number;
   posts: number;
@@ -53,10 +85,7 @@ export class FacebookTimelineBehavior
   static id = "Facebook" as const;
 
   static isMatch() {
-    // match just for posts for now
-    return !!window.location.href.match(
-      /https:\/\/(www\.)?facebook\.com\/.*\/posts\//,
-    );
+    return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\//);
   }
 
   static init() {
@@ -72,16 +101,52 @@ export class FacebookTimelineBehavior
   }
 
   async *iterPostFeeds(ctx: Context<FacebookState>) {
-    const { iterChildElem, waitUnit, xpathNode, xpathNodes } = ctx.Lib;
-    const feeds = Array.from(xpathNodes(Q.feed)) as Element[];
+    const {
+      iterChildElem,
+      getState,
+      scrollIntoView,
+      sleep,
+      waitUnit,
+      xpathNode,
+      xpathNodes,
+    } = ctx.Lib;
+    let feeds = Array.from(xpathNodes(Q.feed)) as Element[];
     if (feeds.length) {
       for (const feed of feeds) {
         for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
           yield* this.viewPost(
             ctx,
             xpathNode(Q.article, post) as Element | null,
+            Q.commentList,
           );
         }
+      }
+    } else if (
+      (feeds = Array.from(xpathNodes(Q.articleList)) as Element[]).length
+    ) {
+      for (const post of feeds) {
+        yield getState(ctx, "Viewing post from feed");
+        scrollIntoView(post);
+        yield* this.viewPost(ctx, post, Q.commentList);
+        await sleep(waitUnit * 20);
+      }
+
+      // Keep looping until we run out of posts in the timeline
+      // or hit a limit
+      let lastSeen = feeds.at(-1);
+      for (let i = 0; i < 50; i++) {
+        feeds = Array.from(xpathNodes(Q.articleList)) as Element[];
+        if (feeds[0] == lastSeen) {
+          break;
+        }
+
+        for (const post of feeds) {
+          yield getState(ctx, "Viewing post from feed");
+          scrollIntoView(post);
+          yield* this.viewPost(ctx, post, Q.commentList);
+          await sleep(waitUnit * 20);
+        }
+        lastSeen = feeds.at(-1);
       }
     } else {
       const feed = (xpathNode(Q.pageletPostList) ||
@@ -93,7 +158,11 @@ export class FacebookTimelineBehavior
       }
 
       for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
-        yield* this.viewPost(ctx, xpathNode(Q.article, post) as Element);
+        yield* this.viewPost(
+          ctx,
+          xpathNode(Q.article, post) as Element,
+          Q.commentList,
+        );
       }
     }
 
@@ -102,9 +171,30 @@ export class FacebookTimelineBehavior
     }
   }
 
+  async *handleGroupPost(ctx: Context<FacebookState>) {
+    const { xpathNode } = ctx.Lib;
+
+    const feed = xpathNode(Q.feed) as Element;
+    const post = xpathNode(
+      "./div[@role='presentation']",
+      feed,
+    ) as Element | null;
+
+    yield* this.viewPost(ctx, post, Q.groupPostCommentList, 1000);
+  }
+
+  async *handleSinglePost(ctx: Context<FacebookState>) {
+    const { xpathNode } = ctx.Lib;
+
+    const post = xpathNode(Q.pagePostRootQuery) as Element | null;
+
+    yield* this.viewPost(ctx, post, Q.singlePostCommentList, 1000);
+  }
+
   async *viewPost(
     ctx: Context<FacebookState>,
     post: Element | null,
+    commentQuery: string,
     maxExpands = 2,
   ) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
@@ -134,11 +224,8 @@ export class FacebookTimelineBehavior
 
     //yield* this.viewPhotosOrVideos(ctx, post);
 
-    let commentRootUL = xpathNode(
-      Q.commentList,
-      post,
-    ) as HTMLUListElement | null;
-    if (!commentRootUL) {
+    let commentRoot = xpathNode(commentQuery, post) as HTMLElement | null;
+    if (!commentRoot) {
       const viewCommentsButton = xpathNode(
         Q.viewComments,
         post,
@@ -147,9 +234,9 @@ export class FacebookTimelineBehavior
         viewCommentsButton.click();
         await sleep(waitUnit * 2);
       }
-      commentRootUL = xpathNode(Q.commentList, post) as HTMLUListElement | null;
+      commentRoot = xpathNode(commentQuery, post) as HTMLElement | null;
     }
-    yield* this.iterComments(ctx, commentRootUL, maxExpands);
+    yield* this.iterInfiniteScrollComments(ctx, post, commentRoot, maxExpands);
 
     await sleep(waitUnit * 5);
   }
@@ -257,17 +344,46 @@ export class FacebookTimelineBehavior
     }
   }
 
-  async *iterComments(
+  // Used on some logged-in pages and all logged-out pages;
+  // additional comments are loaded by clicking a button.
+  async *iterPaginatedComments(
     ctx: Context<FacebookState>,
-    commentRootUL: HTMLUListElement | null,
+    post: Element | HTMLElement | null,
+    commentRoot: HTMLElement | null,
     maxExpands = 2,
   ) {
     const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
-    if (!commentRootUL) {
+    if (!commentRoot) {
       await sleep(waitUnit * 5);
       return;
     }
-    let commentBlock = commentRootUL.firstElementChild;
+
+    // If there's a comment filter, try to set it to "All Comments"
+    const filterDropdown = xpathNode(
+      Q.commentFilterDropdown,
+      post,
+    ) as HTMLElement | null;
+    if (filterDropdown) {
+      yield getState(ctx, "Switching to 'All comments'");
+      filterDropdown.click();
+      await sleep(waitUnit * 20);
+
+      const allComments = xpathNode(
+        Q.commentFilterAllComments,
+      ) as HTMLElement | null;
+      // Clicking this will automatically close the dropdown so we don't
+      // have to worry about manually closing it
+      if (allComments) {
+        yield getState(ctx, "Clicking 'All comments' button");
+        allComments.click();
+        await sleep(waitUnit * 20);
+      }
+    }
+
+    let commentBlock = xpathNode(
+      "div[2]/div[1]",
+      commentRoot,
+    ) as HTMLElement | null;
     let lastBlock: Element | null = null;
 
     let count = 0;
@@ -278,17 +394,26 @@ export class FacebookTimelineBehavior
         scrollIntoView(commentBlock);
         await sleep(waitUnit * 2);
 
-        const moreReplies = xpathNode(
+        let moreReplies = xpathNode(
           Q.commentMoreReplies,
           commentBlock,
         ) as HTMLElement | null;
-        if (moreReplies) {
+        while (moreReplies) {
+          scrollIntoView(moreReplies);
+          // TODO: apply maxExpands per-comment or per-click?
           moreReplies.click();
           await sleep(waitUnit * 5);
+          // There can be additional "more replies" buttons
+          // within nested comment chains, so keep searching
+          // for them until we've fully exhausted them.
+          moreReplies = xpathNode(
+            Q.commentMoreReplies,
+            commentBlock,
+          ) as HTMLElement | null;
         }
 
         lastBlock = commentBlock;
-        commentBlock = lastBlock.nextElementSibling;
+        commentBlock = lastBlock.nextElementSibling as HTMLElement | null;
         count++;
       }
 
@@ -298,20 +423,59 @@ export class FacebookTimelineBehavior
 
       const moreButton = xpathNode(
         Q.commentMoreComments,
-        commentRootUL,
+        commentRoot,
       ) as HTMLElement | null;
       if (moreButton) {
         scrollIntoView(moreButton);
         moreButton.click();
         await sleep(waitUnit * 5);
         if (lastBlock) {
-          commentBlock = lastBlock.nextElementSibling;
+          commentBlock = lastBlock.nextElementSibling as HTMLElement | null;
           await sleep(waitUnit * 5);
         }
       }
     }
 
     await sleep(waitUnit * 2);
+  }
+
+  // Used by certain logged-in pages; there's no way to explicitly
+  // expand comments, they just load in as you scroll.
+  async *iterInfiniteScrollComments(
+    ctx: Context<FacebookState>,
+    post: Element | HTMLElement | null,
+    commentRoot: HTMLElement | null,
+    maxExpands = 2,
+  ) {
+    const { getState, scrollIntoView, sleep, waitUnit } = ctx.Lib;
+
+    if (!commentRoot) {
+      yield getState(ctx, "Comment root is null; returning");
+      return;
+    }
+
+    let lastFinalComment =
+      commentRoot.children[commentRoot.children.length - 1];
+
+    for (let i = 0; i < maxExpands; i++) {
+      yield getState(
+        ctx,
+        "Scrolling to bottom of comments to load more",
+        "comments",
+      );
+      scrollIntoView(lastFinalComment);
+      await sleep(waitUnit * 20);
+
+      // Looks like we've run out of comments, so stop iterating
+      if (
+        commentRoot.children[commentRoot.children.length - 1] ===
+        lastFinalComment
+      ) {
+        break;
+      }
+
+      lastFinalComment = commentRoot.children[commentRoot.children.length - 1];
+    }
   }
 
   async *iterPhotoSlideShow(ctx: Context<FacebookState>) {
@@ -328,7 +492,7 @@ export class FacebookTimelineBehavior
     scrollIntoView(firstPhoto);
 
     firstPhoto.click();
-    await sleep(waitUnit * 5);
+    await sleep(waitUnit * 20);
     await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
 
     let nextSlideButton: HTMLElement | null = null;
@@ -353,8 +517,10 @@ export class FacebookTimelineBehavior
 
       yield getState(ctx, `Viewing photo ${window.location.href}`, "photos");
 
-      const root = xpathNode(Q.photoCommentList) as HTMLUListElement | null;
-      yield* this.iterComments(ctx, root, 2);
+      const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
+      // Photo pages seen in the slideshow always use paginated comments,
+      // both when signed in and when not.
+      yield* this.iterPaginatedComments(ctx, root, root, 2);
 
       await sleep(waitUnit * 5);
     }
@@ -425,33 +591,134 @@ export class FacebookTimelineBehavior
     }
   }
 
+  async *iterAllReels(ctx: Context<FacebookState>) {
+    const {
+      getState,
+      scrollIntoView,
+      sleep,
+      waitUnit,
+      waitUntil,
+      xpathNode,
+      xpathNodes,
+    } = ctx.Lib;
+
+    const videoLink = (xpathNode(Q.firstReelThumbnail) ||
+      xpathNode(Q.firstReelSimple)) as HTMLElement | null;
+
+    if (!videoLink) {
+      return;
+    }
+
+    scrollIntoView(videoLink);
+
+    let lastHref = window.location.href;
+    videoLink.click();
+    await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+
+    await sleep(waitUnit * 10);
+
+    let nextButton = (xpathNode(Q.nextReelCard) ||
+      xpathNode(Q.nextReelCardAlt)) as HTMLElement | null;
+
+    while (nextButton) {
+      yield getState(ctx, "Viewing reel: " + window.location.href, "reels");
+      // wait for video to play, or 20s
+      await Promise.race([
+        waitUntil(() => {
+          for (const video of xpathNodes(
+            "//video",
+          ) as Generator<HTMLVideoElement>) {
+            if (video.readyState >= 3) {
+              return true;
+            }
+          }
+          return false;
+        }, waitUnit * 2),
+        sleep(20000),
+      ]);
+
+      await sleep(waitUnit * 10);
+
+      nextButton = (xpathNode(Q.nextReelCard) ||
+        xpathNode(Q.nextReelCardAlt)) as HTMLElement | null;
+
+      if (nextButton) {
+        nextButton.click();
+        lastHref = window.location.href;
+        await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+      }
+    }
+  }
+
   async *run(ctx: Context<FacebookState>) {
     const { getState, sleep, xpathNode } = ctx.Lib;
     yield getState(ctx, "Starting...");
 
     await sleep(2000);
 
+    // If we're logged out, make sure to click the close button
+    // before trying to interact with the page in any other way.
+    const loginModal = xpathNode(Q.loginModal) as HTMLElement | null;
+    if (loginModal) {
+      loginModal.click();
+    }
+
     if (Q.isPhotosPage.exec(window.location.href)) {
       ctx.state = { photos: 0, comments: 0 };
+      yield getState(ctx, "Iterating photos");
       yield* this.iterPhotoSlideShow(ctx);
       return;
     }
 
     if (Q.isVideosPage.exec(window.location.href)) {
       ctx.state = { videos: 0, comments: 0 };
+      yield getState(ctx, "Iterating videos");
       yield* this.iterAllVideos(ctx);
+      return;
+    }
+
+    if (Q.isReelsPage.exec(window.location.href)) {
+      ctx.state = { reels: 0, comments: 0 };
+      yield getState(ctx, "Iterating reels");
+      yield* this.iterAllReels(ctx);
+      return;
+    }
+
+    if (Q.isSingleGroupPost.exec(window.location.href)) {
+      ctx.state = { comments: 0 };
+      yield getState(ctx, "Viewing single group post");
+      yield* this.handleGroupPost(ctx);
+      return;
+    }
+
+    if (Q.isSinglePost.exec(window.location.href)) {
+      ctx.state = { comments: 0 };
+      yield getState(ctx, "Viewing single post");
+      yield* this.handleSinglePost(ctx);
       return;
     }
 
     if (Q.isPhotoVideoPage.exec(window.location.href)) {
       ctx.state = { comments: 0 };
-      const root = xpathNode(Q.photoCommentList) as HTMLUListElement | null;
-      yield* this.iterComments(ctx, root, 1000);
+      const root = xpathNode(Q.photoCommentList) as HTMLElement | null;
+      // Single photo pages use the infinite scroll comment widget
+      // when logged in, but the paginated comment widget when
+      // logged out.
+      if (this.isLoggedIn()) {
+        yield* this.iterInfiniteScrollComments(ctx, root, root, 1000);
+      } else {
+        yield* this.iterPaginatedComments(ctx, root, root, 1000);
+      }
       return;
     }
 
     ctx.state = { posts: 0, comments: 0, videos: 0 };
     yield* this.iterPostFeeds(ctx);
+  }
+
+  isLoggedIn() {
+    // Login form only appears for logged-out users
+    return !document.querySelector("form[id='login_form']");
   }
 
   async awaitPageLoad(ctx: Context<FacebookState>) {
@@ -462,9 +729,6 @@ export class FacebookTimelineBehavior
 
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 
-    assertContentValid(
-      () => !!document.querySelector("div[aria-label*='Account Controls' i]"),
-      "not_logged_in",
-    );
+    assertContentValid(() => !this.isLoggedIn(), "not_logged_in");
   }
 }
