@@ -24,6 +24,12 @@ const Q = {
   storiesHalo: "//section/div/span/div/div[@role='button']",
   storiesViewStoryButton:
     "//section/div[1]/div/div/div/div/div[2]/div/div[3]/div",
+  // A separate list of stories that appears underneath the user's bio.
+  // These are separate from the ones visible from the user avatar;
+  // they're "highlights", which each get their own URL and which are
+  // visible indefinitely instead of expiring after a period of time
+  // like the ones accessible from the avatar.
+  storiesHighlights: "//div[@role='presentation']//ul//li//a",
   userPage: /^\/([^/]+)\/?$/,
 };
 
@@ -284,8 +290,15 @@ export class InstagramPostsBehavior
       return;
     }
 
-    const { addLink, getState, scrollIntoView, sleep, waitUnit, xpathNode } =
-      ctx.Lib;
+    const {
+      addLink,
+      getState,
+      scrollIntoView,
+      sleep,
+      waitUnit,
+      xpathNode,
+      xpathNodes,
+    } = ctx.Lib;
 
     // If we're navigating a profile page, queue up this user's stories
     const match = Q.userPage.exec(window.location.pathname);
@@ -298,6 +311,20 @@ export class InstagramPostsBehavior
         const userName = match[1];
         await addLink(`https://instagram.com/stories/${userName}/`);
       }
+    }
+
+    // This second set of stories is the highlights, which are accessible
+    // from a separate set of links below the user profile.
+    // Unlike the stories above, these are accessible via links.
+    for (const story of xpathNodes(
+      Q.storiesHighlights,
+    ) as Generator<HTMLLinkElement>) {
+      yield getState(
+        ctx,
+        "Adding link to story highlight: " + story.href,
+        "stories",
+      );
+      await addLink(story.href);
     }
 
     for await (const row of this.iterRow(ctx)) {
