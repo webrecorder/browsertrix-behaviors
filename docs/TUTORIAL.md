@@ -314,7 +314,7 @@ for await (const item of commentItems) {
 ```
 
 Our behavior now yields a result each time we scroll to a comment, and the
-extension can now pause and resume the scrolling behavior.
+extension can now pause and resume the scrolling behavior. The last argument is a counter that's incremented by 1 every time `getState` is called with it; this is included in logs, so it can be helpful to identify how many times we've called `getState` in a particular place. The example above, for instance, will give us a count of all times we called `getState` with `"threads"`.
 
 ## 📖 Expanding comment threads
 
