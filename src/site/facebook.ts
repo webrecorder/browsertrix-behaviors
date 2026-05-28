@@ -62,7 +62,10 @@ const Q = {
   // Post from a group
   isSingleGroupPost: /^.*facebook\.com\/groups\/[^/]+\/posts\/[^/]+\/?($|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
-  loginModal: "//div[@role='dialog']//div[@role='button']",
+  // Limit query to only modals with the login_popup_cta_form form child in order
+  // to avoid grabbing unrelated modals, like pop-up posts
+  loginModal:
+    "//div[@role='dialog'][.//form[@id='login_popup_cta_form']]//div[@role='button']",
 };
 
 type FacebookState = Partial<{
