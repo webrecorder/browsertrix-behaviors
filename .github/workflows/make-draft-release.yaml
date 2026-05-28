@@ -19,8 +19,9 @@ jobs:
           echo "version=$(jq -r .version package.json)" >> "$GITHUB_ENV"
 
       - name: Make Draft Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           name: "Browsertrix Behaviors v${{ env.version }}"
           tag_name: v${{ env.version }}
           draft: true
+          generate_release_notes: true
