@@ -185,7 +185,7 @@ Chrome for example by following these steps:
 1. Click the `+ New Snippet` button
 1. Build the development output via `yarn run build-dev`
 1. Copy the output from `dist/behaviors.js`
-   - Running `cat dist/behaviors.js | pbcopy` on Linux/MacOS will copy the contents to your clipboard.
+   - Running `pbcopy < dist/behaviors.js` on MacOS or `xclip -selection clipboard < dist/behaviors.js` on Linux will copy the contents to your clipboard.
 1. Paste the contents in the new Snippet
 1. At the bottom of the window click the "Play" button or press `Ctrl/Cmd+Enter`
 
