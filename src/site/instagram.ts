@@ -309,6 +309,11 @@ export class InstagramPostsBehavior
       const storyHalo = xpathNode(Q.storiesHalo) as HTMLElement | null;
       if (storyHalo) {
         const userName = match[1];
+        yield getState(
+          ctx,
+          "Adding link to stories for user " + userName,
+          "stories",
+        );
         await addLink(`https://instagram.com/stories/${userName}/`);
       }
     }
