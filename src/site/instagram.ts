@@ -30,6 +30,15 @@ const Q = {
   // visible indefinitely instead of expiring after a period of time
   // like the ones accessible from the avatar.
   storiesHighlights: "//div[@role='presentation']//ul//li//a",
+  // The button to access a direct message from within a story.
+  // This is only visible when logged-in (a different button is displayed
+  // on stories that can be viewed logged-out), so this can be used as a
+  // proxy for whether the user is logged in or not.
+  // In testing, this aria-label seems stable across languages, even
+  // languages that don't use Roman script. This label always at least
+  // starts with the string "Direct".
+  storiesDirectMessageButton:
+    "//*[local-name() = 'svg' and starts-with(@aria-label, 'Direct')]",
   userPage: /^\/([^/]+)\/?$/,
 };
 
@@ -360,9 +369,13 @@ export class InstagramPostsBehavior
 
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 
-    assertContentValid(
-      () => !!document.querySelector("*[aria-label='New post']"),
-      "not_logged_in",
-    );
+    // It's currently difficult to determine login state on stories,
+    // so we skip this check there.
+    if (!window.location.pathname.startsWith("/stories")) {
+      assertContentValid(
+        () => !!document.querySelector("*[aria-label='New post']"),
+        "not_logged_in",
+      );
+    }
   }
 }
