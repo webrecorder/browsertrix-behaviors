@@ -271,21 +271,24 @@ export class InstagramPostsBehavior
   }
 
   async *handleStories(ctx: Context<InstagramState>) {
-    const { getState, xpathNode } = ctx.Lib;
+    const { getState, sleep, xpathNode } = ctx.Lib;
 
     yield getState(ctx, "Viewing Stories", "stories");
 
     // When navigating directly to a story via URL, instagram prompts us
     // whether to click through (because it'll reveal your identity to the
     // original poster)
-    //
-    // No need to do anything else; stories autoplay once you visit them,
-    // including navigation to the next active story from the same account,
-    // so we can just hang out on this page and let every story play through.
     const viewStory = xpathNode(Q.storiesViewStoryButton) as HTMLElement | null;
     if (viewStory) {
       viewStory.click();
     }
+
+    // No need to do anything else; stories autoplay once you visit them,
+    // including navigation to the next active story from the same account,
+    // so we can just hang out on this page and let every story play through.
+    // 60 seconds may not catch all stories but will catch many; we should
+    // probably double check this number.
+    await sleep(60000);
   }
 
   async *run(ctx: Context<InstagramState>) {
