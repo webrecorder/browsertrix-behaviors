@@ -19,6 +19,27 @@ const Q = {
   viewReplies: "ul/li//button[span[not(count(*)) and contains(text(), '(')]]",
   loadMore: "//button[span[@aria-label]]",
   pageLoadWaitUntil: "//main",
+  // The clickable ring that appears around a user avatar if the user
+  // has an active story
+  storiesHalo: "//section/div/span/div/div[@role='button']",
+  storiesViewStoryButton:
+    "//section/div[1]/div/div/div/div/div[2]/div/div[3]/div",
+  // A separate list of stories that appears underneath the user's bio.
+  // These are separate from the ones visible from the user avatar;
+  // they're "highlights", which each get their own URL and which are
+  // visible indefinitely instead of expiring after a period of time
+  // like the ones accessible from the avatar.
+  storiesHighlights: "//div[@role='presentation']//ul//li//a",
+  // The button to access a direct message from within a story.
+  // This is only visible when logged-in (a different button is displayed
+  // on stories that can be viewed logged-out), so this can be used as a
+  // proxy for whether the user is logged in or not.
+  // In testing, this aria-label seems stable across languages, even
+  // languages that don't use Roman script. This label always at least
+  // starts with the string "Direct".
+  storiesDirectMessageButton:
+    "//*[local-name() = 'svg' and starts-with(@aria-label, 'Direct')]",
+  userPage: /^\/([^/]+)\/?$/,
 };
 
 // These queries match the single-page versions
@@ -37,6 +58,7 @@ type InstagramState = {
   slides: number;
   posts: number;
   rows: number;
+  stories: number;
 };
 
 export class InstagramPostsBehavior
@@ -119,50 +141,6 @@ export class InstagramPostsBehavior
 
       child = await this.waitForNext(ctx, child);
     }
-  }
-
-  async *viewStandalonePost(ctx: Context<InstagramState>, origLoc: string) {
-    const { getState, sleep, waitUnit, waitUntil, xpathNode, xpathString } =
-      ctx.Lib;
-    const root = xpathNode(Q.rootPath) as HTMLElement | null;
-
-    if (!root?.firstElementChild) {
-      return;
-    }
-
-    const firstPostHref = xpathString(
-      Q.childMatchSelect,
-      root.firstElementChild,
-    );
-
-    yield getState(
-      ctx,
-      "Loading single post view for first post: " + firstPostHref,
-    );
-
-    window.history.replaceState({}, "", firstPostHref);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-
-    let root2: Node | null = null;
-    let root3: Node | null = null;
-
-    await sleep(waitUnit * 5);
-
-    await waitUntil(
-      () => !!((root2 = xpathNode(Q.rootPath)) !== root && root2),
-      waitUnit * 5,
-    );
-
-    await sleep(waitUnit * 5);
-
-    window.history.replaceState({}, "", origLoc);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-
-    await waitUntil(
-      () => !!((root3 = xpathNode(Q.rootPath)) !== root2 && root3),
-      waitUnit * 5,
-    );
-    //}
   }
 
   async *iterSubposts(ctx: Context<InstagramState>, profileView: boolean) {
@@ -292,16 +270,79 @@ export class InstagramPostsBehavior
     ]);
   }
 
+  async *handleStories(ctx: Context<InstagramState>) {
+    const { getState, sleep, xpathNode } = ctx.Lib;
+
+    yield getState(ctx, "Viewing Stories", "stories");
+
+    // When navigating directly to a story via URL, instagram prompts us
+    // whether to click through (because it'll reveal your identity to the
+    // original poster)
+    const viewStory = xpathNode(Q.storiesViewStoryButton) as HTMLElement | null;
+    if (viewStory) {
+      viewStory.click();
+    }
+
+    // No need to do anything else; stories autoplay once you visit them,
+    // including navigation to the next active story from the same account,
+    // so we can just hang out on this page and let every story play through.
+    // 60 seconds may not catch all stories but will catch many; we should
+    // probably double check this number.
+    await sleep(60000);
+  }
+
   async *run(ctx: Context<InstagramState>) {
     if (window.location.pathname.startsWith("/p/")) {
       yield* this.handleSinglePost(ctx, false);
       return;
     }
 
-    const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
-    //const origLoc = window.location.href;
+    if (window.location.pathname.startsWith("/stories/")) {
+      yield* this.handleStories(ctx);
+      return;
+    }
 
-    //yield* this.viewStandalonePost(ctx, origLoc);
+    const {
+      addLink,
+      getState,
+      scrollIntoView,
+      sleep,
+      waitUnit,
+      xpathNode,
+      xpathNodes,
+    } = ctx.Lib;
+
+    // If we're navigating a profile page, queue up this user's stories
+    const match = Q.userPage.exec(window.location.pathname);
+    if (match) {
+      // This element is only present if the user has stories available to view.
+      // We're not going to click it, just use it as a sign we should be
+      // queuing up the user's stories as a separate URL.
+      const storyHalo = xpathNode(Q.storiesHalo) as HTMLElement | null;
+      if (storyHalo) {
+        const userName = match[1];
+        yield getState(
+          ctx,
+          "Adding link to stories for user " + userName,
+          "stories",
+        );
+        await addLink(`https://instagram.com/stories/${userName}/`);
+      }
+    }
+
+    // This second set of stories is the highlights, which are accessible
+    // from a separate set of links below the user profile.
+    // Unlike the stories above, these are accessible via links.
+    for (const story of xpathNodes(
+      Q.storiesHighlights,
+    ) as Generator<HTMLLinkElement>) {
+      yield getState(
+        ctx,
+        "Adding link to story highlight: " + story.href,
+        "stories",
+      );
+      await addLink(story.href);
+    }
 
     for await (const row of this.iterRow(ctx)) {
       scrollIntoView(row);
@@ -331,9 +372,13 @@ export class InstagramPostsBehavior
 
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 
-    assertContentValid(
-      () => !!document.querySelector("*[aria-label='New post']"),
-      "not_logged_in",
-    );
+    // It's currently difficult to determine login state on stories,
+    // so we skip this check there.
+    if (!window.location.pathname.startsWith("/stories")) {
+      assertContentValid(
+        () => !!document.querySelector("*[aria-label='New post']"),
+        "not_logged_in",
+      );
+    }
   }
 }
