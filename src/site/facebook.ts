@@ -209,7 +209,8 @@ export class FacebookTimelineBehavior
     commentQuery: string,
     maxExpands = 2,
   ) {
-    const { getState, scrollIntoView, sleep, waitUnit, xpathNode } = ctx.Lib;
+    const { addLink, getState, scrollIntoView, sleep, waitUnit, xpathNode } =
+      ctx.Lib;
     if (!post) {
       return;
     }
@@ -224,6 +225,18 @@ export class FacebookTimelineBehavior
     }
 
     yield getState(ctx, "Viewing post " + (url || ""), "posts");
+    // If appropriate, queue up the single post view as well
+    if (url) {
+      const urlString = url.toString();
+      yield getState(ctx, "urlString: " + urlString);
+      if (
+        Q.isSinglePost.test(urlString) ||
+        Q.isSingleGroupPost.test(urlString)
+      ) {
+        yield getState(ctx, "Queuing single page post " + urlString);
+        await addLink(urlString);
+      }
+    }
 
     scrollIntoView(post);
 
