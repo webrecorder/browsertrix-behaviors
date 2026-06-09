@@ -11,6 +11,10 @@ const Q = {
   // In the feed view, comments also have @role='article' but additionally
   // have an @aria-label that actual posts don't have.
   articleList: "//div[@role='article' and not(@aria-label)]",
+  // The above is only true when logged out; when logged in, we need to key
+  // off something else. The aria-posinset attribute is set on posts in the
+  // logged in view.
+  articleListLoggedIn: "//div[@aria-posinset]",
   photosOrVideos: `.//a[(contains(@href, '/photos/') or contains(@href, '/photo/?') or contains(@href, '/videos/')) and (starts-with(@href, '${window.location.origin}/') or starts-with(@href, '/'))]`,
   pagePostRootQuery: "//div[@role='dialog']",
   postQuery: ".//a[contains(@href, '/posts/')]",
@@ -110,6 +114,14 @@ export class FacebookTimelineBehavior
       xpathNode,
       xpathNodes,
     } = ctx.Lib;
+
+    let articleQuery;
+    if (this.isLoggedIn()) {
+      articleQuery = Q.articleListLoggedIn;
+    } else {
+      articleQuery = Q.articleList;
+    }
+
     let feeds = Array.from(xpathNodes(Q.feed)) as Element[];
     if (feeds.length) {
       for (const feed of feeds) {
@@ -122,7 +134,7 @@ export class FacebookTimelineBehavior
         }
       }
     } else if (
-      (feeds = Array.from(xpathNodes(Q.articleList)) as Element[]).length
+      (feeds = Array.from(xpathNodes(articleQuery)) as Element[]).length
     ) {
       for (const post of feeds) {
         yield getState(ctx, "Viewing post from feed");
@@ -135,7 +147,7 @@ export class FacebookTimelineBehavior
       // or hit a limit
       let lastSeen = feeds.at(-1);
       for (let i = 0; i < 50; i++) {
-        feeds = Array.from(xpathNodes(Q.articleList)) as Element[];
+        feeds = Array.from(xpathNodes(articleQuery)) as Element[];
         if (feeds[0] == lastSeen) {
           break;
         }
