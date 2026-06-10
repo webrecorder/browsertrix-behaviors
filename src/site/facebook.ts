@@ -228,7 +228,6 @@ export class FacebookTimelineBehavior
     // If appropriate, queue up the single post view as well
     if (url) {
       const urlString = url.toString();
-      yield getState(ctx, "urlString: " + urlString);
       if (
         Q.isSinglePost.test(urlString) ||
         Q.isSingleGroupPost.test(urlString)
