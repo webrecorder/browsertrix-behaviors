@@ -688,6 +688,11 @@ export class FacebookTimelineBehavior
       loginModal.click();
     }
 
+    if (window.location.pathname == "/") {
+      yield getState(ctx, "Not browsing the home timeline");
+      return;
+    }
+
     if (Q.isPhotosPage.exec(window.location.href)) {
       ctx.state = { photos: 0, comments: 0 };
       yield getState(ctx, "Iterating photos");
