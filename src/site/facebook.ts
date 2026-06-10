@@ -59,12 +59,23 @@ const Q = {
     "following::a[contains(@href, '/videos/') and @aria-hidden!='true']",
   isPhotoVideoPage: /^.*facebook\.com\/[^/]+\/(photos|videos)\/.+/,
   isPhotosPage: /^.*facebook\.com\/[^/]+\/photos\/?($|\?)/,
+  isSinglePhoto: /^.*facebook\.com\/photo.php\/?($|\?)/,
   isVideosPage: /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/,
   isReelsPage: /^.*facebook\.com\/[^/]+\/reels\/?($|\?)/,
+  // This is the list of recommended reels for your account,
+  // *not* the reels posted by a particular page
+  isReelsTab: /^.*facebook\.com\/reelsTab\/?($|\?)/,
+  isSingleReel: /^.*facebook\.com\/reel\/\d+\/?($|\?)/,
   // Post from an organization/etc. page
   isSinglePost: /^.*facebook\.com\/\w+\/posts\/[^/]+\/?($|\?)/,
   // Post from a group
   isSingleGroupPost: /^.*facebook\.com\/groups\/[^/]+\/posts\/[^/]+\/?($|\?)/,
+  isGroupPage: /^.*facebook\.com\/groups\/[^/]+\/?($|\?)/,
+  isOrganizationOrPersonPage: /^.*facebook\.com\/[^/]+/,
+  isMarketplace: /^.*facebook\.com\/marketplace/,
+  isFriends: /^.*facebook\.com\/friends/,
+  isGaming: /^.*facebook\.com\/gaming/,
+  isNotifications: /^.*facebook\.com\/notifications/,
   pageLoadWaitUntil: "//div[@role='main']",
   // Limit query to only modals with the login_popup_cta_form form child in order
   // to avoid grabbing unrelated modals, like pop-up posts
@@ -89,7 +100,27 @@ export class FacebookTimelineBehavior
   static id = "Facebook" as const;
 
   static isMatch() {
-    return !!window.location.href.match(/https:\/\/(www\.)?facebook\.com\//);
+    // Attempts to restrict the behaviour to the classes of pages
+    // we're set up to be able to iterate over.
+    return (
+      // We want anything in these categories
+      (!!window.location.href.match(Q.isPhotoVideoPage) ||
+        !!window.location.href.match(Q.isPhotosPage) ||
+        !!window.location.href.match(Q.isSinglePhoto) ||
+        !!window.location.href.match(Q.isVideosPage) ||
+        !!window.location.href.match(Q.isReelsPage) ||
+        !!window.location.href.match(Q.isSingleReel) ||
+        !!window.location.href.match(Q.isSinglePost) ||
+        !!window.location.href.match(Q.isSingleGroupPost) ||
+        !!window.location.href.match(Q.isGroupPage) ||
+        !!window.location.href.match(Q.isOrganizationOrPersonPage)) &&
+      // And *avoid* anything in these categories
+      !window.location.href.match(Q.isMarketplace) &&
+      !window.location.href.match(Q.isFriends) &&
+      !window.location.href.match(Q.isGaming) &&
+      !window.location.href.match(Q.isNotifications) &&
+      !window.location.href.match(Q.isReelsTab)
+    );
   }
 
   static init() {
