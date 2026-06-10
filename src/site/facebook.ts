@@ -684,6 +684,7 @@ export class FacebookTimelineBehavior
     // before trying to interact with the page in any other way.
     const loginModal = xpathNode(Q.loginModal) as HTMLElement | null;
     if (loginModal) {
+      yield getState(ctx, "Closing login modal");
       loginModal.click();
     }
 
