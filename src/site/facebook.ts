@@ -754,6 +754,6 @@ export class FacebookTimelineBehavior
 
     await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
 
-    assertContentValid(() => !this.isLoggedIn(), "not_logged_in");
+    assertContentValid(() => this.isLoggedIn(), "not_logged_in");
   }
 }
