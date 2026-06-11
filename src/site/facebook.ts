@@ -62,9 +62,6 @@ const Q = {
   isSinglePhoto: /^.*facebook\.com\/photo.php\/?($|\?)/,
   isVideosPage: /^.*facebook\.com\/[^/]+\/videos\/?($|\?)/,
   isReelsPage: /^.*facebook\.com\/[^/]+\/reels\/?($|\?)/,
-  // This is the list of recommended reels for your account,
-  // *not* the reels posted by a particular page
-  isReelsTab: /^.*facebook\.com\/reelsTab\/?($|\?)/,
   isSingleReel: /^.*facebook\.com\/reel\/\d+\/?($|\?)/,
   // Post from an organization/etc. page
   isSinglePost: /^.*facebook\.com\/\w+\/posts\/[^/]+\/?($|\?)/,
@@ -72,10 +69,8 @@ const Q = {
   isSingleGroupPost: /^.*facebook\.com\/groups\/[^/]+\/posts\/[^/]+\/?($|\?)/,
   isGroupPage: /^.*facebook\.com\/groups\/[^/]+\/?($|\?)/,
   isOrganizationOrPersonPage: /^.*facebook\.com\/[^/]+/,
-  isMarketplace: /^.*facebook\.com\/marketplace/,
-  isFriends: /^.*facebook\.com\/friends/,
-  isGaming: /^.*facebook\.com\/gaming/,
-  isNotifications: /^.*facebook\.com\/notifications/,
+  isNonHandledPageType:
+    /^.*facebook\.com\/(business|friends|gaming|help|marketplace|notifications|policies|privacy|stories)(\/|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
   // Limit query to only modals with the login_popup_cta_form form child in order
   // to avoid grabbing unrelated modals, like pop-up posts
@@ -115,11 +110,7 @@ export class FacebookTimelineBehavior
         !!window.location.href.match(Q.isGroupPage) ||
         !!window.location.href.match(Q.isOrganizationOrPersonPage)) &&
       // And *avoid* anything in these categories
-      !window.location.href.match(Q.isMarketplace) &&
-      !window.location.href.match(Q.isFriends) &&
-      !window.location.href.match(Q.isGaming) &&
-      !window.location.href.match(Q.isNotifications) &&
-      !window.location.href.match(Q.isReelsTab)
+      !window.location.href.match(Q.isNonHandledPageType)
     );
   }
 
