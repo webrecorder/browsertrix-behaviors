@@ -17,17 +17,8 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
 
   static onPageInit() {
     // Attempt to induce YouTube into serving up older video formats
-    const isTypeSupported = MediaSource.isTypeSupported.bind(MediaSource);
     Object.defineProperty(MediaSource, "isTypeSupported", {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      value: (type: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        if (/av01/.test(type)) {
-          return false;
-        } else {
-          return isTypeSupported.call(MediaSource, type);
-        }
-      },
+      value: () => false,
       configurable: false,
       writable: false,
     });
