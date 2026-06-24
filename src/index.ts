@@ -200,6 +200,11 @@ export class BehaviorManager {
             );
           }
           siteMatch = true;
+
+          if ("onPageInit" in this.mainBehaviorClass) {
+            this.mainBehaviorClass.onPageInit();
+          }
+
           break;
         }
       }
