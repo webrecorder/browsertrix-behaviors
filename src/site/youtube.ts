@@ -22,39 +22,6 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
       configurable: false,
       writable: false,
     });
-
-    const canPlayType = HTMLMediaElement.prototype.canPlayType;
-    Object.defineProperty(HTMLMediaElement.prototype, "canPlayType", {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      value: (type: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        if (/av01/.test(type)) {
-          return "";
-        } else {
-          return canPlayType.call(this, type);
-        }
-      },
-      configurable: false,
-      writable: false,
-    });
-
-    const decodingInfo = navigator.mediaCapabilities.decodingInfo;
-    Object.defineProperty(navigator.mediaCapabilities, "decodingInfo", {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      value: async (configuration: any) => {
-        if (
-          configuration.video &&
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          /av01/.test(configuration.video.contentType)
-        ) {
-          return { supported: false, smooth: false, powerEfficient: false };
-        } else {
-          return decodingInfo.call(this, configuration);
-        }
-      },
-      configurable: false,
-      writable: false,
-    });
   }
 
   async *run(_ctx: Context<YoutubeState>) {}
