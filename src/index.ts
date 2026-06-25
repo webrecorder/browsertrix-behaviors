@@ -182,6 +182,14 @@ export class BehaviorManager {
         const siteBehaviorClass = this.loadedBehaviors[name];
         if ("isMatch" in siteBehaviorClass && siteBehaviorClass.isMatch()) {
           void behaviorLog("Using Site-Specific Behavior: " + name);
+
+          if ("onPageInit" in siteBehaviorClass) {
+            void behaviorLog(
+              "Calling onPageInit for Site-Specific Behavior " + name,
+            );
+            siteBehaviorClass.onPageInit();
+          }
+
           this.mainBehaviorClass = siteBehaviorClass;
           const siteSpecificOpts =
             typeof opts.siteSpecific === "object"
@@ -200,10 +208,6 @@ export class BehaviorManager {
             );
           }
           siteMatch = true;
-
-          if ("onPageInit" in this.mainBehaviorClass) {
-            this.mainBehaviorClass.onPageInit();
-          }
 
           break;
         }
