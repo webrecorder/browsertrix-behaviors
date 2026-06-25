@@ -26,7 +26,15 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     });
   }
 
-  async *run(_ctx: Context<YoutubeState>) {}
+  async *run(ctx: Context<YoutubeState>) {
+    const { getState, sleep, waitUnit } = ctx.Lib;
+
+    const video = document.querySelector("video");
+    if (video) {
+      yield getState(ctx, "Waiting for video to play");
+      await sleep(waitUnit * 60);
+    }
+  }
 
   async awaitPageLoad(ctx: Context<YoutubeState>) {
     const { sleep, assertContentValid } = ctx.Lib;
