@@ -12,7 +12,9 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
   }
 
   static isMatch() {
-    return !!window.location.href.match(/^https:\/\/(www\.)?youtube(-nocookie)?\.com\//);
+    return !!window.location.href.match(
+      /^https:\/\/(www\.)?youtube(-nocookie)?\.com\//,
+    );
   }
 
   static onPageInit() {
