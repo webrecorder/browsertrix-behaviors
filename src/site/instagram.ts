@@ -29,7 +29,8 @@ const Q = {
   // they're "highlights", which each get their own URL and which are
   // visible indefinitely instead of expiring after a period of time
   // like the ones accessible from the avatar.
-  storiesHighlights: "//div[@role='presentation']//ul//li//a",
+  storiesHighlights:
+    "//div[@role='presentation']//ul//li//a[starts-with(@href, '/stories/highlights')]",
   // The button to access a direct message from within a story.
   // This is only visible when logged-in (a different button is displayed
   // on stories that can be viewed logged-out), so this can be used as a
