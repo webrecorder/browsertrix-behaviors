@@ -132,25 +132,7 @@ The promised returned by run will wait for the active behavior to finish, for th
 
 #### Supported features
 
-The following features are expected to work for each of these site-specific behaviors:
-
-##### Facebook
-
-- Capturing a home timeline
-- Capturing single posts
-- Capturing business/organization pages, including posts within those pages
-- Capturing photos and videos
-
-##### Instagram
-
-- Capturing all subposts within every post
-- Expanding comment threads and capturing all comments
-- Capturing a single post
-- Capturing a profile, including the full content of every post on that profile
-- Capturing photos and videos
-- Capturing ephemeral stories from the story carousel
-- Capturing stories with each story loaded via it's unique URL.
-- Extra media in "+N" click-through carousels
+Information about the features that are expected to work can be found in the [crawler documentation](https://crawler.docs.browsertrix.com/user-guide/behaviors/).
 
 ## Logging
 
