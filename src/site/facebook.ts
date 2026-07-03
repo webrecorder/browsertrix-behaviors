@@ -68,7 +68,7 @@ const Q = {
   // Post from a group
   isSingleGroupPost: /^.*facebook\.com\/groups\/[^/]+\/posts\/[^/]+\/?($|\?)/,
   isGroupPage: /^.*facebook\.com\/groups\/[^/]+\/?($|\?)/,
-  isOrganizationOrPersonPage: /^.*facebook\.com\/[^/]+/,
+  isOrganizationOrPersonPage: /^.*facebook\.com\/([^/]+)/,
   isNonHandledPageType:
     /^.*facebook\.com\/(business|friends|gaming|help|marketplace|notifications|policies|privacy|stories)(\/|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
@@ -697,7 +697,7 @@ export class FacebookTimelineBehavior
   }
 
   async *run(ctx: Context<FacebookState>) {
-    const { getState, sleep, xpathNode } = ctx.Lib;
+    const { addLink, getState, sleep, xpathNode } = ctx.Lib;
     yield getState(ctx, "Starting...");
 
     await sleep(2000);
@@ -762,6 +762,21 @@ export class FacebookTimelineBehavior
         yield* this.iterPaginatedComments(ctx, root, root, 1000);
       }
       return;
+    }
+
+    // Try to ensure we grab reels/photos pages
+    const match = window.location.href.match(Q.isOrganizationOrPersonPage);
+    if (match) {
+      const account = match[1];
+      if (account && account != "groups") {
+        const photosPage = `https://www.facebook.com/${account}/photos`;
+        yield getState(ctx, `Adding link to photos page: ${photosPage}`);
+        await addLink(photosPage);
+
+        const reelsPage = `https://www.facebook.com/${account}/reels`;
+        yield getState(ctx, `Adding link to reels page: ${reelsPage}`);
+        await addLink(reelsPage);
+      }
     }
 
     ctx.state = { posts: 0, comments: 0, videos: 0 };
