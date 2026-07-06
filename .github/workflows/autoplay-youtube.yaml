@@ -15,9 +15,9 @@ jobs:
         node-version: [22.x]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: upload cdxj if failed
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: youtube-cdxj
           path: ./crawls/collections/test/indexes/index.cdxj
