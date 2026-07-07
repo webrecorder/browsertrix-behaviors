@@ -13,6 +13,7 @@ export class Autoplay extends BackgroundBehavior {
   _initDone: Function;
   running = false;
   polling = false;
+  seenElem = new WeakSet<HTMLElement>();
 
   static id = "Autoplay" as const;
 
@@ -48,6 +49,19 @@ export class Autoplay extends BackgroundBehavior {
     }
 
     this.polling = true;
+
+    // lite-youtube player won't actually load the video embed until
+    // we click the element the first time.
+    // (It also contains a <a> button inside, but the parent lite-youtube
+    // player itself is clickable and loads the real embed.)
+    for (const [, elem] of querySelectorAllDeep("lite-youtube").entries()) {
+      // Avoid clicking the same element repeatedly should we happen to
+      // run into it multiple times
+      if (!this.seenElem.has(elem)) {
+        elem.click();
+        this.seenElem.add(elem);
+      }
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (run) {
