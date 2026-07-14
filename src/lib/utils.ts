@@ -145,7 +145,10 @@ export async function behaviorLog(data: LogData, type = "debug") {
   }
 }
 
-export async function addLink(url: string, alwaysObeyScope = false): Promise<void> {
+export async function addLink(
+  url: string,
+  alwaysObeyScope = false,
+): Promise<void> {
   if (typeof self["__bx_addLink"] === "function") {
     // call directly as passing two objects
     return await self["__bx_addLink"](url, alwaysObeyScope);
