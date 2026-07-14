@@ -68,7 +68,7 @@ const Q = {
   // Post from a group
   isSingleGroupPost: /^.*facebook\.com\/groups\/[^/]+\/posts\/[^/]+\/?($|\?)/,
   isGroupPage: /^.*facebook\.com\/groups\/[^/]+\/?($|\?)/,
-  isOrganizationOrPersonPage: /^.*facebook\.com\/([^/]+)/,
+  isOrganizationOrPersonPage: /^.*facebook\.com\/([a-zA-Z0-9.]+)/,
   isNonHandledPageType:
     /^.*facebook\.com\/(business|friends|gaming|help|marketplace|notifications|policies|privacy|stories)(\/|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
