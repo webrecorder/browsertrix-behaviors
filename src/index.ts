@@ -433,6 +433,8 @@ export class BehaviorManager {
     const promises: Promise<void>[] = [];
 
     for (const url of urls) {
+      // add link for each matched URL, but only if in scope
+      // this is called from main link extraction in the crawler
       // pass true to always follow scope, even if allowed to ignore
       promises.push(addLink(url, true));
     }
