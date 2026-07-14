@@ -68,9 +68,10 @@ const Q = {
   // Post from a group
   isSingleGroupPost: /^.*facebook\.com\/groups\/[^/]+\/posts\/[^/]+\/?($|\?)/,
   isGroupPage: /^.*facebook\.com\/groups\/[^/]+\/?($|\?)/,
+  isGroupFeed: /^.*facebook\.com\/groups\/feed\/?($|\?)/,
   isOrganizationOrPersonPage: /^.*facebook\.com\/([a-zA-Z0-9.]+)/,
   isNonHandledPageType:
-    /^.*facebook\.com\/(business|friends|gaming|help|marketplace|notifications|policies|privacy|stories)(\/|\?)/,
+    /^.*facebook\.com\/(business|friends|gaming|help|marketplace|notifications|policies|privacy|stories|groups\/feed|login\.php)(\/|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
   // Limit query to only modals with the login_popup_cta_form form child in order
   // to avoid grabbing unrelated modals, like pop-up posts
@@ -727,6 +728,11 @@ export class FacebookTimelineBehavior
 
     if (window.location.pathname == "/") {
       yield getState(ctx, "Not browsing the home timeline");
+      return;
+    }
+
+    if (Q.isGroupFeed.exec(window.location.href)) {
+      yield getState(ctx, "Not browsing the group feed");
       return;
     }
 
