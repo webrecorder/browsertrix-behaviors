@@ -668,6 +668,10 @@ export class FacebookTimelineBehavior
       xpathNode(Q.nextReelCardAlt)) as HTMLElement | null;
 
     while (nextButton) {
+      if (!window.location.href.startsWith("https://www.facebook.com/reel/")) {
+        break;
+      }
+
       yield getState(ctx, "Viewing reel: " + window.location.href, "reels");
       await addLink(window.location.href);
 
