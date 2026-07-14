@@ -646,6 +646,7 @@ export class FacebookTimelineBehavior
       waitUntil,
       xpathNode,
       xpathNodes,
+      addLink,
     } = ctx.Lib;
 
     const videoLink = (xpathNode(Q.firstReelThumbnail) ||
@@ -668,6 +669,8 @@ export class FacebookTimelineBehavior
 
     while (nextButton) {
       yield getState(ctx, "Viewing reel: " + window.location.href, "reels");
+      await addLink(window.location.href);
+
       // wait for video to play, or 20s
       await Promise.race([
         waitUntil(() => {
