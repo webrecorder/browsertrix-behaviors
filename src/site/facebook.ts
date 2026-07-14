@@ -639,6 +639,7 @@ export class FacebookTimelineBehavior
 
   async *iterAllReels(ctx: Context<FacebookState>) {
     const {
+      addLink,
       getState,
       scrollIntoView,
       sleep,
@@ -668,6 +669,20 @@ export class FacebookTimelineBehavior
 
     while (nextButton) {
       yield getState(ctx, "Viewing reel: " + window.location.href, "reels");
+
+      // The first reel viewed won't have a permanent URL in the URL bar,
+      // and will just be at the path www.facebook.com/reel
+      // Subsequent reels we visit will have a permanent URL accessible to
+      // us from the URL bar, so we'll want to addLink those for
+      // individual crawling.
+      if (window.location.pathname != "/reel/") {
+        yield getState(
+          ctx,
+          `Adding link to individual reel: ${window.location.href}`,
+        );
+        await addLink(window.location.href);
+      }
+
       // wait for video to play, or 20s
       await Promise.race([
         waitUntil(() => {
