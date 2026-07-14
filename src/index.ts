@@ -433,7 +433,8 @@ export class BehaviorManager {
     const promises: Promise<void>[] = [];
 
     for (const url of urls) {
-      promises.push(addLink(url));
+      // pass true to always follow scope, even if allowed to ignore
+      promises.push(addLink(url, true));
     }
 
     await Promise.allSettled(promises);
