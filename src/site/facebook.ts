@@ -71,7 +71,7 @@ const Q = {
   isGroupFeed: /^.*facebook\.com\/groups\/feed\/?($|\?)/,
   isOrganizationOrPersonPage: /^.*facebook\.com\/([a-zA-Z0-9.]+)/,
   isNonHandledPageType:
-    /^.*facebook\.com\/(business|friends|gaming|help|marketplace|notifications|policies|privacy|stories|groups\/feed|login\.php)(\/|\?)/,
+    /^.*facebook\.com\/(business|friends|gaming|help|marketplace|notifications|policies|privacy|stories|groups\/feed|login\.php|instagram\/login_sync)(\/|\?)/,
   pageLoadWaitUntil: "//div[@role='main']",
   // Limit query to only modals with the login_popup_cta_form form child in order
   // to avoid grabbing unrelated modals, like pop-up posts
