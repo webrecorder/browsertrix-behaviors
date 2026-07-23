@@ -789,7 +789,7 @@ export class FacebookTimelineBehavior
     const match = window.location.href.match(Q.isOrganizationOrPersonPage);
     if (match) {
       const account = match[1];
-      if (account && account != "groups") {
+      if (account && account != "groups" && account != "reel") {
         const photosPage = `https://www.facebook.com/${account}/photos`;
         yield getState(ctx, `Adding link to photos page: ${photosPage}`);
         await addLink(photosPage);
