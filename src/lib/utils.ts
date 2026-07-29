@@ -24,6 +24,13 @@ export async function scrollAndClick(
 
 export const waitUnit = 200;
 
+// Returns a random number between 150 and 250.
+// Useful for performing a wait with a less predictable timer than
+// using the fixed waitUnit.
+export function fuzzyWaitUnit(): number {
+  return Math.floor(Math.random() * (250 - 150) + 150);
+}
+
 export async function sleep(timeout: number) {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 }

@@ -641,6 +641,7 @@ export class FacebookTimelineBehavior
   async *iterAllReels(ctx: Context<FacebookState>) {
     const {
       addLink,
+      fuzzyWaitUnit,
       getState,
       scrollIntoView,
       sleep,
@@ -663,7 +664,7 @@ export class FacebookTimelineBehavior
     videoLink.click();
     await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
 
-    await sleep(waitUnit * 10);
+    await sleep(fuzzyWaitUnit() * 10);
 
     let nextButton = (xpathNode(Q.nextReelCard) ||
       xpathNode(Q.nextReelCardAlt)) as HTMLElement | null;
@@ -684,7 +685,7 @@ export class FacebookTimelineBehavior
         await addLink(window.location.href);
       }
 
-      // wait for video to play, or 20s
+      // wait for video to play, or ~20s
       await Promise.race([
         waitUntil(() => {
           for (const video of xpathNodes(
@@ -695,11 +696,12 @@ export class FacebookTimelineBehavior
             }
           }
           return false;
-        }, waitUnit * 2),
-        sleep(20000),
+        }, fuzzyWaitUnit() * 2),
+        sleep(fuzzyWaitUnit() * 100),
       ]);
 
-      await sleep(waitUnit * 10);
+      // Continue waiting for the video to finish playing out
+      await sleep(fuzzyWaitUnit() * 100);
 
       nextButton = (xpathNode(Q.nextReelCard) ||
         xpathNode(Q.nextReelCardAlt)) as HTMLElement | null;
@@ -707,7 +709,10 @@ export class FacebookTimelineBehavior
       if (nextButton) {
         nextButton.click();
         lastHref = window.location.href;
-        await waitUntil(() => window.location.href !== lastHref, waitUnit * 2);
+        await waitUntil(
+          () => window.location.href !== lastHref,
+          fuzzyWaitUnit() * 5,
+        );
       }
     }
   }
