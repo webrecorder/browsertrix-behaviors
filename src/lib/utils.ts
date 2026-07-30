@@ -163,7 +163,7 @@ export async function addLink(
 }
 
 export async function addLinkBatch(
-  urls: Set<string>,
+  urls: string,
   alwaysObeyScope = false,
 ): Promise<void> {
   if (typeof self["__bx_addLinkBatch"] === "function") {

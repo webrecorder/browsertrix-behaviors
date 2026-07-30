@@ -2,10 +2,7 @@ import { type BehaviorManager } from "../src";
 
 interface BehaviorGlobals {
   __bx_addLink?: (url: string, alwaysObeyScope: boolean) => Promise<void>;
-  __bx_addLinkBatch?: (
-    url: Set<string>,
-    alwaysObeyScope: boolean,
-  ) => Promise<void>;
+  __bx_addLinkBatch?: (urls: string, alwaysObeyScope: boolean) => Promise<void>;
   __bx_fetch?: (url: string) => Promise<boolean>;
   __bx_addSet?: (url: string) => Promise<boolean>;
   __bx_netIdle?: (params: {

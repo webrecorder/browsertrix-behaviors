@@ -434,7 +434,10 @@ export class BehaviorManager {
     // add link for each matched URL, but only if in scope
     // this is called from main link extraction in the crawler
     // pass true to always follow scope, even if allowed to ignore
-    promises.push(addLinkBatch(urls, true));
+    // We join them into a string here to send back more quickly over
+    // the debug protocol, and they'll be split back out again
+    // in the crawler.
+    promises.push(addLinkBatch(Array.from(urls).join("\n\n"), true));
 
     await Promise.allSettled(promises);
   }
