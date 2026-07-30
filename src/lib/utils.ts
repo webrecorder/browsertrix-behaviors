@@ -162,6 +162,16 @@ export async function addLink(
   }
 }
 
+export async function addLinkBatch(
+  urls: Set<string>,
+  alwaysObeyScope = false,
+): Promise<void> {
+  if (typeof self["__bx_addLinkBatch"] === "function") {
+    // call directly as passing two objects
+    return await self["__bx_addLinkBatch"](urls, alwaysObeyScope);
+  }
+}
+
 export async function doExternalFetch(url: string): Promise<boolean> {
   if (typeof self["__bx_fetch"] === "function") {
     return await callBinding(self["__bx_fetch"], url);

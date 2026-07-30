@@ -9,7 +9,7 @@ import {
   _setLogFunc,
   _setBehaviorManager,
   installBehaviors,
-  addLink,
+  addLinkBatch,
   checkToJsonOverride,
 } from "./lib/utils";
 import { type AbstractBehavior, BehaviorRunner } from "./lib/behavior";
@@ -431,13 +431,10 @@ export class BehaviorManager {
     });
 
     const promises: Promise<void>[] = [];
-
-    for (const url of urls) {
-      // add link for each matched URL, but only if in scope
-      // this is called from main link extraction in the crawler
-      // pass true to always follow scope, even if allowed to ignore
-      promises.push(addLink(url, true));
-    }
+    // add link for each matched URL, but only if in scope
+    // this is called from main link extraction in the crawler
+    // pass true to always follow scope, even if allowed to ignore
+    promises.push(addLinkBatch(urls, true));
 
     await Promise.allSettled(promises);
   }
