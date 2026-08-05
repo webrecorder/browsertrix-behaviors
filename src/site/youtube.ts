@@ -29,8 +29,10 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
   async *run(_ctx: Context<YoutubeState>) {}
 
   async awaitPageLoad(ctx: Context<YoutubeState>) {
-    const { sleep, assertContentValid } = ctx.Lib;
-    await sleep(10);
+    const { assertContentValid, waitUntilNode, waitUnit } = ctx.Lib;
+
+    await waitUntilNode("//video", document, null, 10 * waitUnit * 5);
+
     assertContentValid(() => {
       const video = document.querySelector("video");
       const paused = video?.paused;
