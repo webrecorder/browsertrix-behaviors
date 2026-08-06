@@ -163,12 +163,22 @@ export async function addLink(
 }
 
 export async function addLinkBatch(
-  urls: string,
+  urls: string[],
   alwaysObeyScope = false,
 ): Promise<void> {
   if (typeof self["__bx_addLinkBatch"] === "function") {
-    // call directly as passing two objects
-    return await self["__bx_addLinkBatch"](urls, alwaysObeyScope);
+    const promises = [];
+    // Pipe through at most 2500 URLs at a time
+    for (let i = 0; i < Math.ceil(urls.length / 2500); i++) {
+      const slice = urls.slice(2500 * i, 2500 * (i + 1));
+      // We join them into a string here to send back more quickly over
+      // the debug protocol, and they'll be split back out again
+      // in the crawler.
+      promises.push(
+        self["__bx_addLinkBatch"](slice.join("\n\n"), alwaysObeyScope),
+      );
+    }
+    await Promise.all(promises);
   }
 }
 
