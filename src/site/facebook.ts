@@ -149,6 +149,14 @@ export class FacebookTimelineBehavior
     if (feeds.length) {
       for (const feed of feeds) {
         for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
+          if (post.getBoundingClientRect().y < 0) {
+            yield getState(
+              ctx,
+              "Post is above viewport; iterating over posts complete",
+            );
+            return;
+          }
+
           yield* this.viewPost(
             ctx,
             xpathNode(Q.article, post) as Element | null,
@@ -160,6 +168,14 @@ export class FacebookTimelineBehavior
       (feeds = Array.from(xpathNodes(articleQuery)) as Element[]).length
     ) {
       for (const post of feeds) {
+        if (post.getBoundingClientRect().y < 0) {
+          yield getState(
+            ctx,
+            "Post is above viewport; iterating over posts complete",
+          );
+          return;
+        }
+
         yield getState(ctx, "Viewing post from feed");
         scrollIntoView(post);
         yield* this.viewPost(ctx, post, Q.commentList);
@@ -176,6 +192,14 @@ export class FacebookTimelineBehavior
         }
 
         for (const post of feeds) {
+          if (post.getBoundingClientRect().y < 0) {
+            yield getState(
+              ctx,
+              "Post is above viewport; iterating over posts complete",
+            );
+            return;
+          }
+
           yield getState(ctx, "Viewing post from feed");
           scrollIntoView(post);
           yield* this.viewPost(ctx, post, Q.commentList);
