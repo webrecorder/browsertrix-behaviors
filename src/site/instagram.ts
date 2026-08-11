@@ -18,7 +18,6 @@ const Q = {
     "//article[@role='presentation']/div[1]/div[2]//ul/div[last()]/div/div",
   viewReplies: "ul/li//button[span[not(count(*)) and contains(text(), '(')]]",
   loadMore: "//button[span[@aria-label]]",
-  pageLoadWaitUntil: "//main",
   // The clickable ring that appears around a user avatar if the user
   // has an active story
   storiesHalo: "//section/div/span/div/div[@role='button']",
@@ -371,7 +370,15 @@ export class InstagramPostsBehavior
 
     void log("Waiting for Instagram to fully load");
 
-    await waitUntilNode(Q.pageLoadWaitUntil, document, null, 10000);
+    // Yes, this is a long wait. Yes, it's necessary. Some very large,
+    // complex pages can genuinely take this long to finish making their
+    // photo grid available.
+    // Important note: just because the main node at //main is available,
+    // this does not mean the photos are! The rest of the page can finish
+    // loading significantly in advance of when the photos are there, and
+    // if we treat it as finished at that point we'll give up on iterating
+    // before the photos become available.
+    await waitUntilNode(Q.rootPath, document, null, 18000);
 
     // It's currently difficult to determine login state on stories,
     // so we skip this check there.
