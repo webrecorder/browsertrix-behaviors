@@ -370,6 +370,17 @@ export class InstagramPostsBehavior
 
     void log("Waiting for Instagram to fully load");
 
+    // The //main node doesn't exist for stories, so we shouldn't wait
+    // around for it to load on them.
+    // It doesn't seem to be necessary for us to wait any significant
+    // amount of time for the stories to finish loading, unlike
+    // profiles.
+    // It's also currently difficult to determine login state on stories,
+    // so we don't do that check for them.
+    if (window.location.pathname.startsWith("/stories")) {
+      return;
+    }
+
     // Yes, this is a long wait. Yes, it's necessary. Some very large,
     // complex pages can genuinely take this long to finish making their
     // photo grid available.
@@ -380,13 +391,9 @@ export class InstagramPostsBehavior
     // before the photos become available.
     await waitUntilNode(Q.rootPath, document, null, 18000);
 
-    // It's currently difficult to determine login state on stories,
-    // so we skip this check there.
-    if (!window.location.pathname.startsWith("/stories")) {
-      assertContentValid(
-        () => !!document.querySelector("*[aria-label='New post']"),
-        "not_logged_in",
-      );
-    }
+    assertContentValid(
+      () => !!document.querySelector("*[aria-label='New post']"),
+      "not_logged_in",
+    );
   }
 }
