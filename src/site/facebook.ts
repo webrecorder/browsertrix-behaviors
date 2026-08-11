@@ -79,6 +79,8 @@ const Q = {
     "//div[@role='dialog'][.//form[@id='login_popup_cta_form']]//div[@role='button']",
 };
 
+class HaltIteration extends Error {}
+
 type FacebookState = Partial<{
   photos: number;
   reels: number;
@@ -92,6 +94,7 @@ export class FacebookTimelineBehavior
 {
   extraWindow: WindowProxy | null;
   allowNewWindow: boolean;
+  seenIds: Set<string>;
 
   static id = "Facebook" as const;
 
@@ -125,6 +128,7 @@ export class FacebookTimelineBehavior
     this.extraWindow = null;
     //todo: make option
     this.allowNewWindow = false;
+    this.seenIds = new Set();
   }
 
   async *iterPostFeeds(ctx: Context<FacebookState>) {
@@ -178,7 +182,19 @@ export class FacebookTimelineBehavior
         for (const post of feeds) {
           yield getState(ctx, "Viewing post from feed");
           scrollIntoView(post);
-          yield* this.viewPost(ctx, post, Q.commentList);
+          try {
+            yield* this.viewPost(ctx, post, Q.commentList);
+          } catch (e) {
+            if (e instanceof HaltIteration) {
+              yield getState(
+                ctx,
+                "Halting iteration after looping back over old posts",
+              );
+              return;
+            } else {
+              throw e;
+            }
+          }
           await sleep(waitUnit * 20);
         }
         lastSeen = feeds.at(-1);
@@ -245,6 +261,27 @@ export class FacebookTimelineBehavior
     if (postLink) {
       url = new URL(postLink.href, window.location.href);
       url.search = "";
+
+      // URL format: /username/posts/pfbid0blahblahblah
+      let match = window.location.href.match(/\/[^/]+\/posts\/(.+)/);
+      if (!match) {
+        // URL format: /groups/123456789/posts/123456789/
+        match = window.location.href.match(/\/groups\/[^/]+\/posts\/([^/]+)/);
+      }
+
+      if (match) {
+        const postId = match[1] as string | null;
+
+        if (postId) {
+          if (this.seenIds.has(postId)) {
+            throw new HaltIteration(
+              `Iteration has looped around to previously-seen post ${postId}`,
+            );
+          }
+
+          this.seenIds.add(postId);
+        }
+      }
     }
 
     yield getState(ctx, "Viewing post " + (url || ""), "posts");
