@@ -166,7 +166,19 @@ export class FacebookTimelineBehavior
       for (const post of feeds) {
         yield getState(ctx, "Viewing post from feed");
         scrollIntoView(post);
-        yield* this.viewPost(ctx, post, Q.commentList);
+        try {
+          yield* this.viewPost(ctx, post, Q.commentList);
+        } catch (e) {
+          if (e instanceof HaltIteration) {
+            yield getState(
+              ctx,
+              "Halting iteration after looping back over old posts",
+            );
+            return;
+          } else {
+            throw e;
+          }
+        }
         await sleep(waitUnit * 20);
       }
 
@@ -209,11 +221,23 @@ export class FacebookTimelineBehavior
       }
 
       for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
-        yield* this.viewPost(
-          ctx,
-          xpathNode(Q.article, post) as Element,
-          Q.commentList,
-        );
+        try {
+          yield* this.viewPost(
+            ctx,
+            xpathNode(Q.article, post) as Element,
+            Q.commentList,
+          );
+        } catch (e) {
+          if (e instanceof HaltIteration) {
+            yield getState(
+              ctx,
+              "Halting iteration after looping back over old posts",
+            );
+            return;
+          } else {
+            throw e;
+          }
+        }
       }
     }
 
