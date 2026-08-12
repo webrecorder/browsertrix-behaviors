@@ -337,6 +337,10 @@ export class TwitterTimelineBehavior
     }
   }
 
+  isLoggedIn() {
+    return !document.documentElement.outerHTML.match(/Log In/i);
+  }
+
   async *run(ctx: Context<TwitterState, TwitterOpts>) {
     yield* this.iterTimeline(ctx, 0);
   }
@@ -344,9 +348,6 @@ export class TwitterTimelineBehavior
   async awaitPageLoad(ctx: Context<TwitterState, TwitterOpts>) {
     const { sleep, assertContentValid } = ctx.Lib;
     await sleep(5);
-    assertContentValid(
-      () => !document.documentElement.outerHTML.match(/Log In/i),
-      "not_logged_in",
-    );
+    assertContentValid(() => this.isLoggedIn(), "not_logged_in");
   }
 }
