@@ -40,6 +40,7 @@ export class TwitterTimelineBehavior
 {
   seenTweets: Set<string>;
   seenMediaTweets: Set<string>;
+  username: string | null;
 
   static id = "Twitter" as const;
 
@@ -63,6 +64,7 @@ export class TwitterTimelineBehavior
   constructor() {
     this.seenTweets = new Set();
     this.seenMediaTweets = new Set();
+    this.username = null;
   }
 
   showingProgressBar(
@@ -279,6 +281,8 @@ export class TwitterTimelineBehavior
         yield* this.iterTimeline(ctx, depth + 1);
       }
 
+      yield* this.followExternalLinks(ctx);
+
       this.seenTweets.add(window.location.href);
 
       // wait
@@ -287,6 +291,42 @@ export class TwitterTimelineBehavior
       await tweetState.goBack(Q.backButton);
 
       await sleep(waitUnit);
+    }
+  }
+
+  async *followExternalLinks(ctx: Context<TwitterState, TwitterOpts>) {
+    const { addLink, getState, xpathNode, xpathNodes } = ctx.Lib;
+
+    // Follow links within the tweet text, but only if it's a tweet
+    // for the account being crawled
+    if (this.urlIsTweet() && this.username == this.currentUrlUsername()) {
+      const statusId = this.statusIdForUrl();
+
+      const query = `//article[@data-tweet-id='${statusId}']`;
+      const tweet = xpathNode(query);
+
+      if (tweet) {
+        for (const link of xpathNodes(
+          ".//a[@target='_blank']",
+          tweet,
+        ) as Generator<HTMLAnchorElement>) {
+          // Don't follow internal links, only external ones
+          // NOTE: these don't seem to be t.co anymore??
+          if (!link.href.match(/https?:\/\/x.com/)) {
+            yield getState(ctx, "Following external link: " + link.href);
+            await addLink(link.href);
+          }
+        }
+      }
+    }
+  }
+
+  statusIdForUrl() {
+    const match = window.location.pathname.match(
+      /^\/[a-zA-Z0-9_]+\/status\/(\d+)$/,
+    );
+    if (match) {
+      return match[1];
     }
   }
 
@@ -341,7 +381,19 @@ export class TwitterTimelineBehavior
     return !document.documentElement.outerHTML.match(/Log In/i);
   }
 
+  currentUrlUsername() {
+    if (window.location.pathname.match(/^\/[a-zA-Z0-9_]+$/)) {
+      return window.location.pathname.split("/")[1];
+    }
+  }
+
+  urlIsTweet() {
+    return !!window.location.pathname.match(/^\/[a-zA-Z0-9_]+\/status/);
+  }
+
   async *run(ctx: Context<TwitterState, TwitterOpts>) {
+    this.username = this.currentUrlUsername();
+
     yield* this.iterTimeline(ctx, 0);
   }
 
