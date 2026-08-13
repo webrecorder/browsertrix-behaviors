@@ -427,6 +427,9 @@ export class TwitterTimelineBehavior
         const mediaTabUrl = window.location.href + "/media";
         yield getState(ctx, "Queuing Media Tab: " + mediaTabUrl);
         await addLink(mediaTabUrl);
+        // The default media tab is for videos; there's also a photo
+        // version, which we can visit with a separate query parameter.
+        await addLink(mediaTabUrl + "?filter=photo");
       }
     }
 
