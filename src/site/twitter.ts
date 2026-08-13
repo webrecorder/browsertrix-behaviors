@@ -22,6 +22,7 @@ const Q = {
     ".//a[@href='/settings/content_you_see']/parent::div/parent::div/parent::div//div[@role='button']",
   progress: ".//*[@role='progressbar']",
   promoted: ".//div[data-testid='placementTracking']",
+  profilePageRegex: /^\/[a-zA-Z0-9_]+$/,
 };
 
 type TwitterState = {
@@ -40,7 +41,7 @@ export class TwitterTimelineBehavior
 {
   seenTweets: Set<string>;
   seenMediaTweets: Set<string>;
-  username: string | null;
+  username: string | undefined;
 
   static id = "Twitter" as const;
 
@@ -64,7 +65,7 @@ export class TwitterTimelineBehavior
   constructor() {
     this.seenTweets = new Set();
     this.seenMediaTweets = new Set();
-    this.username = null;
+    this.username = undefined;
   }
 
   showingProgressBar(
@@ -392,9 +393,13 @@ export class TwitterTimelineBehavior
   }
 
   currentUrlUsername() {
-    if (window.location.pathname.match(/^\/[a-zA-Z0-9_]+$/)) {
+    if (this.urlIsProfilePage()) {
       return window.location.pathname.split("/")[1];
     }
+  }
+
+  urlIsProfilePage() {
+    return !!window.location.pathname.match(Q.profilePageRegex);
   }
 
   urlIsTweet() {
@@ -402,7 +407,18 @@ export class TwitterTimelineBehavior
   }
 
   async *run(ctx: Context<TwitterState, TwitterOpts>) {
-    this.username = this.currentUrlUsername();
+    const { addLink, getState } = ctx.Lib;
+
+    if (this.urlIsProfilePage()) {
+      this.username = this.currentUrlUsername();
+
+      // Media tab can't be visited at all when logged out
+      if (this.isLoggedIn()) {
+        const mediaTabUrl = window.location.href + "/media";
+        yield getState(ctx, "Queuing Media Tab: " + mediaTabUrl);
+        await addLink(mediaTabUrl);
+      }
+    }
 
     yield* this.iterTimeline(ctx, 0);
   }
