@@ -327,6 +327,9 @@ export class TwitterTimelineBehavior
 
       if (tweet) {
         for (const link of xpathNodes(
+          // All external links have target=_blank, so this helps us
+          // identify external links from within a tweet as opposed to
+          // internal links from the UI.
           ".//a[@target='_blank']",
           tweet,
         ) as Generator<HTMLAnchorElement>) {
