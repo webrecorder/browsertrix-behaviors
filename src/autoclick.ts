@@ -1,5 +1,5 @@
 import { BackgroundBehavior } from "./lib/behavior";
-import { addToExternalSet, sleep } from "./lib/utils";
+import { addLink, addToExternalSet, sleep } from "./lib/utils";
 
 export class AutoClick extends BackgroundBehavior {
   _donePromise: Promise<void>;
@@ -107,6 +107,8 @@ export class AutoClick extends BackgroundBehavior {
       self.history.length === origHistoryLen + 1 &&
       self.location.href != origHref
     ) {
+      // We want to ensure we respect scope here
+      await addLink(self.location.href, true);
       await new Promise((resolve) => {
         window.addEventListener(
           "popstate",
