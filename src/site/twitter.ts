@@ -334,7 +334,7 @@ export class TwitterTimelineBehavior
           // When logged out, these links go directly to the linked sites;
           // when logged in, these will be t.co links.
           if (!link.href.match(/https?:\/\/x.com/)) {
-            yield getState(ctx, "Following external link: " + link.href);
+            yield getState(ctx, "Following External Link: " + link.href);
             await addLink(link.href);
           }
         }
