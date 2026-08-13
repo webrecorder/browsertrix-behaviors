@@ -313,7 +313,16 @@ export class TwitterTimelineBehavior
     if (this.urlIsTweet() && this.username == this.currentUrlUsername()) {
       const statusId = this.statusIdForUrl();
 
-      const query = `//article[@data-tweet-id='${statusId}']`;
+      let query;
+      if (this.isLoggedIn()) {
+        // Tweets are <article> elements, and the first <article> on
+        // the page should be the primary tweet for the page.
+        query = "//article";
+      } else {
+        // When logged out, the data-tweet-id parameter is set so that
+        // we can be even more confident we're getting the right tweet.
+        query = `//article[@data-tweet-id='${statusId}']`;
+      }
       const tweet = xpathNode(query);
 
       if (tweet) {
@@ -322,7 +331,8 @@ export class TwitterTimelineBehavior
           tweet,
         ) as Generator<HTMLAnchorElement>) {
           // Don't follow internal links, only external ones
-          // NOTE: these don't seem to be t.co anymore??
+          // When logged out, these links go directly to the linked sites;
+          // when logged in, these will be t.co links.
           if (!link.href.match(/https?:\/\/x.com/)) {
             yield getState(ctx, "Following external link: " + link.href);
             await addLink(link.href);
