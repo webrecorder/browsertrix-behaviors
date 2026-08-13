@@ -424,7 +424,7 @@ export class TwitterTimelineBehavior
 
       // Media tab can't be visited at all when logged out
       if (this.isLoggedIn()) {
-        const mediaTabUrl = window.location.href + "/media";
+        const mediaTabUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}/media`;
         yield getState(ctx, "Queuing Media Tab: " + mediaTabUrl);
         await addLink(mediaTabUrl);
         // The default media tab is for videos; there's also a photo
