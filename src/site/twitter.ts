@@ -403,7 +403,7 @@ export class TwitterTimelineBehavior
   }
 
   currentUrlUsername() {
-    if (this.urlIsProfilePage()) {
+    if (window.location.pathname.match(/^\/[a-zA-Z0-9_]+/)) {
       return window.location.pathname.split("/")[1];
     }
   }
