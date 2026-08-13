@@ -269,7 +269,7 @@ export class TwitterTimelineBehavior
     tweet: HTMLElement,
     depth: number,
   ): AsyncGenerator<{ state: TwitterState; msg: string }> {
-    const { getState, HistoryState, sleep, waitUnit } = ctx.Lib;
+    const { addLink, getState, HistoryState, sleep, waitUnit } = ctx.Lib;
     const tweetState = new HistoryState(() => tweet.click());
 
     await sleep(waitUnit);
@@ -284,6 +284,16 @@ export class TwitterTimelineBehavior
       yield* this.followExternalLinks(ctx);
 
       this.seenTweets.add(window.location.href);
+
+      // If this is a tweet by the profile this crawl is capturing,
+      // queue the individual tweet to be captured standalone too.
+      if (this.urlIsTweet() && this.username == this.currentUrlUsername()) {
+        yield getState(
+          ctx,
+          "Queuing Individual Tweet URL: " + window.location.href,
+        );
+        await addLink(window.location.href);
+      }
 
       // wait
       await sleep(waitUnit * 2);
