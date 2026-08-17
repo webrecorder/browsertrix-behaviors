@@ -167,10 +167,24 @@ export async function addLinkBatch(
   alwaysObeyScope = false,
 ): Promise<void> {
   if (typeof self["__bx_addLinkBatch"] === "function") {
+    // Slice up the array into subarrays of up to 1MB worth of URLs
+    const slices: string[][] = [[]];
+    let currentSlice = 0;
+    let currentLength = 0;
+
+    for (const url of urls) {
+      if (currentLength >= 1048576) {
+        slices.push([]);
+        currentSlice += 1;
+        currentLength = 0;
+      }
+
+      slices[currentSlice].push(url);
+      currentLength += url.length + 2;
+    }
+
     const promises = [];
-    // Pipe through at most 2500 URLs at a time
-    for (let i = 0; i < Math.ceil(urls.length / 2500); i++) {
-      const slice = urls.slice(2500 * i, 2500 * (i + 1));
+    for (const slice of slices) {
       // We join them into a string here to send back more quickly over
       // the debug protocol, and they'll be split back out again
       // in the crawler.
