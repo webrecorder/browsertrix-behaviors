@@ -6,6 +6,8 @@ export type LogData = string | { msg: string; [k: string]: unknown };
 let _logFunc: ((...data: unknown[]) => void) | null = console.log;
 let _behaviorMgrClass: typeof BehaviorManager | null = null;
 
+const ONE_MEGABYTE = 1048576;
+
 const scrollOpts: ScrollIntoViewOptions = {
   behavior: "smooth",
   block: "center",
@@ -168,30 +170,27 @@ export async function addLinkBatch(
 ): Promise<void> {
   if (typeof self["__bx_addLinkBatch"] === "function") {
     // Slice up the array into subarrays of up to 1MB worth of URLs
-    const slices: string[][] = [[]];
-    let currentSlice = 0;
+    let slice: string[] = [];
     let currentLength = 0;
+    const promises = [];
 
     for (const url of urls) {
-      if (currentLength >= 1048576) {
-        slices.push([]);
-        currentSlice += 1;
+      if (currentLength >= ONE_MEGABYTE) {
+        // We join them into a string here to send back more quickly over
+        // the debug protocol, and they'll be split back out again
+        // in the crawler.
+        promises.push(
+          self["__bx_addLinkBatch"](slice.join("\n\n"), alwaysObeyScope),
+        );
+
+        slice = [];
         currentLength = 0;
       }
 
-      slices[currentSlice].push(url);
+      slice.push(url);
       currentLength += url.length + 2;
     }
 
-    const promises = [];
-    for (const slice of slices) {
-      // We join them into a string here to send back more quickly over
-      // the debug protocol, and they'll be split back out again
-      // in the crawler.
-      promises.push(
-        self["__bx_addLinkBatch"](slice.join("\n\n"), alwaysObeyScope),
-      );
-    }
     await Promise.all(promises);
   }
 }
