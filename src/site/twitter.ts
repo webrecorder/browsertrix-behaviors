@@ -22,6 +22,7 @@ const Q = {
     ".//a[@href='/settings/content_you_see']/parent::div/parent::div/parent::div//div[@role='button']",
   progress: ".//*[@role='progressbar']",
   promoted: ".//div[data-testid='placementTracking']",
+  profilePageRegex: /^\/[a-zA-Z0-9_]+$/,
 };
 
 type TwitterState = {
@@ -40,6 +41,7 @@ export class TwitterTimelineBehavior
 {
   seenTweets: Set<string>;
   seenMediaTweets: Set<string>;
+  username: string | undefined;
 
   static id = "Twitter" as const;
 
@@ -63,6 +65,7 @@ export class TwitterTimelineBehavior
   constructor() {
     this.seenTweets = new Set();
     this.seenMediaTweets = new Set();
+    this.username = undefined;
   }
 
   showingProgressBar(
@@ -267,7 +270,7 @@ export class TwitterTimelineBehavior
     tweet: HTMLElement,
     depth: number,
   ): AsyncGenerator<{ state: TwitterState; msg: string }> {
-    const { getState, HistoryState, sleep, waitUnit } = ctx.Lib;
+    const { addLink, getState, HistoryState, sleep, waitUnit } = ctx.Lib;
     const tweetState = new HistoryState(() => tweet.click());
 
     await sleep(waitUnit);
@@ -279,7 +282,19 @@ export class TwitterTimelineBehavior
         yield* this.iterTimeline(ctx, depth + 1);
       }
 
+      yield* this.followExternalLinks(ctx);
+
       this.seenTweets.add(window.location.href);
+
+      // If this is a tweet by the profile this crawl is capturing,
+      // queue the individual tweet to be captured standalone too.
+      if (this.urlIsTweet() && this.username == this.currentUrlUsername()) {
+        yield getState(
+          ctx,
+          "Queuing Individual Tweet URL: " + window.location.href,
+        );
+        await addLink(window.location.href);
+      }
 
       // wait
       await sleep(waitUnit * 2);
@@ -287,6 +302,55 @@ export class TwitterTimelineBehavior
       await tweetState.goBack(Q.backButton);
 
       await sleep(waitUnit);
+    }
+  }
+
+  async *followExternalLinks(ctx: Context<TwitterState, TwitterOpts>) {
+    const { addLink, getState, xpathNode, xpathNodes } = ctx.Lib;
+
+    // Follow links within the tweet text, but only if it's a tweet
+    // for the account being crawled
+    if (this.urlIsTweet() && this.username == this.currentUrlUsername()) {
+      const statusId = this.statusIdForUrl();
+
+      let query;
+      if (this.isLoggedIn()) {
+        // Tweets are <article> elements, and the first <article> on
+        // the page should be the primary tweet for the page.
+        query = "//article";
+      } else {
+        // When logged out, the data-tweet-id parameter is set so that
+        // we can be even more confident we're getting the right tweet.
+        query = `//article[@data-tweet-id='${statusId}']`;
+      }
+      const tweet = xpathNode(query);
+
+      if (tweet) {
+        for (const link of xpathNodes(
+          // All external links have target=_blank, so this helps us
+          // identify external links from within a tweet as opposed to
+          // internal links from the UI.
+          ".//a[@target='_blank']",
+          tweet,
+        ) as Generator<HTMLAnchorElement>) {
+          // Don't follow internal links, only external ones
+          // When logged out, these links go directly to the linked sites;
+          // when logged in, these will be t.co links.
+          if (!link.href.match(/https?:\/\/x.com/)) {
+            yield getState(ctx, "Following External Link: " + link.href);
+            await addLink(link.href);
+          }
+        }
+      }
+    }
+  }
+
+  statusIdForUrl() {
+    const match = window.location.pathname.match(
+      /^\/[a-zA-Z0-9_]+\/status\/(\d+)$/,
+    );
+    if (match) {
+      return match[1];
     }
   }
 
@@ -337,16 +401,47 @@ export class TwitterTimelineBehavior
     }
   }
 
+  isLoggedIn() {
+    return !document.documentElement.outerHTML.match(/Log In/i);
+  }
+
+  currentUrlUsername() {
+    if (window.location.pathname.match(/^\/[a-zA-Z0-9_]+/)) {
+      return window.location.pathname.split("/")[1];
+    }
+  }
+
+  urlIsProfilePage() {
+    return !!window.location.pathname.match(Q.profilePageRegex);
+  }
+
+  urlIsTweet() {
+    return !!window.location.pathname.match(/^\/[a-zA-Z0-9_]+\/status/);
+  }
+
   async *run(ctx: Context<TwitterState, TwitterOpts>) {
+    const { addLink, getState } = ctx.Lib;
+
+    if (this.urlIsProfilePage()) {
+      this.username = this.currentUrlUsername();
+
+      // Media tab can't be visited at all when logged out
+      if (this.isLoggedIn()) {
+        const mediaTabUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}/media`;
+        yield getState(ctx, "Queuing Media Tab: " + mediaTabUrl);
+        await addLink(mediaTabUrl);
+        // The default media tab is for videos; there's also a photo
+        // version, which we can visit with a separate query parameter.
+        await addLink(mediaTabUrl + "?filter=photo");
+      }
+    }
+
     yield* this.iterTimeline(ctx, 0);
   }
 
   async awaitPageLoad(ctx: Context<TwitterState, TwitterOpts>) {
     const { sleep, assertContentValid } = ctx.Lib;
     await sleep(5);
-    assertContentValid(
-      () => !document.documentElement.outerHTML.match(/Log In/i),
-      "not_logged_in",
-    );
+    assertContentValid(() => this.isLoggedIn(), "not_logged_in");
   }
 }
