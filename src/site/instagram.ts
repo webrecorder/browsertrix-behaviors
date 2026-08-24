@@ -391,9 +391,15 @@ export class InstagramPostsBehavior
     // before the photos become available.
     await waitUntilNode(Q.rootPath, document, null, 18000);
 
-    assertContentValid(
-      () => !!document.querySelector("*[aria-label='New post']"),
-      "not_logged_in",
-    );
+    // Looks like something we can safely run a login check on
+    if (
+      window.location.pathname.startsWith("/p/") ||
+      !!Q.userPage.exec(window.location.pathname)
+    ) {
+      assertContentValid(
+        () => !!document.querySelector("*[aria-label='New post']"),
+        "not_logged_in",
+      );
+    }
   }
 }
