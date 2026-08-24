@@ -17,7 +17,7 @@ export class Autoplay extends BackgroundBehavior {
 
   static id = "Autoplay" as const;
 
-  constructor(autofetcher: AutoFetcher, startEarly = false) {
+  constructor(autofetcher: AutoFetcher) {
     super();
     this.mediaSet = new Set();
     this.autofetcher = autofetcher;
@@ -25,11 +25,9 @@ export class Autoplay extends BackgroundBehavior {
     this.promises = [];
     this._initDone = () => null;
     this.promises.push(new Promise((resolve) => (this._initDone = resolve)));
-    if (startEarly) {
-      document.addEventListener("DOMContentLoaded", async () =>
-        this.pollAudioVideo(),
-      );
-    }
+    document.addEventListener("DOMContentLoaded", async () =>
+      this.pollAudioVideo(),
+    );
   }
 
   async start() {
