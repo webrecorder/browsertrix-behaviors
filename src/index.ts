@@ -132,10 +132,7 @@ export class BehaviorManager {
       }
     }
 
-    this.autofetch = new AutoFetcher(
-      !!opts.autofetch,
-      opts.fetchHeaders,
-    );
+    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders);
 
     if (opts.autofetch) {
       void behaviorLog("Using AutoFetcher");
