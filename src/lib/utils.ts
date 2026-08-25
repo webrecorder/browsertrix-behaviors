@@ -6,6 +6,8 @@ export type LogData = string | { msg: string; [k: string]: unknown };
 let _logFunc: ((...data: unknown[]) => void) | null = console.log;
 let _behaviorMgrClass: typeof BehaviorManager | null = null;
 
+const ONE_MEGABYTE = 1048576;
+
 const scrollOpts: ScrollIntoViewOptions = {
   behavior: "smooth",
   block: "center",
@@ -159,6 +161,37 @@ export async function addLink(
   if (typeof self["__bx_addLink"] === "function") {
     // call directly as passing two objects
     return await self["__bx_addLink"](url, alwaysObeyScope);
+  }
+}
+
+export async function addLinkBatch(
+  urls: string[],
+  alwaysObeyScope = false,
+): Promise<void> {
+  if (typeof self["__bx_addLinkBatch"] === "function") {
+    // Slice up the array into subarrays of up to 1MB worth of URLs
+    let slice: string[] = [];
+    let currentLength = 0;
+    const promises = [];
+
+    for (const url of urls) {
+      if (currentLength >= ONE_MEGABYTE) {
+        // We join them into a string here to send back more quickly over
+        // the debug protocol, and they'll be split back out again
+        // in the crawler.
+        promises.push(
+          self["__bx_addLinkBatch"](slice.join("\n\n"), alwaysObeyScope),
+        );
+
+        slice = [];
+        currentLength = 0;
+      }
+
+      slice.push(url);
+      currentLength += url.length + 2;
+    }
+
+    await Promise.all(promises);
   }
 }
 
