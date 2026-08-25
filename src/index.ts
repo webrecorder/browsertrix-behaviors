@@ -67,19 +67,18 @@ type BehaviorInstance = InstanceType<BehaviorClass>;
 
 export class BehaviorManager {
   autofetch?: AutoFetcher;
-  behaviors: BehaviorInstance[];
+  behaviors: BehaviorInstance[] = [];
   loadedBehaviors: Record<string, BehaviorClass>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mainBehavior: BehaviorInstance | BehaviorRunner<any, any> | null;
-  mainBehaviorClass!: BehaviorClass;
-  inited: boolean;
-  started: boolean;
+  mainBehavior: BehaviorInstance | BehaviorRunner<any, any> | null = null;
+  mainBehaviorClass: BehaviorClass | null = null;
+  inited = false;
+  started = false;
   timeout?: number;
   opts?: BehaviorManagerOpts;
   linkOpts: LinkOpts;
 
   constructor() {
-    this.behaviors = [];
     this.loadedBehaviors = siteBehaviors.reduce<Record<string, BehaviorClass>>(
       (behaviors, next) => {
         behaviors[next.id] = next;
@@ -87,9 +86,6 @@ export class BehaviorManager {
       },
       {},
     );
-    this.mainBehavior = null;
-    this.inited = false;
-    this.started = false;
     this.linkOpts = {
       selector: DEFAULT_LINK_SELECTOR,
       extractName: DEFAULT_LINK_EXTRACT,
@@ -372,12 +368,14 @@ export class BehaviorManager {
   }
 
   pause() {
-    void behaviorLog("Pausing Main Behavior" + this.mainBehaviorClass.name);
+    void behaviorLog(`Pausing Main Behavior ${this.mainBehaviorClass?.name}`);
     this.behaviors.forEach((x) => "pause" in x && x.pause());
   }
 
   unpause() {
-    void behaviorLog("Unpausing Main Behavior: " + this.mainBehaviorClass.name);
+    void behaviorLog(
+      `Unpausing Main Behavior: ${this.mainBehaviorClass?.name}`,
+    );
     this.behaviors.forEach((x) => "unpause" in x && x.unpause());
   }
 
