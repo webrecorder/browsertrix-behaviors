@@ -151,6 +151,7 @@ export class AutoFetcher extends BackgroundBehavior {
         credentials: "include",
         referrerPolicy: "origin-when-cross-origin",
         headers: this.headers,
+        priority: "low"
       } as {});
       this.debug(`Autofetch: started non-cors stream for ${url}`);
       return true;
