@@ -373,7 +373,9 @@ export class BehaviorManager {
   }
 
   unpause() {
-    void behaviorLog(`Unpausing Main Behavior: ${this.mainBehaviorClass?.name}`);
+    void behaviorLog(
+      `Unpausing Main Behavior: ${this.mainBehaviorClass?.name}`,
+    );
     this.behaviors.forEach((x) => "unpause" in x && x.unpause());
   }
 
