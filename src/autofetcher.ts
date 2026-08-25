@@ -39,11 +39,7 @@ export class AutoFetcher extends BackgroundBehavior {
 
   static id = "Autofetcher" as const;
 
-  constructor(
-    active = false,
-    headers: Record<string, string> | null = null,
-    startEarly = false,
-  ) {
+  constructor(active = false, headers: Record<string, string> | null = null) {
     super();
 
     this.headers = headers || {};
@@ -51,9 +47,6 @@ export class AutoFetcher extends BackgroundBehavior {
     this._donePromise = new Promise((resolve) => (this._markDone = resolve));
 
     this.active = active;
-    if (this.active && startEarly) {
-      document.addEventListener("DOMContentLoaded", () => this.initObserver());
-    }
   }
 
   get numFetching() {

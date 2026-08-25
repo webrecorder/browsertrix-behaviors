@@ -31,7 +31,6 @@ interface BehaviorManagerOpts {
   siteSpecific?: boolean | Record<string, unknown>;
   timeout?: number;
   fetchHeaders?: Record<string, string> | null;
-  startEarly?: boolean | null;
   clickSelector?: string;
 }
 
@@ -133,11 +132,7 @@ export class BehaviorManager {
       }
     }
 
-    this.autofetch = new AutoFetcher(
-      !!opts.autofetch,
-      opts.fetchHeaders,
-      !!opts.startEarly,
-    );
+    this.autofetch = new AutoFetcher(!!opts.autofetch, opts.fetchHeaders);
 
     if (opts.autofetch) {
       void behaviorLog("Using AutoFetcher");
@@ -146,7 +141,7 @@ export class BehaviorManager {
 
     if (opts.autoplay) {
       void behaviorLog("Using Autoplay");
-      this.behaviors.push(new Autoplay(this.autofetch, !!opts.startEarly));
+      this.behaviors.push(new Autoplay(this.autofetch));
     }
 
     if (opts.autoclick) {
