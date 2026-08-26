@@ -191,6 +191,12 @@ export async function addLinkBatch(
       currentLength += url.length + 2;
     }
 
+    if (slice.length > 0) {
+      promises.push(
+        self["__bx_addLinkBatch"](slice.join("\n\n"), alwaysObeyScope),
+      );
+    }
+
     await Promise.all(promises);
   }
 }
