@@ -5,6 +5,8 @@ type YoutubeState = {};
 export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
   static id = "Youtube" as const;
 
+  static runInIframe = true;
+
   static init() {
     return {
       state: {},
