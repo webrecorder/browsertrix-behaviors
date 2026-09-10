@@ -14,6 +14,7 @@ import {
   registerFrame,
 } from "./lib/utils";
 import { type AbstractBehavior, BehaviorRunner } from "./lib/behavior";
+import * as Lib from "./lib/utils";
 
 import siteBehaviors from "./site";
 
