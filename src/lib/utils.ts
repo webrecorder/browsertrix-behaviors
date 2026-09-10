@@ -156,7 +156,7 @@ export async function behaviorLog(data: LogData, type = "debug") {
 
 export function registerFrame() {
   if (typeof self["__bx_registerFrame"] === "function") {
-    // call directly as passing two objects
+    // pass location of frame
     self["__bx_registerFrame"](self.location.href);
     return true;
   }
