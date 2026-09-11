@@ -92,6 +92,7 @@ export class BehaviorManager {
       extractName: DEFAULT_LINK_EXTRACT,
     };
     void behaviorLog("Loaded behaviors for: " + self.location.href);
+    registerFrame();
   }
 
   init(
@@ -110,8 +111,6 @@ export class BehaviorManager {
     if (!self.window) {
       return;
     }
-
-    registerFrame();
 
     this.timeout = opts.timeout;
 
