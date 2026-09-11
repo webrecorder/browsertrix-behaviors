@@ -154,6 +154,16 @@ export async function behaviorLog(data: LogData, type = "debug") {
   }
 }
 
+export function registerFrame() {
+  if (typeof self["__bx_registerFrame"] === "function") {
+    // pass location of frame
+    self["__bx_registerFrame"](self.location.href);
+    return true;
+  }
+
+  return false;
+}
+
 export async function addLink(
   url: string,
   alwaysObeyScope = false,

@@ -11,6 +11,7 @@ import {
   installBehaviors,
   addLinkBatch,
   checkToJsonOverride,
+  registerFrame,
 } from "./lib/utils";
 import { type AbstractBehavior, BehaviorRunner } from "./lib/behavior";
 import * as Lib from "./lib/utils";
@@ -109,6 +110,8 @@ export class BehaviorManager {
     if (!self.window) {
       return;
     }
+
+    registerFrame();
 
     this.timeout = opts.timeout;
 
