@@ -30,15 +30,6 @@ const Q = {
   // like the ones accessible from the avatar.
   storiesHighlights:
     "//div[@role='presentation']//ul//li//a[starts-with(@href, '/stories/highlights')]",
-  // The button to access a direct message from within a story.
-  // This is only visible when logged-in (a different button is displayed
-  // on stories that can be viewed logged-out), so this can be used as a
-  // proxy for whether the user is logged in or not.
-  // In testing, this aria-label seems stable across languages, even
-  // languages that don't use Roman script. This label always at least
-  // starts with the string "Direct".
-  storiesDirectMessageButton:
-    "//*[local-name() = 'svg' and starts-with(@aria-label, 'Direct')]",
   userPage: /^\/([^/]+)\/?$/,
 };
 
