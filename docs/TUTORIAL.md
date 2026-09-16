@@ -651,6 +651,36 @@ export class TikTokVideoBehavior {
 }
 ```
 
+### Implementing login checks
+
+Many social media sites have limits on the content they'll show to logged out users, so you may find it useful to be able to let a behaviour check if it's logged in or not. The `assertContentValid` utility function can be used to tell the crawler whether or not the site is logged in; this lets the crawler decide whether to continue the crawl or not. `assertContentValid` is called with a function that returns true or false along with a string representing the type of assertion being made. For our login checks, we'll be using the `"not_logged_in"` reason.
+
+For most sites, the best way to perform this check is to look for something in the document that should only exist if the user is or isn't logged in. For example, on TikTok, the direct messages feature only exists in the user interface if the user is logged in and will be missing if the user is logged out. This means that we can tell `assertContentValid` to check for the result of that:
+
+```javascript
+assertContentValid(
+  () => !!document.querySelector("*[aria-label='Messages']"),
+  "not_logged_in",
+);
+```
+
+This causes `assertContentValid` to check whether an element with `aria-label='Messages'` exists on the page. If it does, it assumes the crawler is logged in; otherwise, it sends the crawler the message `"not_logged_in"`. If the crawler is configured to fail a crawl when not logged in, it will use this signal to stop the crawl.
+
+Most behaviors will call this helper in the `awaitPageLoad` method, which is the first thing called on startup before the rest of the behaviour runs. Here's a sample of how this could be structured:
+
+```javascript
+export class TikTokVideoBehavior {
+  // ...
+  async awaitPageLoad(ctx) {
+    const { assertContentValid } = ctx.Lib;
+
+    assertContentValid(
+      () => !!document.querySelector("*[aria-label='Messages']"),
+      "not_logged_in",
+    );
+  }
+```
+
 ## 🏁 Finishing up: Our TikTok video behavior
 
 Congratulations! We've completed a working TikTok video behavior that iterates
