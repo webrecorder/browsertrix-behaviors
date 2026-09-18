@@ -1,7 +1,19 @@
 import { type AbstractBehavior, type Context } from "../lib/behavior";
 import { getState } from "../lib/utils";
 
-type YoutubeState = {};
+type YoutubeState = {
+  videos: number;
+  videoTab: number;
+  shorts: number;
+  shortTab: number;
+};
+
+const Q = {
+  videoLink:
+    "//a[contains(@class, 'ytLockupMetadataViewModelTitle') and starts-with(@href, '/watch')]",
+  shortLink:
+    "//a[contains(@class, 'reel-item-endpoint') and starts-with(@href, '/shorts')]",
+};
 
 export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
   static id = "Youtube" as const;
@@ -20,6 +32,66 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     );
   }
 
+  isChannel() {
+    return (
+      window.location.pathname.startsWith("/channel") ||
+      window.location.pathname.startsWith("/@")
+    );
+  }
+
+  isChannelRoot() {
+    const channelId = this.channelId();
+    const channelUsername = this.channelUsername();
+    if (channelId) {
+      return window.location.pathname.endsWith(channelId);
+    }
+    if (channelUsername) {
+      return window.location.pathname.endsWith(channelUsername);
+    }
+
+    return false;
+  }
+
+  // If this is a channel URL, returns the channel ID.
+  channelId() {
+    if (this.isChannel()) {
+      const match = window.location.pathname.match(/\/channel\/([^/]+)/);
+      if (match) {
+        return match[1];
+      }
+    }
+  }
+
+  channelUsername() {
+    if (this.isChannel()) {
+      const match = window.location.pathname.match(/\/(@[^/]+)/);
+      if (match) {
+        return match[1];
+      }
+    }
+  }
+
+  isVideosTab() {
+    return this.isChannel() && window.location.pathname.endsWith("/videos");
+  }
+
+  isShortsTab() {
+    return this.isChannel() && window.location.pathname.endsWith("/shorts");
+  }
+
+  // YouTube has two channel URL formats, which are used interchangeably.
+  // This returns the appropriate channel URL for the version the user is
+  // already on based on what the current URL is.
+  channelUrl() {
+    if (this.isChannel()) {
+      if (this.channelUsername()) {
+        return `https://${window.location.hostname}/${this.channelUsername()}`;
+      } else {
+        return `https://${window.location.hostname}/channel/${this.channelId()}`;
+      }
+    }
+  }
+
   static onPageInit() {
     // Attempt to induce YouTube into serving up older video formats
     Object.defineProperty(MediaSource, "isTypeSupported", {
@@ -29,12 +101,96 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     });
   }
 
+  async *iterTab(
+    ctx: Context<YoutubeState>,
+    query: string,
+  ): AsyncGenerator<[string, HTMLAnchorElement | undefined]> {
+    const { addLink, scrollIntoView, sleep, waitUnit, xpathNodes } = ctx.Lib;
+
+    const seenUrls = new Set();
+    let moreVideos = true;
+
+    while (moreVideos) {
+      yield ["iterTab", undefined];
+
+      const videos = Array.from(xpathNodes(query)) as HTMLAnchorElement[];
+      const unaddedVideos = videos.filter((video) => !seenUrls.has(video.href));
+
+      // We've reached the bottom; no more videos to add
+      if (unaddedVideos.length == 0) {
+        moreVideos = false;
+      }
+
+      for (const video of unaddedVideos) {
+        // Scroll down so that we'll trigger the load to get more videos
+        // underneath us for the next iteration.
+        scrollIntoView(video);
+        await sleep(waitUnit);
+
+        yield ["iterVideo", video];
+        await addLink(video.href);
+        seenUrls.add(video.href);
+      }
+    }
+  }
+
+  async *iterVideoTab(ctx: Context<YoutubeState>) {
+    const { getState } = ctx.Lib;
+
+    for await (const [message, video] of this.iterTab(ctx, Q.videoLink)) {
+      switch (message) {
+        case "iterTab":
+          yield getState(ctx, "Iterating videos from video tab", "videoTab");
+          break;
+        case "iterVideo":
+          yield getState(ctx, `Adding link to video: ${video!.href}`, "videos");
+          break;
+      }
+    }
+  }
+
+  async *iterShortsTab(ctx: Context<YoutubeState>) {
+    const { getState } = ctx.Lib;
+
+    for await (const [message, video] of this.iterTab(ctx, Q.shortLink)) {
+      switch (message) {
+        case "iterTab":
+          yield getState(ctx, "Iterating shorts from short tab", "shortTab");
+          break;
+        case "iterVideo":
+          yield getState(ctx, `Adding link to short: ${video!.href}`, "shorts");
+          break;
+      }
+    }
+  }
+
   async *run(ctx: Context<YoutubeState>) {
+    const { addLink, waitUntilNode, waitUnit } = ctx.Lib;
+
+    // If we're on the root URL for a channel, and not any of its tabs,
+    // use this as a signal we want to add the /videos page and then
+    // start iterating through videos.
+    if (this.isChannelRoot()) {
+      const channelUrl = this.channelUrl();
+      await addLink(channelUrl + "/videos");
+      await addLink(channelUrl + "/shorts");
+    }
+
+    // If this is the videos tab, we want to identify and addLink
+    // every individual video.
+    if (this.isVideosTab()) {
+      yield* this.iterVideoTab(ctx);
+    }
+
+    // If this is the videos tab, we want to identify and addLink
+    // every individual video.
+    if (this.isShortsTab()) {
+      yield* this.iterShortsTab(ctx);
+    }
+
     if (window !== top && window.location.href.indexOf("/embed/") > 0) {
       // if iframe embed, just ensure that we wait for the video also
       // since awaitPageLoad is not called for iframes
-      const { waitUntilNode, waitUnit } = ctx.Lib;
-
       yield getState(ctx, "Waiting for YT video element");
 
       await waitUntilNode("//video", document, null, 10 * waitUnit * 5);
