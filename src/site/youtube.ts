@@ -4,11 +4,15 @@ import { getState } from "../lib/utils";
 type YoutubeState = {
   videos: number;
   videoTab: number;
+  shorts: number;
+  shortTab: number;
 };
 
 const Q = {
   videoLink:
     "//a[contains(@class, 'ytLockupMetadataViewModelTitle') and starts-with(@href, '/watch')]",
+  shortLink:
+    "//a[contains(@class, 'reel-item-endpoint') and starts-with(@href, '/shorts')]",
 };
 
 export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
@@ -71,6 +75,10 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     return this.isChannel() && window.location.pathname.endsWith("/videos");
   }
 
+  isShortsTab() {
+    return this.isChannel() && window.location.pathname.endsWith("/shorts");
+  }
+
   // YouTube has two channel URL formats, which are used interchangeably.
   // This returns the appropriate channel URL for the version the user is
   // already on based on what the current URL is.
@@ -93,16 +101,19 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     });
   }
 
-  async *iterVideoTab(ctx: Context<YoutubeState>) {
+  async *iterTab(
+    ctx: Context<YoutubeState>,
+    query: string,
+  ): AsyncGenerator<[string, HTMLAnchorElement | undefined]> {
     const { addLink, scrollIntoView, sleep, waitUnit, xpathNodes } = ctx.Lib;
 
     const seenUrls = new Set();
     let moreVideos = true;
 
     while (moreVideos) {
-      yield getState(ctx, "Iterating videos from video tab", "videoTab");
+      yield ["iterTab", undefined];
 
-      const videos = Array.from(xpathNodes(Q.videoLink)) as HTMLAnchorElement[];
+      const videos = Array.from(xpathNodes(query)) as HTMLAnchorElement[];
       const unaddedVideos = videos.filter((video) => !seenUrls.has(video.href));
 
       // We've reached the bottom; no more videos to add
@@ -116,9 +127,39 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
         scrollIntoView(video);
         await sleep(waitUnit);
 
-        yield getState(ctx, `Adding link to video: ${video.href}`, "videos");
+        yield ["iterVideo", video];
         await addLink(video.href);
         seenUrls.add(video.href);
+      }
+    }
+  }
+
+  async *iterVideoTab(ctx: Context<YoutubeState>) {
+    const { getState } = ctx.Lib;
+
+    for await (const [message, video] of this.iterTab(ctx, Q.videoLink)) {
+      switch (message) {
+        case "iterTab":
+          yield getState(ctx, "Iterating videos from video tab", "videoTab");
+          break;
+        case "iterVideo":
+          yield getState(ctx, `Adding link to video: ${video!.href}`, "videos");
+          break;
+      }
+    }
+  }
+
+  async *iterShortsTab(ctx: Context<YoutubeState>) {
+    const { getState } = ctx.Lib;
+
+    for await (const [message, video] of this.iterTab(ctx, Q.shortLink)) {
+      switch (message) {
+        case "iterTab":
+          yield getState(ctx, "Iterating shorts from short tab", "shortTab");
+          break;
+        case "iterVideo":
+          yield getState(ctx, `Adding link to short: ${video!.href}`, "shorts");
+          break;
       }
     }
   }
@@ -132,12 +173,19 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     if (this.isChannelRoot()) {
       const channelUrl = this.channelUrl();
       await addLink(channelUrl + "/videos");
+      await addLink(channelUrl + "/shorts");
     }
 
     // If this is the videos tab, we want to identify and addLink
     // every individual video.
     if (this.isVideosTab()) {
       yield* this.iterVideoTab(ctx);
+    }
+
+    // If this is the videos tab, we want to identify and addLink
+    // every individual video.
+    if (this.isShortsTab()) {
+      yield* this.iterShortsTab(ctx);
     }
 
     if (window !== top && window.location.href.indexOf("/embed/") > 0) {
