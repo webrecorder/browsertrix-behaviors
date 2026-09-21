@@ -6,9 +6,17 @@ type YoutubeState = {
   videoTab: number;
   shorts: number;
   shortTab: number;
+  playlistTab: number;
+  playlists: number;
+  fullPlaylists: number;
+  playlistVideos: number;
 };
 
 const Q = {
+  playlistLink:
+    "//a[contains(@class, 'ytAttributedStringLink' and starts-with(@href, '/playlist'))]",
+  playlistVideoLink:
+    "//div[@id='contents']//a[starts-with(@href, '/watch') and not(@aria-hidden='true')]",
   videoLink:
     "//a[contains(@class, 'ytLockupMetadataViewModelTitle') and starts-with(@href, '/watch')]",
   shortLink:
@@ -77,6 +85,14 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
 
   isShortsTab() {
     return this.isChannel() && window.location.pathname.endsWith("/shorts");
+  }
+
+  isPlaylistsTab() {
+    return this.isChannel() && window.location.pathname.endsWith("/playlists");
+  }
+
+  isSinglePlaylistView() {
+    return window.location.pathname.startsWith("/playlist");
   }
 
   // YouTube has two channel URL formats, which are used interchangeably.
@@ -164,12 +180,66 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     }
   }
 
+  async *iterPlaylistsTab(ctx: Context<YoutubeState>) {
+    const { getState } = ctx.Lib;
+
+    for await (const [message, playlist] of this.iterTab(ctx, Q.playlistLink)) {
+      switch (message) {
+        case "iterTab":
+          yield getState(
+            ctx,
+            "Iterating playlists from playlist tab",
+            "playlistTab",
+          );
+          break;
+        case "iterVideo":
+          yield getState(
+            ctx,
+            `Adding link to full playlist: ${playlist!.href}`,
+            "playlists",
+          );
+          break;
+      }
+    }
+  }
+
+  async *iterFullPlaylist(ctx: Context<YoutubeState>) {
+    const { getState } = ctx.Lib;
+
+    // There are two playlist formats with different link structures,
+    // but this query can find both
+    for await (const [message, video] of this.iterTab(
+      ctx,
+      Q.playlistVideoLink,
+    )) {
+      switch (message) {
+        case "iterTab":
+          yield getState(
+            ctx,
+            "Iterating videos from playlist",
+            "fullPlaylists",
+          );
+          break;
+        case "iterVideo":
+          yield getState(
+            ctx,
+            `Adding link to video: ${video!.href}`,
+            "playlistVideos",
+          );
+          break;
+      }
+    }
+  }
+
   async *run(ctx: Context<YoutubeState>) {
     const { addLink, waitUntilNode, waitUnit } = ctx.Lib;
 
     // If we're on the root URL for a channel, and not any of its tabs,
     // use this as a signal we want to add the /videos page and then
     // start iterating through videos.
+    //
+    // Note that we *don't* want to iterate through every playlist for
+    // a channel here.
     if (this.isChannelRoot()) {
       const channelUrl = this.channelUrl();
       await addLink(channelUrl + "/videos");
@@ -186,6 +256,18 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     // every individual video.
     if (this.isShortsTab()) {
       yield* this.iterShortsTab(ctx);
+    }
+
+    // If this is the playlists tab, we want to identify and addLink
+    // every individual playlist.
+    if (this.isPlaylistsTab()) {
+      yield* this.iterPlaylistsTab(ctx);
+    }
+
+    // If this is a single playlist, iterate every video within
+    // that playlist.
+    if (this.isSinglePlaylistView()) {
+      yield* this.iterFullPlaylist(ctx);
     }
 
     if (window !== top && window.location.href.indexOf("/embed/") > 0) {
