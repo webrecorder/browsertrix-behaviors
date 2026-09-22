@@ -326,13 +326,15 @@ export class TwitterTimelineBehavior
       const tweet = xpathNode(query);
 
       if (tweet) {
-        for (const link of xpathNodes(
-          // All external links have target=_blank, so this helps us
-          // identify external links from within a tweet as opposed to
-          // internal links from the UI.
-          ".//a[@target='_blank']",
-          tweet,
-        ) as Generator<HTMLAnchorElement>) {
+        for (const link of Array.from(
+          xpathNodes(
+            // All external links have target=_blank, so this helps us
+            // identify external links from within a tweet as opposed to
+            // internal links from the UI.
+            ".//a[@target='_blank']",
+            tweet,
+          ),
+        ) as HTMLAnchorElement[]) {
           // Don't follow internal links, only external ones
           // When logged out, these links go directly to the linked sites;
           // when logged in, these will be t.co links.
