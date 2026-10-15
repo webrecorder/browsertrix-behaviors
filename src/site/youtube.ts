@@ -21,6 +21,11 @@ const Q = {
     "//a[contains(@class, 'ytLockupMetadataViewModelTitle') and starts-with(@href, '/watch')]",
   shortLink:
     "//a[contains(@class, 'reel-item-endpoint') and starts-with(@href, '/shorts')]",
+  channelRoot: "//*[@page-subtype='channels']",
+  // For channls that don't begin with an @, this is a list of strings that
+  // are otherwise valid usernames but which are reserved URLs for YouTube itself.
+  channelishButNotChannelUsername:
+    /\/(feed\/.+|shorts\/\S+|gaming|podcasts|playables|channel_memberships|premium|reporthistory|about|contact_us|creators|ads|t|howyoutubeworks|new|account)\/?$/,
 };
 
 export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
@@ -41,13 +46,26 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
   }
 
   isChannel() {
+    if (window.location.pathname.startsWith("/@")) {
+      return true;
+    }
+
+    // Certain channels have user ID formats similar to the @-prefixed channel,
+    // so after checking if it begins with an @ or /channel, double check it's
+    // NOT any of these.
     return (
       window.location.pathname.startsWith("/channel") ||
-      window.location.pathname.startsWith("/@")
+      !window.location.pathname.match(Q.channelishButNotChannelUsername)
     );
   }
 
-  isChannelRoot() {
+  isChannelRoot(ctx: Context<YoutubeState>) {
+    const { xpathNode } = ctx.Lib;
+
+    if (!xpathNode(Q.channelRoot)) {
+      return false;
+    }
+
     const channelId = this.channelId();
     const channelUsername = this.channelUsername();
     if (channelId) {
@@ -72,7 +90,16 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
 
   channelUsername() {
     if (this.isChannel()) {
-      const match = window.location.pathname.match(/\/(@[^/]+)/);
+      // Double check this isn't a /channel URL or one of the URLs that
+      // begins with one of the otherwise channel-esque strings.
+      if (
+        window.location.pathname.startsWith("/channel") ||
+        !!window.location.pathname.match(Q.channelishButNotChannelUsername)
+      ) {
+        return;
+      }
+
+      const match = window.location.pathname.match(/\/(@?[^/]+)/);
       if (match) {
         return match[1];
       }
@@ -240,7 +267,7 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     //
     // Note that we *don't* want to iterate through every playlist for
     // a channel here.
-    if (this.isChannelRoot()) {
+    if (this.isChannelRoot(ctx)) {
       const channelUrl = this.channelUrl();
       await addLink(channelUrl + "/videos");
       await addLink(channelUrl + "/shorts");
