@@ -202,6 +202,17 @@ export class FacebookTimelineBehavior
       articleQuery = Q.articleList;
     }
 
+    // Under some circumstances, we'll see obfuscated post links that
+    // will prevent us from actually locating the posts on a page.
+    // In this case, we should skip all of the rest of the machinery here
+    // and just scroll down the page as far as we can until we hit the
+    // bottom.
+    const postLink = xpathNode(Q.postQuery);
+    if (!postLink) {
+      yield* this.scrollFeed(ctx);
+      return;
+    }
+
     let feeds = xpathNodesArray(Q.feed) as Element[];
     if (feeds.length) {
       for (const feed of feeds) {
@@ -302,6 +313,31 @@ export class FacebookTimelineBehavior
     if (this.extraWindow) {
       this.extraWindow.close();
     }
+  }
+
+  async *scrollFeed(ctx: Context<FacebookState>) {
+    const { getState, sleep, waitUnit } = ctx.Lib;
+
+    yield getState(ctx, "Scrolling timeline to load more posts");
+
+    let lastScrolledPosition = 0;
+    await window.scrollTo(0, document.body.scrollHeight);
+    await sleep(waitUnit * 2);
+
+    let scrolls = 0;
+    while (lastScrolledPosition != window.scrollY) {
+      scrolls += 1;
+      lastScrolledPosition = document.body.scrollTop;
+      await window.scrollTo(0, document.body.scrollHeight);
+      await sleep(waitUnit * 2);
+
+      // Limit how long we keep endlessly scrolling
+      if (scrolls > 50) {
+        break;
+      }
+    }
+
+    yield getState(ctx, `Finished scrolling page (${scrolls} iterations)`);
   }
 
   async *handleGroupPost(ctx: Context<FacebookState>) {
