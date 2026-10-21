@@ -148,7 +148,8 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     ctx: Context<YoutubeState>,
     query: string,
   ): AsyncGenerator<[string, HTMLAnchorElement | undefined]> {
-    const { addLink, scrollIntoView, sleep, waitUnit, xpathNodes } = ctx.Lib;
+    const { addLink, scrollIntoView, sleep, waitUnit, xpathNodesArray } =
+      ctx.Lib;
 
     const seenUrls = new Set();
     let moreVideos = true;
@@ -156,7 +157,7 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     while (moreVideos) {
       yield ["iterTab", undefined];
 
-      const videos = Array.from(xpathNodes(query)) as HTMLAnchorElement[];
+      const videos = xpathNodesArray(query) as HTMLAnchorElement[];
       const unaddedVideos = videos.filter((video) => !seenUrls.has(video.href));
 
       // We've reached the bottom; no more videos to add

@@ -382,6 +382,10 @@ export function* xpathNodes(path: string, root?: Node | null) {
   }
 }
 
+export function xpathNodesArray(path: string, root?: Node | null) {
+  return Array.from(xpathNodes(path, root));
+}
+
 export function xpathString(path: string, root?: Node | null) {
   root = root || document;
   return document.evaluate(path, root, null, XPathResult.STRING_TYPE)
