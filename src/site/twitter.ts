@@ -306,7 +306,7 @@ export class TwitterTimelineBehavior
   }
 
   async *followExternalLinks(ctx: Context<TwitterState, TwitterOpts>) {
-    const { addLink, getState, xpathNode, xpathNodes } = ctx.Lib;
+    const { addLink, getState, xpathNode, xpathNodesArray } = ctx.Lib;
 
     // Follow links within the tweet text, but only if it's a tweet
     // for the account being crawled
@@ -326,14 +326,12 @@ export class TwitterTimelineBehavior
       const tweet = xpathNode(query);
 
       if (tweet) {
-        for (const link of Array.from(
-          xpathNodes(
-            // All external links have target=_blank, so this helps us
-            // identify external links from within a tweet as opposed to
-            // internal links from the UI.
-            ".//a[@target='_blank']",
-            tweet,
-          ),
+        for (const link of xpathNodesArray(
+          // All external links have target=_blank, so this helps us
+          // identify external links from within a tweet as opposed to
+          // internal links from the UI.
+          ".//a[@target='_blank']",
+          tweet,
         ) as HTMLAnchorElement[]) {
           // Don't follow internal links, only external ones
           // When logged out, these links go directly to the linked sites;

@@ -139,7 +139,7 @@ export class FacebookTimelineBehavior
       sleep,
       waitUnit,
       xpathNode,
-      xpathNodes,
+      xpathNodesArray,
     } = ctx.Lib;
 
     let articleQuery;
@@ -149,7 +149,7 @@ export class FacebookTimelineBehavior
       articleQuery = Q.articleList;
     }
 
-    let feeds = Array.from(xpathNodes(Q.feed)) as Element[];
+    let feeds = xpathNodesArray(Q.feed) as Element[];
     if (feeds.length) {
       for (const feed of feeds) {
         for await (const post of iterChildElem(feed, waitUnit, waitUnit * 10)) {
@@ -160,9 +160,7 @@ export class FacebookTimelineBehavior
           );
         }
       }
-    } else if (
-      (feeds = Array.from(xpathNodes(articleQuery)) as Element[]).length
-    ) {
+    } else if ((feeds = xpathNodesArray(articleQuery) as Element[]).length) {
       for (const post of feeds) {
         yield getState(ctx, "Viewing post from feed");
         scrollIntoView(post);
@@ -186,7 +184,7 @@ export class FacebookTimelineBehavior
       // or hit a limit
       let lastSeen = feeds.at(-1);
       for (let i = 0; i < 50; i++) {
-        feeds = Array.from(xpathNodes(articleQuery)) as Element[];
+        feeds = xpathNodesArray(articleQuery) as Element[];
         if (feeds[0] == lastSeen) {
           break;
         }
@@ -350,9 +348,10 @@ export class FacebookTimelineBehavior
   }
 
   async *viewPhotosOrVideos(ctx: Context<FacebookState>, post: Element | null) {
-    const { getState, sleep, waitUnit, xpathNode, xpathNodes } = ctx.Lib;
-    const objects = Array.from(
-      xpathNodes(Q.photosOrVideos, post),
+    const { getState, sleep, waitUnit, xpathNode, xpathNodesArray } = ctx.Lib;
+    const objects = xpathNodesArray(
+      Q.photosOrVideos,
+      post,
     ) as HTMLAnchorElement[];
 
     const objHrefs = new Set();
