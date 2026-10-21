@@ -300,7 +300,7 @@ export class InstagramPostsBehavior
       sleep,
       waitUnit,
       xpathNode,
-      xpathNodes,
+      xpathNodesArray,
     } = ctx.Lib;
 
     // If we're navigating a profile page, queue up this user's stories
@@ -324,9 +324,9 @@ export class InstagramPostsBehavior
     // This second set of stories is the highlights, which are accessible
     // from a separate set of links below the user profile.
     // Unlike the stories above, these are accessible via links.
-    for (const story of xpathNodes(
+    for (const story of xpathNodesArray(
       Q.storiesHighlights,
-    ) as Generator<HTMLLinkElement>) {
+    ) as HTMLLinkElement[]) {
       yield getState(
         ctx,
         "Adding link to story highlight: " + story.href,
