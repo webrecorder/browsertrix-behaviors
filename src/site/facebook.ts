@@ -131,6 +131,52 @@ export class FacebookTimelineBehavior
     this.seenIds = new Set();
   }
 
+  urlFromPostElement(
+    ctx: Context<FacebookState>,
+    post: Element,
+  ): URL | undefined {
+    const { xpathNode } = ctx.Lib;
+
+    const postLink = xpathNode(Q.postQuery, post) as HTMLAnchorElement | null;
+
+    if (postLink) {
+      const url = new URL(postLink.href, window.location.href);
+      url.search = "";
+
+      return url;
+    }
+  }
+
+  postIdFromUrl(ctx: Context<FacebookState>, url: string): string | undefined {
+    // URL format: /username/posts/pfbid0blahblahblah
+    let match = url.match(/\/[^/]+\/posts\/(.+)/);
+    if (!match) {
+      // URL format: /groups/123456789/posts/123456789/
+      match = url.match(/\/groups\/[^/]+\/posts\/([^/]+)/);
+    }
+
+    if (match) {
+      return match[1];
+    }
+  }
+
+  filterSeenIdsFromPosts(
+    ctx: Context<FacebookState>,
+    posts: Element[],
+  ): Element[] {
+    return posts.filter((post) => {
+      const url = this.urlFromPostElement(ctx, post);
+      let postId;
+      if (url) {
+        postId = this.postIdFromUrl(ctx, url.toString());
+        if (postId) {
+          return !this.seenIds.has(postId);
+        }
+      }
+      return true;
+    });
+  }
+
   async *iterPostFeeds(ctx: Context<FacebookState>) {
     const {
       iterChildElem,
@@ -141,6 +187,13 @@ export class FacebookTimelineBehavior
       xpathNode,
       xpathNodesArray,
     } = ctx.Lib;
+
+    // Before querying, scroll to the bottom of the page to induce Facebook
+    // to load more content. In certain circumstances we might end up with
+    // only a single post having loaded from the start, so we'll want to
+    // make sure the site has loaded more before we start querying.
+    yield getState(ctx, "Scrolling to bottom of page");
+    window.scrollTo(0, document.body.scrollHeight);
 
     let articleQuery;
     if (this.isLoggedIn()) {
@@ -182,14 +235,22 @@ export class FacebookTimelineBehavior
 
       // Keep looping until we run out of posts in the timeline
       // or hit a limit
-      let lastSeen = feeds.at(-1);
       for (let i = 0; i < 50; i++) {
+        yield getState(ctx, "Scrolling to bottom of page");
+        window.scrollTo(0, document.body.scrollHeight);
+
         feeds = xpathNodesArray(articleQuery) as Element[];
-        if (feeds[0] == lastSeen) {
-          break;
+
+        const unseenPosts = this.filterSeenIdsFromPosts(ctx, feeds);
+        if (unseenPosts.length == 0) {
+          yield getState(
+            ctx,
+            "Query returned only previously-seen posts; returning",
+          );
+          return;
         }
 
-        for (const post of feeds) {
+        for (const post of unseenPosts) {
           yield getState(ctx, "Viewing post from feed");
           scrollIntoView(post);
           try {
@@ -207,7 +268,6 @@ export class FacebookTimelineBehavior
           }
           await sleep(waitUnit * 20);
         }
-        lastSeen = feeds.at(-1);
       }
     } else {
       const feed = (xpathNode(Q.pageletPostList) ||
@@ -276,40 +336,29 @@ export class FacebookTimelineBehavior
       return;
     }
 
-    const postLink = xpathNode(Q.postQuery, post) as HTMLAnchorElement | null;
+    const url = this.urlFromPostElement(ctx, post);
+    let urlString: string | undefined = undefined;
+    if (url) {
+      urlString = url.toString();
+      const postId = this.postIdFromUrl(ctx, urlString);
 
-    let url: URL | null = null;
-
-    if (postLink) {
-      url = new URL(postLink.href, window.location.href);
-      url.search = "";
-
-      // URL format: /username/posts/pfbid0blahblahblah
-      let match = window.location.href.match(/\/[^/]+\/posts\/(.+)/);
-      if (!match) {
-        // URL format: /groups/123456789/posts/123456789/
-        match = window.location.href.match(/\/groups\/[^/]+\/posts\/([^/]+)/);
-      }
-
-      if (match) {
-        const postId = match[1] as string | null;
-
-        if (postId) {
-          if (this.seenIds.has(postId)) {
-            throw new HaltIteration(
-              `Iteration has looped around to previously-seen post ${postId}`,
-            );
-          }
-
-          this.seenIds.add(postId);
+      if (postId) {
+        // We try to handle this while looping, so this inner check is
+        // just a failsafe in case we didn't filter out this post
+        // while looping.
+        if (this.seenIds.has(postId)) {
+          throw new HaltIteration(
+            `Iteration has looped around to previously-seen post ${postId}`,
+          );
         }
+
+        this.seenIds.add(postId);
       }
     }
 
     yield getState(ctx, "Viewing post " + (url || ""), "posts");
     // If appropriate, queue up the single post view as well
-    if (url) {
-      const urlString = url.toString();
+    if (urlString) {
       if (
         Q.isSinglePost.test(urlString) ||
         Q.isSingleGroupPost.test(urlString)
