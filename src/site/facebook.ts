@@ -325,7 +325,7 @@ export class FacebookTimelineBehavior
     await sleep(waitUnit * 2);
 
     let scrolls = 0;
-    while (lastScrolledPosition != window.scrollY) {
+    while (lastScrolledPosition < window.scrollY) {
       scrolls += 1;
       lastScrolledPosition = document.body.scrollTop;
       await window.scrollTo(0, document.body.scrollHeight);
