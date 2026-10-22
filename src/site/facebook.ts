@@ -331,10 +331,6 @@ export class FacebookTimelineBehavior
       await window.scrollTo(0, document.body.scrollHeight);
       await sleep(waitUnit * 2);
 
-      // Limit how long we keep endlessly scrolling
-      if (scrolls > 50) {
-        break;
-      }
     }
 
     yield getState(ctx, `Finished scrolling page (${scrolls} iterations)`);
