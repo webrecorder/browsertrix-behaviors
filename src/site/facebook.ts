@@ -330,7 +330,6 @@ export class FacebookTimelineBehavior
       lastScrolledPosition = document.body.scrollTop;
       await window.scrollTo(0, document.body.scrollHeight);
       await sleep(waitUnit * 2);
-
     }
 
     yield getState(ctx, `Finished scrolling page (${scrolls} iterations)`);
