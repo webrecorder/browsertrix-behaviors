@@ -177,6 +177,12 @@ export class FacebookTimelineBehavior
     });
   }
 
+  scrollDownAndUp() {
+    const currentPosition = window.scrollY;
+    window.scrollTo(0, document.body.scrollHeight);
+    window.scrollTo(0, currentPosition);
+  }
+
   async *iterPostFeeds(ctx: Context<FacebookState>) {
     const {
       iterChildElem,
@@ -193,7 +199,7 @@ export class FacebookTimelineBehavior
     // only a single post having loaded from the start, so we'll want to
     // make sure the site has loaded more before we start querying.
     yield getState(ctx, "Scrolling to bottom of page");
-    window.scrollTo(0, document.body.scrollHeight);
+    this.scrollDownAndUp();
 
     let articleQuery;
     if (this.isLoggedIn()) {
@@ -247,8 +253,11 @@ export class FacebookTimelineBehavior
       // Keep looping until we run out of posts in the timeline
       // or hit a limit
       for (let i = 0; i < 50; i++) {
+        // Scroll to the bottom to make sure we load more post elements,
+        // then scroll back to the previous position to ensure we iterate
+        // from the current place in the timeline.
         yield getState(ctx, "Scrolling to bottom of page");
-        window.scrollTo(0, document.body.scrollHeight);
+        this.scrollDownAndUp();
 
         feeds = xpathNodesArray(articleQuery) as Element[];
 
@@ -423,6 +432,9 @@ export class FacebookTimelineBehavior
       commentRoot = xpathNode(commentQuery, post) as HTMLElement | null;
     }
     yield* this.iterInfiniteScrollComments(ctx, post, commentRoot, maxExpands);
+    // Scroll back to the top of the post in case scrolling the comments
+    // caused us to scroll the browser position as well.
+    scrollIntoView(post);
 
     await sleep(waitUnit * 5);
   }
