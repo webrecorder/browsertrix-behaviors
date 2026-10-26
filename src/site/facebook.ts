@@ -432,6 +432,9 @@ export class FacebookTimelineBehavior
       commentRoot = xpathNode(commentQuery, post) as HTMLElement | null;
     }
     yield* this.iterInfiniteScrollComments(ctx, post, commentRoot, maxExpands);
+    // Scroll back to the top of the post in case scrolling the comments
+    // caused us to scroll the browser position as well.
+    scrollIntoView(post);
 
     await sleep(waitUnit * 5);
   }
