@@ -168,6 +168,11 @@ export async function addLink(
   url: string,
   alwaysObeyScope = false,
 ): Promise<void> {
+  // Always disable smart scoping when running in a frame
+  if (self !== top) {
+    alwaysObeyScope = true;
+  }
+
   if (typeof self["__bx_addLink"] === "function") {
     // call directly as passing two objects
     return await self["__bx_addLink"](url, alwaysObeyScope);
@@ -178,6 +183,10 @@ export async function addLinkBatch(
   urls: string[],
   alwaysObeyScope = false,
 ): Promise<void> {
+  if (self !== top) {
+    alwaysObeyScope = true;
+  }
+
   if (typeof self["__bx_addLinkBatch"] === "function") {
     // Slice up the array into subarrays of up to 1MB worth of URLs
     let slice: string[] = [];
