@@ -196,7 +196,7 @@ export class AutoScroll
             `${document.location.pathname} != ${this.origPath}`,
           "info",
         );
-        void addLink(document.location.href);
+        void addLink(document.location.href, true);
         return;
       }
 
