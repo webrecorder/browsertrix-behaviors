@@ -180,6 +180,7 @@ export class BehaviorManager {
             void behaviorLog(
               "Calling onPageInit for Site-Specific Behavior " + name,
             );
+            // @ts-expect-error TS18046
             siteBehaviorClass.onPageInit();
           }
 

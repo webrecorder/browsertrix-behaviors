@@ -135,15 +135,6 @@ export class YoutubeBehavior implements AbstractBehavior<YoutubeState> {
     }
   }
 
-  static onPageInit() {
-    // Attempt to induce YouTube into serving up older video formats
-    Object.defineProperty(MediaSource, "isTypeSupported", {
-      value: () => false,
-      configurable: false,
-      writable: false,
-    });
-  }
-
   async *iterTab(
     ctx: Context<YoutubeState>,
     query: string,
